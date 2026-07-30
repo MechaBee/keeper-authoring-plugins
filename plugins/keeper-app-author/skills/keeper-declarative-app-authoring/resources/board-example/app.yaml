@@ -1,0 +1,10 @@
+id: board-example
+title: Collaborative Kanban Example
+description: Plan, discuss, and complete work without leaving the board.
+version: 1
+defaultView: board
+icon: list-todo
+schemaVersion: 1
+access:
+  default_role: none
+  users: []

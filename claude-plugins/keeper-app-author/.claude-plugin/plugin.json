@@ -1,0 +1,25 @@
+{
+  "name": "keeper-app-author",
+  "displayName": "Keeper App Author",
+  "version": "1.0.0",
+  "description": "Describe how you or your team works and get a real app for it — notes, records, boards, dashboards, and workflows — with every change reviewed before it goes live.",
+  "author": {
+    "name": "MechaBee",
+    "email": "info@mechabee.com",
+    "url": "https://mechabee.com/"
+  },
+  "homepage": "https://mechabee.com/keeper",
+  "repository": "https://github.com/MechaBee/keeper-authoring-plugins",
+  "keywords": [
+    "keeper",
+    "app-builder",
+    "no-code",
+    "low-code",
+    "personal-productivity",
+    "small-business",
+    "workflow-automation",
+    "business-operations",
+    "mcp",
+    "app-authoring"
+  ]
+}

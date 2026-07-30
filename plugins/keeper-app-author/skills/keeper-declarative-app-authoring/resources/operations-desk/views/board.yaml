@@ -1,0 +1,90 @@
+view:
+  id: board
+  title: Work board
+  description: Triage, assign, and move operational work through its lifecycle.
+
+nav:
+  order: 10
+
+actions:
+  - id: new_work_order
+    kind: action_set
+    data_source: new_work_order_action
+
+data_sources:
+  work_orders:
+    kind: table
+    table: work_orders
+    sort:
+      field: scheduled_date
+      direction: asc
+  new_work_order_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: work_orders
+      label: New work order
+      fields: title,organization_id,asset_id,assignee_id,priority,scheduled_date,description
+      field__status: requested
+      field__priority: normal
+    on_success:
+      - type: navigate
+        viewId: work-order-detail
+        query:
+          workOrderId:
+            bind: action.result.id
+
+components:
+  work_board:
+    kind: record_board
+    title: Active work
+    description: Drag a card to update its writable lifecycle status.
+    table: work_orders
+    data_source: work_orders
+    group_by:
+      field: status
+    card:
+      title_field: title
+      body_field: description
+      badge_field: priority
+      meta_fields:
+        - organization_id
+        - asset_id
+        - assignee_id
+        - scheduled_date
+    groups:
+      - value: requested
+        label: Requested
+      - value: scheduled
+        label: Scheduled
+        color: "#0ea5e9"
+      - value: in_progress
+        label: In progress
+        color: "#f59e0b"
+      - value: blocked
+        label: Blocked
+        color: "#ef4444"
+      - value: completed
+        label: Completed
+        color: "#10b981"
+        done: true
+    search:
+      enabled: true
+      placeholder: Search work
+      fields:
+        - title
+        - description
+        - organization_id
+        - assignee_id
+    allow_group_change: true
+    empty_message: No work orders yet.
+    on_card_click:
+      - type: navigate
+        viewId: work-order-detail
+        query:
+          workOrderId:
+            bind: record.id
+
+layout:
+  component: work_board

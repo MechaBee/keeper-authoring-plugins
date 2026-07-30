@@ -1,0 +1,35 @@
+{
+  "name": "mechabee",
+  "owner": {
+    "name": "MechaBee",
+    "email": "info@mechabee.com",
+    "url": "https://mechabee.com/"
+  },
+  "metadata": {
+    "description": "MechaBee Keeper plugins for building and maintaining declarative apps from a conversation.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "keeper-app-author",
+      "source": "./claude-plugins/keeper-app-author",
+      "version": "1.0.0",
+      "description": "Build and safely evolve Keeper apps—records, boards, dashboards, and workflows—from a conversation.",
+      "author": {
+        "name": "MechaBee",
+        "email": "info@mechabee.com"
+      },
+      "homepage": "https://mechabee.com/keeper",
+      "repository": "https://github.com/MechaBee/keeper-authoring-plugins",
+      "category": "Developer Tools",
+      "keywords": [
+        "keeper",
+        "app-builder",
+        "workflow-automation",
+        "business-operations",
+        "mcp",
+        "app-authoring"
+      ]
+    }
+  ]
+}

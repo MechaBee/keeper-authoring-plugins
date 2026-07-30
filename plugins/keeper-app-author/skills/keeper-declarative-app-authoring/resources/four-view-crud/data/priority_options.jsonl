@@ -1,0 +1,5 @@
+{"value":"all","label":"All priorities","sort_order":0}
+{"value":"urgent","label":"Urgent","sort_order":10}
+{"value":"high","label":"High","sort_order":20}
+{"value":"normal","label":"Normal","sort_order":30}
+{"value":"low","label":"Low","sort_order":40}

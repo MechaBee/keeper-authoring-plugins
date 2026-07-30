@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "keeper": {
+      "type": "http",
+      "url": "https://mechabee.com/mcp/keeper",
+      "auth": "oauth",
+      "oauth_resource": "https://mechabee.com/mcp/keeper",
+      "scopes": [
+        "https://mechabee.com/mcp/keeper/read",
+        "https://mechabee.com/mcp/keeper/write"
+      ],
+      "default_tools_approval_mode": "writes",
+      "enabled": true
+    }
+  }
+}

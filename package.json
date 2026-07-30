@@ -1,0 +1,12 @@
+{
+  "name": "keeper-authoring-plugins-marketplace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Distribution marketplace for MechaBee Keeper authoring plugins.",
+  "scripts": {
+    "validate": "node scripts/validate-marketplaces.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,36 @@
+table: task_checklist_items
+version: 2
+primaryKey: id
+idPrefix: check
+displayField: title
+rowAccess:
+  mode: all
+fields:
+  - id: id
+    type: text
+    label: ID
+    required: true
+    readonly: true
+  - id: task_id
+    type: reference
+    label: Task
+    referenceTable: tasks
+    required: true
+  - id: title
+    type: text
+    label: Checklist item
+    required: true
+  - id: completed
+    type: boolean
+    label: Complete
+    required: true
+    default: false
+  - id: due_date
+    type: date
+    label: Due
+relations:
+  - field: task_id
+    references:
+      table: tasks
+      field: id
+    onDelete: cascade

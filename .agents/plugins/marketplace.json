@@ -1,0 +1,20 @@
+{
+  "name": "mechabee",
+  "interface": {
+    "displayName": "MechaBee"
+  },
+  "plugins": [
+    {
+      "name": "keeper-app-author",
+      "source": {
+        "source": "local",
+        "path": "./plugins/keeper-app-author"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

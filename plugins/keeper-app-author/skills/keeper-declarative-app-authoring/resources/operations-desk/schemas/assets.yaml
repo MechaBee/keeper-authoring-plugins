@@ -1,0 +1,59 @@
+table: assets
+version: 1
+primaryKey: id
+idPrefix: asset
+displayField: label
+fields:
+  - id: id
+    type: text
+    label: ID
+    required: true
+    readonly: true
+  - id: organization_id
+    type: reference
+    label: Organization
+    required: true
+    referenceTable: organizations
+  - id: label
+    type: text
+    label: Asset
+    required: true
+  - id: asset_type
+    type: text
+    label: Type
+    required: true
+  - id: location
+    type: text
+    label: Location
+  - id: status
+    type: select
+    label: Status
+    required: true
+    default: active
+    options:
+      - value: active
+        label: Active
+      - value: needs_attention
+        label: Needs attention
+      - value: retired
+        label: Retired
+  - id: last_service_date
+    type: date
+    label: Last service
+  - id: next_service_due
+    type: date
+    label: Next service due
+  - id: service_interval_months
+    type: number
+    label: Service interval
+    unit: months
+    min: 1
+  - id: notes
+    type: textarea
+    label: Notes
+    contentFormat: markdown
+relations:
+  - field: organization_id
+    references:
+      table: organizations
+      field: id

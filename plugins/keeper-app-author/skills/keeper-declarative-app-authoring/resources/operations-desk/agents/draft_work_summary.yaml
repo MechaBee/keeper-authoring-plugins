@@ -1,0 +1,66 @@
+id: draft_work_summary
+title: Draft work summary
+kind: templated_prompt
+inputs:
+  work_order:
+    kind: record
+    table: work_orders
+    id:
+      bind: input.work_order_id
+  organization:
+    kind: record
+    table: organizations
+    id:
+      bind: input.organization_id
+  asset:
+    kind: record
+    table: assets
+    id:
+      bind: input.asset_id
+  recent_history:
+    kind: table
+    table: work_orders
+    filter:
+      asset_id:
+        bind: input.asset_id
+    sort:
+      field: created_at
+      direction: desc
+    limit: 5
+promptTemplate: |
+  Draft a concise internal work summary using only the supplied structured data.
+
+  Use markdown headings for Current request, Relevant context, Work completed, and Next steps.
+  Omit a section when the records contain no supporting facts. Do not invent dates, actions,
+  commitments, or technical findings.
+
+  Organization:
+  {{organization}}
+
+  Asset:
+  {{asset}}
+
+  Current work order:
+  {{work_order}}
+
+  Recent work for the same asset:
+  {{recent_history}}
+result:
+  type: markdown
+  key: summary
+  successMessage: Drafted an internal work summary.
+  fallbackContent: |-
+    ## Summary unavailable
+
+    The summary could not be generated. Review the work-order fields and try again.
+  fallbackMessage: The AI summary is unavailable. Showing fallback content.
+  persistFallback: false
+writes:
+  - key: persist_summary
+    op: update
+    table: work_orders
+    recordId:
+      bind: input.work_order_id
+    values:
+      summary_md:
+        bind: result.summary

@@ -1,0 +1,110 @@
+view:
+  id: home
+  title: Notes
+nav:
+  order: 10
+
+state:
+  selectedNoteId: null
+
+route_state:
+  selectedNoteId: note
+
+data_sources:
+  notes:
+    kind: table
+    table: notes
+    sort:
+      field: updated_at
+      direction: desc
+
+  note_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: notes
+      label: Create note
+      fields: title,content
+
+components:
+  notes_workspace:
+    kind: record_collection
+    table: notes
+    data_source: notes
+    title: Notes
+    show_title: false
+    search:
+      enabled: true
+      placeholder: Search notes
+      fields:
+        - title
+        - content
+    create:
+      data_source: note_create_action
+      label: New note
+      mode: instant
+    delete:
+      enabled: true
+      label: Delete note
+      confirm: Delete this note? This cannot be undone.
+    pinning:
+      enabled: true
+      field: is_pinned
+      pinned_at_field: pinned_at
+    archiving:
+      enabled: true
+      field: is_archived
+      toggle_label: Include archived
+    selection:
+      state_key: selectedNoteId
+      desktop: split
+      mobile: page
+    summary:
+      title_field: title
+      preview_field: content
+      color_field: color
+      default_view: grid
+      views:
+        - id: grid
+          kind: grid
+          label: Grid
+        - id: list
+          kind: list
+          label: List
+      meta_fields:
+        - field: updated_at
+          label: Edited
+    # Document surface: title + body only. Pin, color, and archive are not fields
+    # here — they render as a derived affordance bar from the collection config
+    # above (pinning / archiving / summary.color_field / delete).
+    detail:
+      title: Note
+      mode: editable
+      save_mode: autosave
+      presentation: document
+      show_primary_key: false
+      header:
+        title_field:
+          field: title
+          mode: edit
+          ui:
+            placeholder: Untitled
+        meta_fields:
+          - field: updated_at
+            mode: display
+            ui:
+              label: Edited
+              variant: datetime
+      sections:
+        - id: body
+          fields:
+            - field: content
+              ui:
+                variant: markdown
+                show_label: false
+                width: full
+                chrome: plain
+
+layout:
+  component: notes_workspace

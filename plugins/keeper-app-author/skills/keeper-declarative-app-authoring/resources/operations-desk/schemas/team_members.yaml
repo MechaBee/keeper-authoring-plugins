@@ -1,0 +1,38 @@
+table: team_members
+version: 1
+primaryKey: id
+idPrefix: team
+displayField: name
+fields:
+  - id: id
+    type: text
+    label: ID
+    required: true
+    readonly: true
+  - id: name
+    type: text
+    label: Name
+    required: true
+  - id: role
+    type: text
+    label: Role
+    required: true
+  - id: email
+    type: text
+    label: Email
+    required: true
+  - id: color
+    type: color
+    label: Color
+  - id: status
+    type: select
+    label: Status
+    required: true
+    default: active
+    options:
+      - value: active
+        label: Active
+      - value: away
+        label: Away
+      - value: inactive
+        label: Inactive

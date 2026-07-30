@@ -1,0 +1,149 @@
+id: complete_work_order
+title: Complete work order
+appearance: default
+success_message: Work order completed and the selected asset schedule advanced.
+
+input_fields:
+  - id: work_order_id
+    type: reference
+    label: Work order
+    referenceTable: work_orders
+    required: true
+    readonly: true
+  - id: completed_date
+    type: date
+    label: Completed on
+    required: true
+  - id: labor_hours
+    type: number
+    label: Labor hours
+    min: 0
+    step: 0.25
+  - id: resolution
+    type: textarea
+    label: Resolution
+    contentFormat: markdown
+
+input_sections:
+  - id: completion
+    title: Completion
+    description: This updates one work order and, when present, its one related asset.
+    fields:
+      - completed_date
+      - labor_hours
+      - resolution
+
+steps:
+  - id: work_order
+    kind: get_record
+    table: work_orders
+    record_id:
+      bind: input.work_order_id
+  - id: related_assets
+    kind: query_records
+    table: assets
+    filter:
+      id:
+        bind: step.work_order.asset_id
+    limit: 1
+  - id: prepare
+    kind: script
+    label: Prepare completion
+    input:
+      workOrder:
+        bind: step.work_order
+      relatedAssets:
+        bind: step.related_assets
+      completedDate:
+        bind: input.completed_date
+      laborHours:
+        bind: input.labor_hours
+        fallback: null
+      resolution:
+        bind: input.resolution
+        fallback: null
+      now:
+        bind: system.nowIso
+    code: |
+      const workOrder = input.workOrder;
+      if (!workOrder) throw new Error("Work order not found.");
+      if (workOrder.status === "completed") {
+        throw new Error("This work order is already completed.");
+      }
+
+      const completedDate = String(input.completedDate ?? "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(completedDate)) {
+        throw new Error("Completed date must be an ISO date.");
+      }
+
+      const asset = Array.isArray(input.relatedAssets) ? input.relatedAssets[0] : null;
+      const addMonths = (isoDate, months) => {
+        const value = new Date(`${isoDate}T00:00:00.000Z`);
+        value.setUTCMonth(value.getUTCMonth() + Number(months || 0));
+        return value.toISOString().slice(0, 10);
+      };
+      const hasAsset = Boolean(asset && asset.id);
+      const nextServiceDue = hasAsset
+        ? addMonths(completedDate, Number(asset.service_interval_months || 12))
+        : null;
+
+      return {
+        hasAsset,
+        workOrderValues: {
+          status: "completed",
+          completed_at: String(input.now || `${completedDate}T00:00`).slice(0, 16),
+          labor_hours: input.laborHours === null ? null : Number(input.laborHours),
+          resolution: input.resolution || workOrder.resolution || null,
+        },
+        assetValues: {
+          last_service_date: completedDate,
+          next_service_due: nextServiceDue,
+          status: asset && asset.status === "needs_attention"
+            ? "active"
+            : asset && asset.status,
+        },
+        preview: {
+          title: `Complete ${String(workOrder.title || workOrder.id)}`,
+          description: hasAsset
+            ? "Completes this work order and advances its related asset schedule."
+            : "Completes this work order without changing any asset.",
+          items: [
+            { label: "Completed on", value: completedDate, tone: "success" },
+            ...(nextServiceDue
+              ? [{ label: "Next service due", value: nextServiceDue }]
+              : []),
+          ],
+        },
+        result: {
+          id: String(workOrder.id),
+          next_service_due: nextServiceDue,
+        },
+      };
+  - id: update_work_order
+    kind: update_record
+    table: work_orders
+    record_id:
+      bind: input.work_order_id
+    values_from:
+      bind: step.prepare.workOrderValues
+  - id: update_asset
+    kind: update_record
+    table: assets
+    record_id:
+      bind: step.work_order.asset_id
+    values_from:
+      bind: step.prepare.assetValues
+    when:
+      bind: step.prepare.hasAsset
+
+preview:
+  step: prepare
+  path: preview
+
+result:
+  step: prepare
+  path: result
+
+invalidate:
+  - work_orders
+  - assets

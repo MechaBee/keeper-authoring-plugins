@@ -1,0 +1,113 @@
+table: work_orders
+version: 1
+primaryKey: id
+idPrefix: work
+displayField: title
+fields:
+  - id: id
+    type: text
+    label: ID
+    required: true
+    readonly: true
+  - id: title
+    type: text
+    label: Work order
+    required: true
+  - id: organization_id
+    type: reference
+    label: Organization
+    required: true
+    referenceTable: organizations
+  - id: asset_id
+    type: reference
+    label: Asset
+    referenceTable: assets
+  - id: assignee_id
+    type: reference
+    label: Assignee
+    referenceTable: team_members
+  - id: status
+    type: select
+    label: Status
+    required: true
+    default: requested
+    options:
+      - value: requested
+        label: Requested
+      - value: scheduled
+        label: Scheduled
+      - value: in_progress
+        label: In progress
+      - value: blocked
+        label: Blocked
+      - value: completed
+        label: Completed
+  - id: priority
+    type: select
+    label: Priority
+    required: true
+    default: normal
+    options:
+      - value: low
+        label: Low
+      - value: normal
+        label: Normal
+      - value: high
+        label: High
+      - value: urgent
+        label: Urgent
+  - id: scheduled_date
+    type: date
+    label: Scheduled date
+  - id: description
+    type: textarea
+    label: Request
+    contentFormat: markdown
+  - id: resolution
+    type: textarea
+    label: Resolution
+    contentFormat: markdown
+  - id: labor_hours
+    type: number
+    label: Labor
+    unit: h
+    min: 0
+  - id: summary_md
+    type: textarea
+    label: Work summary
+    contentFormat: markdown
+  - id: source_plan_id
+    type: reference
+    label: Source plan
+    referenceTable: service_plans
+    readonly: true
+  - id: created_at
+    type: datetime
+    label: Created
+    required: true
+    readonly: true
+    computed:
+      kind: now
+      on: create
+      format: datetime
+  - id: completed_at
+    type: datetime
+    label: Completed
+    readonly: true
+relations:
+  - field: organization_id
+    references:
+      table: organizations
+      field: id
+  - field: asset_id
+    references:
+      table: assets
+      field: id
+  - field: assignee_id
+    references:
+      table: team_members
+      field: id
+  - field: source_plan_id
+    references:
+      table: service_plans
+      field: id

@@ -1,0 +1,46 @@
+table: organizations
+version: 1
+primaryKey: id
+idPrefix: organization
+displayField: name
+fields:
+  - id: id
+    type: text
+    label: ID
+    required: true
+    readonly: true
+  - id: name
+    type: text
+    label: Organization
+    required: true
+  - id: kind
+    type: select
+    label: Type
+    required: true
+    options:
+      - value: customer
+        label: Customer
+      - value: partner
+        label: Partner
+      - value: internal
+        label: Internal
+  - id: status
+    type: select
+    label: Status
+    required: true
+    default: active
+    options:
+      - value: active
+        label: Active
+      - value: inactive
+        label: Inactive
+  - id: contact_name
+    type: text
+    label: Primary contact
+  - id: contact_email
+    type: text
+    label: Contact email
+  - id: notes
+    type: textarea
+    label: Notes
+    contentFormat: markdown

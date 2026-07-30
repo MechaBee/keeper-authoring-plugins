@@ -1,0 +1,5 @@
+{"value":"all","label":"All statuses","sort_order":0}
+{"value":"submitted","label":"Submitted","sort_order":10}
+{"value":"in_review","label":"In review","sort_order":20}
+{"value":"approved","label":"Approved","sort_order":30}
+{"value":"rejected","label":"Rejected","sort_order":40}

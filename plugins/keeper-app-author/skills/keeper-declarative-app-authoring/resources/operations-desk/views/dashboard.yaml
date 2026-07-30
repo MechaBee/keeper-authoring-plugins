@@ -1,0 +1,266 @@
+view:
+  id: dashboard
+  title: Attention
+  description: Joined, read-only views of open work and assets approaching service.
+
+nav:
+  order: 20
+
+route_state:
+  assignee_filter:
+    route: assigneeId
+    omit_values:
+      - all
+
+state:
+  assignee_filter: all
+
+filters:
+  - id: assignee_select
+    kind: state_select
+    label: Assignee
+    state_key: assignee_filter
+    options_source: team_options
+    value_field: value
+    label_field: label
+
+data_sources:
+  organizations:
+    kind: table
+    table: organizations
+    sort:
+      field: name
+      direction: asc
+  assets:
+    kind: table
+    table: assets
+    sort:
+      field: next_service_due
+      direction: asc
+  team_members:
+    kind: table
+    table: team_members
+    sort:
+      field: name
+      direction: asc
+  work_orders:
+    kind: table
+    table: work_orders
+    sort:
+      field: scheduled_date
+      direction: asc
+  team_options:
+    kind: table
+    table: team_options
+    sort:
+      field: sort_order
+      direction: asc
+  attention_assets:
+    kind: projected_table
+    schema: asset_attention
+    from:
+      source: assets
+      as: asset
+    lookups:
+      - source: organizations
+        as: organization
+        local: asset.organization_id
+        foreign: id
+        mode: left
+    where:
+      - kind: script
+        label: due-within-thirty-days
+        input:
+          now:
+            bind: context.nowIso
+          due:
+            path: asset.next_service_due
+        code: |
+          const today = String(input.now ?? "").slice(0, 10);
+          const due = String(input.due ?? "");
+          if (!today || !due) return false;
+          const threshold = new Date(`${today}T00:00:00.000Z`);
+          threshold.setUTCDate(threshold.getUTCDate() + 30);
+          return due <= threshold.toISOString().slice(0, 10);
+    fields:
+      - field: id
+        value:
+          path: asset.id
+      - field: label
+        value:
+          path: asset.label
+      - field: organization_name
+        value:
+          op: coalesce
+          values:
+            - path: organization.name
+            - path: asset.organization_id
+      - field: asset_type
+        value:
+          path: asset.asset_type
+      - field: location
+        value:
+          path: asset.location
+      - field: next_service_due
+        value:
+          path: asset.next_service_due
+      - field: days_to_due
+        value:
+          kind: script
+          input:
+            now:
+              bind: context.nowIso
+            due:
+              path: asset.next_service_due
+          code: |
+            const today = String(input.now ?? "").slice(0, 10);
+            const due = String(input.due ?? "");
+            if (!today || !due) return null;
+            const start = new Date(`${today}T00:00:00.000Z`).getTime();
+            const end = new Date(`${due}T00:00:00.000Z`).getTime();
+            if (Number.isNaN(start) || Number.isNaN(end)) return null;
+            return Math.round((end - start) / 86400000);
+      - field: service_status
+        value:
+          kind: script
+          input:
+            now:
+              bind: context.nowIso
+            due:
+              path: asset.next_service_due
+          code: |
+            const today = String(input.now ?? "").slice(0, 10);
+            const due = String(input.due ?? "");
+            return due && due < today ? "overdue" : "due_soon";
+    sort:
+      field: next_service_due
+      direction: asc
+  open_work:
+    kind: projected_table
+    schema: open_work
+    from:
+      source: work_orders
+      as: work
+    lookups:
+      - source: organizations
+        as: organization
+        local: work.organization_id
+        foreign: id
+        mode: left
+      - source: assets
+        as: asset
+        local: work.asset_id
+        foreign: id
+        mode: left
+      - source: team_members
+        as: assignee
+        local: work.assignee_id
+        foreign: id
+        mode: left
+    where:
+      - kind: script
+        label: open-only
+        input:
+          status:
+            path: work.status
+        code: |
+          return ["requested", "scheduled", "in_progress", "blocked"].includes(String(input.status ?? ""));
+      - kind: script
+        label: optional-assignee
+        input:
+          filter:
+            bind: state.assignee_filter
+          assigneeId:
+            path: work.assignee_id
+        code: |
+          return !input.filter || input.filter === "all" || input.assigneeId === input.filter;
+    fields:
+      - field: id
+        value:
+          path: work.id
+      - field: title
+        value:
+          path: work.title
+      - field: organization_name
+        value:
+          op: coalesce
+          values:
+            - path: organization.name
+            - path: work.organization_id
+      - field: asset_label
+        value:
+          op: coalesce
+          values:
+            - path: asset.label
+            - path: work.asset_id
+      - field: assignee_name
+        value:
+          kind: script
+          input:
+            name:
+              path: assignee.name
+          code: |
+            return input.name || "Unassigned";
+      - field: status
+        value:
+          path: work.status
+      - field: priority
+        value:
+          path: work.priority
+      - field: scheduled_date
+        value:
+          path: work.scheduled_date
+    sort:
+      field: scheduled_date
+      direction: asc
+    refresh_on:
+      - state.assignee_filter
+
+components:
+  attention_assets_table:
+    kind: record_table
+    title: Service attention
+    description: Assets overdue or due within the next 30 days.
+    data_source: attention_assets
+    columns:
+      - field: label
+      - field: organization_name
+      - field: location
+      - field: next_service_due
+      - field: days_to_due
+      - field: service_status
+    on_row_click:
+      - type: navigate
+        viewId: assets
+        query:
+          assetId:
+            bind: record.id
+  open_work_table:
+    kind: record_table
+    title: Open work
+    description: The assignee filter is backed by a stable option catalog.
+    data_source: open_work
+    columns:
+      - field: title
+      - field: organization_name
+      - field: asset_label
+      - field: assignee_name
+      - field: status
+      - field: priority
+      - field: scheduled_date
+    on_row_click:
+      - type: navigate
+        viewId: work-order-detail
+        query:
+          workOrderId:
+            bind: record.id
+
+layout:
+  kind: split
+  direction: horizontal
+  sizes:
+    - 1
+    - 1
+  children:
+    - component: attention_assets_table
+    - component: open_work_table

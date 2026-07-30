@@ -1,0 +1,167 @@
+id: create_rule
+title: Create rule
+appearance: default
+success_message: Rule created with its initial version and current snapshot.
+
+input_fields:
+  - id: name
+    type: text
+    label: Rule name
+    required: true
+  - id: category
+    type: select
+    label: Category
+    required: true
+    options:
+      - value: service_level
+        label: Service level
+      - value: quality_threshold
+        label: Quality threshold
+      - value: operating_limit
+        label: Operating limit
+  - id: effective_from
+    type: date
+    label: Effective from
+    required: true
+  - id: value
+    type: number
+    label: Value
+    required: true
+  - id: unit
+    type: text
+    label: Unit
+    required: true
+  - id: notes
+    type: textarea
+    label: Notes
+    contentFormat: markdown
+
+input_sections:
+  - id: identity
+    title: Logical rule
+    fields:
+      - name
+      - category
+  - id: initial_version
+    title: Initial version
+    fields:
+      - effective_from
+      - value
+      - unit
+      - notes
+
+steps:
+  - id: existing_rules
+    kind: query_records
+    table: rules
+  - id: prepare
+    kind: script
+    label: Prepare initial lifecycle
+    input:
+      existingRules:
+        bind: step.existing_rules
+      name:
+        bind: input.name
+      category:
+        bind: input.category
+      effectiveFrom:
+        bind: input.effective_from
+      value:
+        bind: input.value
+      unit:
+        bind: input.unit
+      notes:
+        bind: input.notes
+        fallback: null
+      now:
+        bind: system.nowIso
+    code: |
+      const name = String(input.name || "").trim();
+      const category = String(input.category || "").trim();
+      const effectiveFrom = String(input.effectiveFrom || "").trim();
+      const unit = String(input.unit || "").trim();
+      const value = Number(input.value);
+      if (!name || !category || !unit || !/^\d{4}-\d{2}-\d{2}$/.test(effectiveFrom)) {
+        throw new Error("Name, category, ISO effective date, and unit are required.");
+      }
+      if (!Number.isFinite(value)) throw new Error("Value must be a finite number.");
+      const today = String(input.now || "").slice(0, 10);
+      if (today && effectiveFrom > today) {
+        throw new Error("Create the current rule first; use a successor for a future version.");
+      }
+      const duplicate = (Array.isArray(input.existingRules) ? input.existingRules : [])
+        .some((entry) => String(entry && entry.name || "").trim().toLowerCase() === name.toLowerCase());
+      if (duplicate) throw new Error(`A rule named "${name}" already exists.`);
+
+      return {
+        logicalValues: { name, category, status: "active" },
+        versionValues: {
+          version_number: 1,
+          effective_from: effectiveFrom,
+          value,
+          unit,
+          change_reason: "initial",
+          notes: input.notes || null,
+        },
+        snapshotValues: {
+          rule_name: name,
+          category,
+          effective_from: effectiveFrom,
+          value,
+          unit,
+          last_change_reason: "initial",
+        },
+        preview: {
+          title: `Create ${name}`,
+          description: "Creates one logical rule, its first dated version, and its current snapshot.",
+          items: [
+            { label: "Effective from", value: effectiveFrom },
+            { label: "Value", value: `${value} ${unit}` },
+          ],
+        },
+      };
+  - id: create_logical_rule
+    kind: create_record
+    table: rules
+    values_from:
+      bind: step.prepare.logicalValues
+  - id: create_initial_version
+    kind: create_record
+    table: rule_versions
+    values_from:
+      bind: step.prepare.versionValues
+    values:
+      rule_id:
+        bind: step.create_logical_rule.id
+  - id: create_current_snapshot
+    kind: create_record
+    table: current_rules
+    values_from:
+      bind: step.prepare.snapshotValues
+    values:
+      id:
+        bind: step.create_logical_rule.id
+      rule_id:
+        bind: step.create_logical_rule.id
+      version_id:
+        bind: step.create_initial_version.id
+  - id: link_current_version
+    kind: update_record
+    table: rules
+    record_id:
+      bind: step.create_logical_rule.id
+    values:
+      current_version_id:
+        bind: step.create_initial_version.id
+
+preview:
+  step: prepare
+  path: preview
+
+result:
+  step: create_logical_rule
+
+invalidate:
+  - rules
+  - rule_versions
+  - current_rules

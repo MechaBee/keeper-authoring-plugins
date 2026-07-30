@@ -1,0 +1,86 @@
+table: tasks
+version: 2
+primaryKey: id
+idPrefix: task
+displayField: title
+rowAccess:
+  mode: all
+fields:
+  - id: id
+    type: text
+    label: ID
+    required: true
+    readonly: true
+  - id: title
+    type: text
+    label: Title
+    required: true
+  - id: status
+    type: select
+    label: Status
+    required: true
+    default: todo
+    options:
+      - {value: todo, label: To do}
+      - {value: in_progress, label: In progress}
+      - {value: blocked, label: Blocked}
+      - {value: done, label: Done}
+  - id: priority
+    type: select
+    label: Priority
+    required: true
+    default: medium
+    options:
+      - {value: low, label: Low}
+      - {value: medium, label: Medium}
+      - {value: high, label: High}
+  - id: owner
+    type: select
+    label: Owner
+    options:
+      - {value: aria, label: Aria}
+      - {value: ben, label: Ben}
+      - {value: chloe, label: Chloe}
+  - id: due_date
+    type: date
+    label: Due date
+  - id: progress
+    type: number
+    label: Progress
+    min: 0
+    max: 100
+    default: 0
+  - id: progress_mode
+    type: select
+    label: Progress source
+    required: true
+    default: automatic
+    options:
+      - {value: automatic, label: Checklist}
+      - {value: manual, label: Manual}
+  - id: labels
+    type: multi_select
+    label: Labels
+    options:
+      - {value: design, label: Design}
+      - {value: engineering, label: Engineering}
+      - {value: content, label: Content}
+      - {value: qa, label: QA}
+  - id: position
+    type: number
+    label: Board position
+    required: true
+    default: 1000
+  - id: completed_at
+    type: datetime
+    label: Completed at
+  - id: archived
+    type: boolean
+    label: Archived
+    required: true
+    default: false
+  - id: notes
+    type: textarea
+    label: Notes
+    contentFormat: markdown
+    helpText: Keep the context collaborators need to act.

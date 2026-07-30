@@ -1,0 +1,44 @@
+table: task_links
+version: 2
+primaryKey: id
+idPrefix: link
+displayField: title
+rowAccess:
+  mode: all
+fields:
+  - id: id
+    type: text
+    label: ID
+    required: true
+    readonly: true
+  - id: task_id
+    type: reference
+    label: Task
+    referenceTable: tasks
+    required: true
+  - id: title
+    type: text
+    label: Link title
+    required: true
+  - id: url
+    type: text
+    label: URL
+    required: true
+  - id: notes
+    type: textarea
+    label: Notes
+  - id: created_at
+    type: datetime
+    label: Added at
+    required: true
+    readonly: true
+    computed:
+      kind: now
+      on: create
+      format: datetime
+relations:
+  - field: task_id
+    references:
+      table: tasks
+      field: id
+    onDelete: cascade

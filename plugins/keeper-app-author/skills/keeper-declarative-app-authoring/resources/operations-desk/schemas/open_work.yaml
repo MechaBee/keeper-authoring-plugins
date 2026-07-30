@@ -1,0 +1,51 @@
+table: open_work
+version: 1
+primaryKey: id
+idPrefix: open_work
+displayField: title
+fields:
+  - id: id
+    type: text
+    label: ID
+    required: true
+    readonly: true
+  - id: title
+    type: text
+    label: Work order
+    required: true
+  - id: organization_name
+    type: text
+    label: Organization
+  - id: asset_label
+    type: text
+    label: Asset
+  - id: assignee_name
+    type: text
+    label: Assignee
+  - id: status
+    type: select
+    label: Status
+    options:
+      - value: requested
+        label: Requested
+      - value: scheduled
+        label: Scheduled
+      - value: in_progress
+        label: In progress
+      - value: blocked
+        label: Blocked
+  - id: priority
+    type: select
+    label: Priority
+    options:
+      - value: low
+        label: Low
+      - value: normal
+        label: Normal
+      - value: high
+        label: High
+      - value: urgent
+        label: Urgent
+  - id: scheduled_date
+    type: date
+    label: Scheduled

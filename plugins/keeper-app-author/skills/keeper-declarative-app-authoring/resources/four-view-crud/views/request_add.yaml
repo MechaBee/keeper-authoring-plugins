@@ -1,0 +1,38 @@
+view:
+  id: request_add
+  title: Add request
+
+nav:
+  visible: false
+
+data_sources:
+  requests:
+    kind: table
+    table: requests
+
+components:
+  add_request_form:
+    kind: record_form
+    table: requests
+    title: New request
+    description: Capture enough context for another person to triage the request.
+    fields:
+      - title
+      - requester
+      - owner
+      - status
+      - priority
+      - due_date
+      - description
+    submit_label: Create request
+    on_success:
+      - type: navigate
+        viewId: request_detail
+        query:
+          requestId:
+            bind: record.id
+
+layout:
+  kind: stack
+  children:
+    - component: add_request_form

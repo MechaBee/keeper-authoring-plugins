@@ -1,0 +1,252 @@
+view:
+  id: board
+  title: Delivery Board
+  description: Plan, discuss, and complete work without leaving the board.
+nav:
+  order: 10
+state:
+  selectedTaskId: null
+route_state:
+  selectedTaskId: task
+actions:
+  - id: new_task
+    kind: action_set
+    data_source: task_create_action
+data_sources:
+  tasks:
+    kind: table
+    table: tasks
+    sort: {field: position, direction: asc}
+  task_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: tasks
+      label: New task
+      fields: title,priority,owner,due_date,progress,labels,notes
+  task_checklist_items:
+    kind: table
+    table: task_checklist_items
+    filter:
+      task_id:
+        bind: state.selectedTaskId
+    sort: {field: due_date, direction: asc}
+    refresh_on: [state.selectedTaskId]
+  task_checklist_rollup:
+    kind: table
+    table: task_checklist_items
+  task_checklist_create:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: task_checklist_items
+      label: Add checklist item
+      fields: title,due_date
+      field__task_id:
+        bind: state.selectedTaskId
+    refresh_on: [state.selectedTaskId]
+  task_activity:
+    kind: table
+    table: task_activity
+    filter:
+      task_id:
+        bind: state.selectedTaskId
+    sort: {field: created_at, direction: desc}
+    refresh_on: [state.selectedTaskId]
+  task_activity_create:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: task_activity
+      label: Add comment
+      fields: body
+      field__task_id:
+        bind: state.selectedTaskId
+    refresh_on: [state.selectedTaskId]
+  task_links:
+    kind: table
+    table: task_links
+    filter:
+      task_id:
+        bind: state.selectedTaskId
+    sort: {field: created_at, direction: desc}
+    refresh_on: [state.selectedTaskId]
+  task_link_create:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: task_links
+      label: Add link
+      fields: title,url,notes
+      field__task_id:
+        bind: state.selectedTaskId
+    refresh_on: [state.selectedTaskId]
+components:
+  board:
+    kind: record_board
+    title: Collaborative work
+    description: Open a card to edit its context, checklist, activity, and links in place.
+    table: tasks
+    data_source: tasks
+    group_by:
+      field: status
+    card:
+      title_field: title
+      body_field: notes
+      badge_field: priority
+      signals:
+        - {field: owner, kind: avatar, label: Owner}
+        - {field: due_date, kind: date, label: Due}
+        - {field: progress, kind: progress, label: Progress, max: 100}
+        - {field: labels, kind: labels}
+    groups:
+      - {value: todo, label: To do}
+      - {value: in_progress, label: In progress, limit: 3}
+      - {value: blocked, label: Blocked, color: "#f59e0b"}
+      - {value: done, label: Done, done: true}
+    search:
+      placeholder: Search tasks
+      fields: [title, notes, priority, owner, labels]
+    filters:
+      - {field: priority}
+      - {field: owner}
+      - {field: labels}
+    create:
+      data_source: task_create_action
+      label: Add card
+      title_field: title
+      placeholder: What needs doing?
+    ordering:
+      field: position
+      step: 1000
+    archiving:
+      field: archived
+      toggle_label: Include archived tasks
+    completion:
+      field: completed_at
+      clear_when_reopened: true
+    activity:
+      data_source: task_activity_create
+      record_field: task_id
+      body_field: body
+      type_field: type
+      from_field: from_status
+      to_field: to_status
+      movement_type: status_changed
+    checklist_progress:
+      field: progress
+      mode_field: progress_mode
+      checklist_section: checklist
+      data_source: task_checklist_rollup
+      record_field: task_id
+      automatic_value: automatic
+      manual_value: manual
+    selection:
+      state_key: selectedTaskId
+      desktop: split
+      mobile: page
+      reconcile: clear
+    detail:
+      title: Task
+      description: Keep the task's context and collaborative work together.
+      mode: editable
+      save_mode: autosave
+      show_primary_key: false
+      header:
+        title_field:
+          field: title
+          mode: edit
+          ui:
+            placeholder: Name this task
+        meta_fields:
+          - field: status
+            mode: edit
+            ui: {label: Status, variant: badge}
+          - field: priority
+            mode: edit
+            ui: {label: Priority, variant: badge}
+          - field: owner
+            mode: edit
+            ui: {label: Owner, variant: badge}
+          - field: due_date
+            mode: edit
+            ui: {label: Due, variant: date}
+      sections:
+        - id: delivery
+          title: Delivery
+          columns: 2
+          fields:
+            - field: progress
+              mode: edit
+              ui: {label: Progress, width: half}
+            - field: labels
+              mode: edit
+              ui: {label: Labels, width: half}
+        - id: notes
+          title: Context
+          fields:
+            - field: notes
+              mode: edit
+              contentFormat: markdown
+              ui:
+                variant: markdown
+                show_label: false
+                width: full
+                chrome: plain
+                empty_text: Add the context collaborators need to act.
+      related_sections:
+        - id: checklist
+          kind: checklist
+          title: Checklist
+          description: Break delivery into visible steps.
+          table: task_checklist_items
+          data_source: task_checklist_items
+          title_field: title
+          completed_field: completed
+          meta_fields: [due_date]
+          create:
+            data_source: task_checklist_create
+            label: Add item
+            fields: [title, due_date]
+        - id: activity
+          kind: activity
+          title: Activity
+          description: Keep comments and board movement in one stream.
+          table: task_activity
+          data_source: task_activity
+          body_field: body
+          author_field: author
+          occurred_at_field: created_at
+          type_field: type
+          create:
+            data_source: task_activity_create
+            label: Comment
+            fields:
+              - field: body
+                placeholder: Add an update or decision…
+                multiline: true
+        - id: links
+          kind: links
+          title: Links
+          description: Attach briefs, artifacts, and supporting work.
+          table: task_links
+          data_source: task_links
+          title_field: title
+          url_field: url
+          body_field: notes
+          meta_fields: [created_at]
+          create:
+            data_source: task_link_create
+            label: Add link
+            fields:
+              - title
+              - field: url
+                placeholder: https://…
+    allow_group_change: true
+    empty_message: No tasks yet. Add the first card to start planning.
+layout:
+  component: board

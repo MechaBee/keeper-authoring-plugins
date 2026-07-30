@@ -1,0 +1,19 @@
+table: priority_options
+version: 1
+primaryKey: value
+idPrefix: priority
+displayField: label
+fields:
+  - id: value
+    type: text
+    label: Value
+    required: true
+    readonly: true
+  - id: label
+    type: text
+    label: Label
+    required: true
+  - id: sort_order
+    type: number
+    label: Sort order
+    required: true

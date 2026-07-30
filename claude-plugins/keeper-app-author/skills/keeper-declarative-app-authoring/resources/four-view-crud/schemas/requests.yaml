@@ -1,0 +1,81 @@
+table: requests
+version: 1
+primaryKey: id
+idPrefix: request
+displayField: title
+fields:
+  - id: id
+    type: text
+    label: ID
+    required: true
+    readonly: true
+  - id: title
+    type: text
+    label: Request
+    required: true
+    helpText: State the outcome or decision needed.
+  - id: requester
+    type: text
+    label: Requester
+    required: true
+  - id: owner
+    type: text
+    label: Owner
+    helpText: Person accountable for the next step.
+  - id: status
+    type: select
+    label: Status
+    required: true
+    default: submitted
+    options:
+      - value: submitted
+        label: Submitted
+      - value: in_review
+        label: In review
+      - value: approved
+        label: Approved
+      - value: rejected
+        label: Rejected
+  - id: priority
+    type: select
+    label: Priority
+    required: true
+    default: normal
+    options:
+      - value: low
+        label: Low
+      - value: normal
+        label: Normal
+      - value: high
+        label: High
+      - value: urgent
+        label: Urgent
+  - id: due_date
+    type: date
+    label: Due date
+  - id: description
+    type: textarea
+    label: Description
+    contentFormat: markdown
+  - id: decision_notes
+    type: textarea
+    label: Decision notes
+    contentFormat: markdown
+  - id: created_at
+    type: datetime
+    label: Created
+    required: true
+    readonly: true
+    computed:
+      kind: now
+      on: create
+      format: datetime
+  - id: updated_at
+    type: datetime
+    label: Updated
+    required: true
+    readonly: true
+    computed:
+      kind: now
+      on: always
+      format: datetime

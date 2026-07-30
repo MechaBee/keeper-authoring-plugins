@@ -1,0 +1,74 @@
+table: rule_versions
+version: 1
+primaryKey: id
+idPrefix: rule_version
+displayField: rule_id
+fields:
+  - id: id
+    type: text
+    label: ID
+    required: true
+    readonly: true
+  - id: rule_id
+    type: reference
+    label: Rule
+    required: true
+    referenceTable: rules
+  - id: version_number
+    type: number
+    label: Version
+    required: true
+    min: 1
+  - id: effective_from
+    type: date
+    label: Effective from
+    required: true
+  - id: effective_to
+    type: date
+    label: Effective to
+  - id: value
+    type: number
+    label: Value
+    required: true
+  - id: unit
+    type: text
+    label: Unit
+    required: true
+  - id: change_reason
+    type: select
+    label: Change reason
+    required: true
+    options:
+      - value: initial
+        label: Initial
+      - value: manual_update
+        label: Manual update
+      - value: correction
+        label: Correction
+  - id: supersedes_version_id
+    type: reference
+    label: Supersedes
+    referenceTable: rule_versions
+    readonly: true
+  - id: notes
+    type: textarea
+    label: Notes
+    contentFormat: markdown
+  - id: created_at
+    type: datetime
+    label: Created
+    required: true
+    readonly: true
+    computed:
+      kind: now
+      on: create
+      format: datetime
+relations:
+  - field: rule_id
+    references:
+      table: rules
+      field: id
+  - field: supersedes_version_id
+    references:
+      table: rule_versions
+      field: id

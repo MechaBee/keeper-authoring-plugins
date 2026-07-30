@@ -1,0 +1,189 @@
+view:
+  id: plans
+  title: Plans
+  description: Maintain recurring plans and generate one guarded work order at a time.
+
+nav:
+  order: 40
+
+route_state:
+  selected_plan_id: planId
+
+state:
+  selected_plan_id: ""
+
+actions:
+  - id: new_plan
+    kind: action_set
+    data_source: new_plan_action
+
+data_sources:
+  organizations:
+    kind: table
+    table: organizations
+    sort:
+      field: name
+      direction: asc
+  assets:
+    kind: table
+    table: assets
+    sort:
+      field: label
+      direction: asc
+  team_members:
+    kind: table
+    table: team_members
+    sort:
+      field: name
+      direction: asc
+  service_plans:
+    kind: table
+    table: service_plans
+    sort:
+      field: next_due_date
+      direction: asc
+  selected_plan:
+    kind: record
+    table: service_plans
+    id:
+      bind: state.selected_plan_id
+    refresh_on:
+      - state.selected_plan_id
+  generated_work:
+    kind: table
+    table: work_orders
+    filter:
+      source_plan_id:
+        bind: state.selected_plan_id
+    sort:
+      field: created_at
+      direction: desc
+    refresh_on:
+      - state.selected_plan_id
+  new_plan_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: service_plans
+      label: New plan
+      fields: label,organization_id,asset_id,interval_months,next_due_date,assignee_id,priority,status,notes
+      field__interval_months: 12
+      field__priority: normal
+      field__status: active
+    on_success:
+      - type: set_state
+        key: selected_plan_id
+        value:
+          bind: action.result.id
+  generate_plan_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    refresh_on:
+      - state.selected_plan_id
+    params:
+      workflow_id: generate_plan_work
+      label: Generate next work order
+      input__plan_id:
+        bind: state.selected_plan_id
+
+components:
+  plans_table:
+    kind: record_table
+    title: Recurring plans
+    data_source: service_plans
+    selection:
+      state_key: selected_plan_id
+      reconcile: first_available
+    columns:
+      - field: label
+      - field: organization_id
+      - field: asset_id
+      - field: next_due_date
+      - field: assignee_id
+      - field: status
+    on_row_click:
+      - type: set_state
+        key: selected_plan_id
+        value:
+          bind: record.id
+  plan_detail:
+    kind: record_detail
+    title: Plan detail
+    description: The contextual action creates one work order and advances only this plan.
+    table: service_plans
+    data_source: selected_plan
+    actions_source: generate_plan_action
+    mode: editable
+    show_primary_key: false
+    empty_message: Select a plan.
+    header:
+      title_field:
+        field: label
+        mode: edit
+      meta_fields:
+        - field: status
+          mode: edit
+          ui:
+            variant: badge
+        - field: organization_id
+          mode: edit
+          ui:
+            variant: reference_chip
+        - field: asset_id
+          mode: edit
+          ui:
+            variant: reference_chip
+    sections:
+      - id: schedule
+        title: Schedule
+        columns: 2
+        fields:
+          - field: interval_months
+            mode: edit
+          - field: next_due_date
+            mode: edit
+          - field: assignee_id
+            mode: edit
+          - field: priority
+            mode: edit
+      - id: notes
+        fields:
+          - field: notes
+            mode: edit
+            contentFormat: markdown
+            ui:
+              variant: markdown
+              width: full
+    save_label: Save plan
+  generated_work_table:
+    kind: record_table
+    title: Generated work
+    data_source: generated_work
+    columns:
+      - field: title
+      - field: status
+      - field: priority
+      - field: scheduled_date
+      - field: assignee_id
+    on_row_click:
+      - type: navigate
+        viewId: work-order-detail
+        query:
+          workOrderId:
+            bind: record.id
+
+layout:
+  kind: split
+  direction: horizontal
+  sizes:
+    - 1
+    - 1
+  children:
+    - component: plans_table
+    - kind: stack
+      gap: md
+      children:
+        - component: plan_detail
+        - component: generated_work_table

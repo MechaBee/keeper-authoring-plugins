@@ -1,0 +1,207 @@
+id: create_successor_rule
+title: Create successor version
+appearance: default
+success_message: Successor created and the current snapshot updated when effective today.
+
+input_fields:
+  - id: rule_id
+    type: reference
+    label: Rule
+    referenceTable: rules
+    required: true
+    readonly: true
+  - id: effective_from
+    type: date
+    label: Effective from
+    required: true
+  - id: value
+    type: number
+    label: Value
+    required: true
+  - id: unit
+    type: text
+    label: Unit
+    required: true
+  - id: change_reason
+    type: select
+    label: Change reason
+    required: true
+    options:
+      - value: manual_update
+        label: Manual update
+      - value: correction
+        label: Correction
+  - id: notes
+    type: textarea
+    label: Notes
+    contentFormat: markdown
+
+input_defaults:
+  change_reason: manual_update
+
+steps:
+  - id: rule
+    kind: get_record
+    table: rules
+    record_id:
+      bind: input.rule_id
+  - id: current_snapshot
+    kind: get_record
+    table: current_rules
+    record_id:
+      bind: input.rule_id
+  - id: versions
+    kind: query_records
+    table: rule_versions
+    filter:
+      rule_id:
+        bind: input.rule_id
+    sort:
+      field: effective_from
+      direction: desc
+  - id: prepare
+    kind: script
+    label: Prepare successor
+    input:
+      rule:
+        bind: step.rule
+      currentSnapshot:
+        bind: step.current_snapshot
+      versions:
+        bind: step.versions
+      effectiveFrom:
+        bind: input.effective_from
+      value:
+        bind: input.value
+      unit:
+        bind: input.unit
+      changeReason:
+        bind: input.change_reason
+      notes:
+        bind: input.notes
+        fallback: null
+      now:
+        bind: system.nowIso
+    code: |
+      const rule = input.rule;
+      const current = input.currentSnapshot;
+      if (!rule || !current) throw new Error("The selected rule needs a current snapshot.");
+      if (rule.status !== "active") throw new Error("Only active rules can receive a successor.");
+
+      const versions = Array.isArray(input.versions) ? input.versions : [];
+      const previous = versions.find((entry) => entry && entry.id === current.version_id);
+      if (!previous) throw new Error("The current version could not be resolved.");
+      if (versions.some((entry) => entry && entry.effective_from > previous.effective_from)) {
+        throw new Error("A later successor already exists.");
+      }
+
+      const effectiveFrom = String(input.effectiveFrom || "").trim();
+      const today = String(input.now || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(effectiveFrom)) {
+        throw new Error("Effective from must be an ISO date.");
+      }
+      if (effectiveFrom <= String(previous.effective_from || "")) {
+        throw new Error("A successor must start after the current version.");
+      }
+      if (today && effectiveFrom < today) {
+        throw new Error("This workflow creates current or future successors only.");
+      }
+
+      const value = Number(input.value);
+      const unit = String(input.unit || "").trim();
+      if (!Number.isFinite(value) || !unit) throw new Error("A finite value and unit are required.");
+      const end = new Date(`${effectiveFrom}T00:00:00.000Z`);
+      end.setUTCDate(end.getUTCDate() - 1);
+      const previousEffectiveTo = end.toISOString().slice(0, 10);
+      const shouldPromoteNow = effectiveFrom === today;
+
+      return {
+        previousVersionValues: { effective_to: previousEffectiveTo },
+        successorValues: {
+          rule_id: rule.id,
+          version_number: Math.max(...versions.map((entry) => Number(entry && entry.version_number || 0))) + 1,
+          effective_from: effectiveFrom,
+          effective_to: null,
+          value,
+          unit,
+          change_reason: input.changeReason,
+          supersedes_version_id: previous.id,
+          notes: input.notes || null,
+        },
+        snapshotSuccessorValues: {
+          effective_from: effectiveFrom,
+          effective_to: null,
+          value,
+          unit,
+          last_change_reason: input.changeReason,
+        },
+        snapshotFutureValues: { effective_to: previousEffectiveTo },
+        shouldPromoteNow,
+        shouldKeepCurrent: !shouldPromoteNow,
+        previousVersionId: previous.id,
+        preview: {
+          title: `Add successor to ${String(rule.name || rule.id)}`,
+          description: shouldPromoteNow
+            ? "Closes the previous version and promotes the successor now."
+            : "Closes the previous version on the day before the future successor starts.",
+          items: [
+            { label: "Effective from", value: effectiveFrom },
+            { label: "Value", value: `${value} ${unit}` },
+          ],
+        },
+      };
+  - id: close_previous_version
+    kind: update_record
+    table: rule_versions
+    record_id:
+      bind: step.prepare.previousVersionId
+    values_from:
+      bind: step.prepare.previousVersionValues
+  - id: create_successor_version
+    kind: create_record
+    table: rule_versions
+    values_from:
+      bind: step.prepare.successorValues
+  - id: promote_logical_rule
+    kind: update_record
+    table: rules
+    record_id:
+      bind: input.rule_id
+    values:
+      current_version_id:
+        bind: step.create_successor_version.id
+    when:
+      bind: step.prepare.shouldPromoteNow
+  - id: promote_current_snapshot
+    kind: update_record
+    table: current_rules
+    record_id:
+      bind: input.rule_id
+    values_from:
+      bind: step.prepare.snapshotSuccessorValues
+    values:
+      version_id:
+        bind: step.create_successor_version.id
+    when:
+      bind: step.prepare.shouldPromoteNow
+  - id: end_date_current_snapshot
+    kind: update_record
+    table: current_rules
+    record_id:
+      bind: input.rule_id
+    values_from:
+      bind: step.prepare.snapshotFutureValues
+    when:
+      bind: step.prepare.shouldKeepCurrent
+
+preview:
+  step: prepare
+  path: preview
+
+result:
+  step: create_successor_version
+
+invalidate:
+  - rules
+  - rule_versions
+  - current_rules

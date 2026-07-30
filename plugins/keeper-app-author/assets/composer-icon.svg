@@ -1,0 +1,12 @@
+<svg width="128" height="128" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ctile-c" x1="40" y1="24" x2="472" y2="488" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1A87B7"/><stop offset="0.55" stop-color="#0E6591"/><stop offset="1" stop-color="#0A3F5C"/>
+    </linearGradient>
+    <linearGradient id="cgold-c" x1="150" y1="100" x2="360" y2="410" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#F2CE6C"/><stop offset="0.5" stop-color="#DDB04B"/><stop offset="1" stop-color="#BC8926"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#ctile-c)"/>
+  <polygon points="256.0,72.0 415.3,164.0 415.3,348.0 256.0,440.0 96.7,348.0 96.7,164.0" fill="#FFFFFF" fill-opacity="0.92"/>
+  <polygon points="256.0,84.0 405.0,170.0 405.0,342.0 256.0,428.0 107.0,342.0 107.0,170.0" fill="url(#cgold-c)"/>
+
+</svg>

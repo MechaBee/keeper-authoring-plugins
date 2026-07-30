@@ -1,0 +1,152 @@
+view:
+  id: request_list
+  title: Requests
+
+nav:
+  order: 10
+
+state:
+  status_filter: all
+  priority_filter: all
+
+data_sources:
+  all_requests:
+    kind: table
+    table: requests
+    sort:
+      field: created_at
+      direction: desc
+  status_options:
+    kind: table
+    table: status_options
+    sort:
+      field: sort_order
+      direction: asc
+  priority_options:
+    kind: table
+    table: priority_options
+    sort:
+      field: sort_order
+      direction: asc
+  filtered_requests:
+    kind: projected_table
+    schema: requests
+    from:
+      source: all_requests
+      as: request
+    where:
+      - kind: script
+        label: optional-request-filters
+        input:
+          statusFilter:
+            bind: state.status_filter
+          priorityFilter:
+            bind: state.priority_filter
+          rowStatus:
+            path: request.status
+          rowPriority:
+            path: request.priority
+        code: |
+          const statusMatches =
+            !input.statusFilter ||
+            input.statusFilter === "all" ||
+            input.rowStatus === input.statusFilter;
+          const priorityMatches =
+            !input.priorityFilter ||
+            input.priorityFilter === "all" ||
+            input.rowPriority === input.priorityFilter;
+          return statusMatches && priorityMatches;
+    fields:
+      - field: id
+        value:
+          path: request.id
+      - field: title
+        value:
+          path: request.title
+      - field: requester
+        value:
+          path: request.requester
+      - field: owner
+        value:
+          path: request.owner
+      - field: status
+        value:
+          path: request.status
+      - field: priority
+        value:
+          path: request.priority
+      - field: due_date
+        value:
+          path: request.due_date
+      - field: description
+        value:
+          path: request.description
+      - field: decision_notes
+        value:
+          path: request.decision_notes
+      - field: created_at
+        value:
+          path: request.created_at
+      - field: updated_at
+        value:
+          path: request.updated_at
+    refresh_on:
+      - state.status_filter
+      - state.priority_filter
+
+filters:
+  - id: status_select
+    kind: state_select
+    label: Status
+    state_key: status_filter
+    options_source: status_options
+    value_field: value
+    label_field: label
+  - id: priority_select
+    kind: state_select
+    label: Priority
+    state_key: priority_filter
+    options_source: priority_options
+    value_field: value
+    label_field: label
+
+components:
+  request_toolbar:
+    kind: toolbar
+    title: Request actions
+    items:
+      - id: add_request
+        kind: link
+        label: Add request
+        viewId: request_add
+        appearance: default
+  requests_table:
+    kind: record_table
+    title: Request register
+    description: Filter the working list, then open a request for its complete context.
+    data_source: filtered_requests
+    columns:
+      - field: title
+      - field: requester
+      - field: owner
+      - field: status
+      - field: priority
+      - field: due_date
+    search:
+      fields:
+        - title
+        - requester
+        - owner
+        - description
+    on_row_click:
+      - type: navigate
+        viewId: request_detail
+        query:
+          requestId:
+            bind: record.id
+
+layout:
+  kind: stack
+  children:
+    - component: request_toolbar
+    - component: requests_table

@@ -1,0 +1,153 @@
+view:
+  id: work-order-detail
+  title: Work order
+  description: Deep-linked operational detail with completion and AI summary actions.
+
+nav:
+  visible: false
+
+share:
+  enabled: true
+  route_keys:
+    - workOrderId
+  allowed_audiences:
+    - owner_only
+    - authenticated_link
+  views:
+    - work-order-detail
+
+data_sources:
+  organizations:
+    kind: table
+    table: organizations
+    sort:
+      field: name
+      direction: asc
+  assets:
+    kind: table
+    table: assets
+    sort:
+      field: label
+      direction: asc
+  team_members:
+    kind: table
+    table: team_members
+    sort:
+      field: name
+      direction: asc
+  selected_work_order:
+    kind: record
+    table: work_orders
+    id:
+      bind: route.workOrderId
+    refresh_on:
+      - route.workOrderId
+  complete_work_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    refresh_on:
+      - route.workOrderId
+    params:
+      workflow_id: complete_work_order
+      label: Complete work order
+      input__work_order_id:
+        bind: route.workOrderId
+
+components:
+  work_order_detail:
+    kind: record_detail
+    title: Work order
+    table: work_orders
+    data_source: selected_work_order
+    actions_source: complete_work_action
+    mode: editable
+    show_primary_key: false
+    empty_message: Open a work order from the board.
+    header:
+      title_field:
+        field: title
+        mode: edit
+      meta_fields:
+        - field: status
+          mode: edit
+          ui:
+            variant: badge
+        - field: priority
+          mode: edit
+          ui:
+            variant: badge
+        - field: assignee_id
+          mode: edit
+          ui:
+            variant: reference_chip
+        - field: scheduled_date
+          mode: edit
+    sections:
+      - id: context
+        title: Context
+        columns: 2
+        fields:
+          - field: organization_id
+            mode: edit
+            ui:
+              variant: reference_chip
+          - field: asset_id
+            mode: edit
+            ui:
+              variant: reference_chip
+          - field: source_plan_id
+          - field: labor_hours
+            mode: edit
+      - id: request
+        title: Request
+        fields:
+          - field: description
+            mode: edit
+            contentFormat: markdown
+            ui:
+              variant: markdown
+              width: full
+      - id: completion
+        title: Completion
+        columns: 2
+        fields:
+          - field: resolution
+            mode: edit
+            contentFormat: markdown
+            ui:
+              variant: markdown
+              width: full
+          - field: completed_at
+      - id: summary
+        title: Generated summary
+        fields:
+          - field: summary_md
+            contentFormat: markdown
+            ui:
+              variant: markdown
+              width: full
+    save_label: Save work order
+  summary_agent:
+    kind: agent_action_panel
+    title: Draft work summary
+    description: Generate a concise internal handover from the selected records and recent history.
+    agent: draft_work_summary
+    input:
+      work_order_id:
+        bind: route.workOrderId
+      organization_id:
+        bind: source.selected_work_order.record.organization_id
+      asset_id:
+        bind: source.selected_work_order.record.asset_id
+    submit_label: Draft summary
+
+layout:
+  kind: split
+  direction: horizontal
+  sizes:
+    - 2
+    - 1
+  children:
+    - component: work_order_detail
+    - component: summary_agent

@@ -1,0 +1,48 @@
+table: rules
+version: 1
+primaryKey: id
+idPrefix: rule
+displayField: name
+fields:
+  - id: id
+    type: text
+    label: ID
+    required: true
+    readonly: true
+  - id: name
+    type: text
+    label: Rule
+    required: true
+  - id: category
+    type: select
+    label: Category
+    required: true
+    options:
+      - value: service_level
+        label: Service level
+      - value: quality_threshold
+        label: Quality threshold
+      - value: operating_limit
+        label: Operating limit
+  - id: status
+    type: select
+    label: Status
+    required: true
+    default: active
+    options:
+      - value: active
+        label: Active
+      - value: ending
+        label: Ending
+      - value: ended
+        label: Ended
+  - id: current_version_id
+    type: reference
+    label: Current version
+    referenceTable: rule_versions
+    readonly: true
+relations:
+  - field: current_version_id
+    references:
+      table: rule_versions
+      field: id

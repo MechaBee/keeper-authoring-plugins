@@ -1,0 +1,38 @@
+table: asset_attention
+version: 1
+primaryKey: id
+idPrefix: asset_attention
+displayField: label
+fields:
+  - id: id
+    type: text
+    label: ID
+    required: true
+    readonly: true
+  - id: label
+    type: text
+    label: Asset
+    required: true
+  - id: organization_name
+    type: text
+    label: Organization
+  - id: asset_type
+    type: text
+    label: Type
+  - id: location
+    type: text
+    label: Location
+  - id: next_service_due
+    type: date
+    label: Next service due
+  - id: days_to_due
+    type: number
+    label: Days to due
+  - id: service_status
+    type: select
+    label: Service status
+    options:
+      - value: overdue
+        label: Overdue
+      - value: due_soon
+        label: Due soon
