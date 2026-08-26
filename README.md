@@ -1,12 +1,18 @@
 # MechaBee Keeper Authoring Plugins
 
 Build and safely evolve declarative [MechaBee Keeper](https://mechabee.com/keeper) apps from a
-conversation. This repository distributes Keeper App Author for both Codex and Claude Code from
+conversation. This public repository distributes Keeper App Author for Codex and Claude Code from
 one versioned Git marketplace.
 
-Keeper App Author can create schemas, records, boards, tables, dashboards, workflows, providers,
-and agent-assisted actions. It validates complete app candidates, previews changes, and requires
-review before applying them. Existing live records are preserved by default.
+Keeper App Author creates complete operational apps: schemas, records, boards, tables, dashboards,
+forms, workflows, providers, and agent-assisted actions. It validates the complete candidate,
+previews a path-by-path diff, and requires review before applying a change. Existing live records
+are preserved by default.
+
+See the public [installation, permissions, update, and support guide](https://mechabee.com/keeper/app-author).
+
+> **Distribution status:** the Git marketplace is available now as an independent distribution
+> channel. Keeper App Author is not yet published in OpenAI's universal Plugins Directory.
 
 ## Install for Codex
 
@@ -44,6 +50,17 @@ claude plugin install keeper-app-author@mechabee
 Every published release increments the plugin version in both platform manifests and marketplace
 catalogs.
 
+## Start with a real brief
+
+Try one of these after installation:
+
+- `Build a service dispatch app with customers, equipment, work orders, technicians, and recurring maintenance.`
+- `Inspect my existing Keeper app and add an approval step without changing its live records.`
+- `Create a project delivery board with owners, status, due dates, and a weekly summary action.`
+
+The plugin will discover the exact MechaBee agent and workspace, read the current Keeper contract,
+and show the deployment diff before asking to apply it.
+
 ## Repository layout
 
 ```text
@@ -65,7 +82,12 @@ access tokens, passwords, or MFA codes into prompts. The plugin bundle contains 
 requests separate read and write scopes.
 
 Please report security concerns privately to [info@mechabee.com](mailto:info@mechabee.com). For
-product support, visit [MechaBee Keeper](https://mechabee.com/keeper#codex-plugin-support).
+product support, visit [Keeper App Author support](https://mechabee.com/keeper/app-author#support).
 
 See the [privacy policy](https://mechabee.com/privacy) and
 [terms of service](https://mechabee.com/terms).
+
+## Publication materials
+
+The reviewer-ready listing copy, test cases, release notes, and submission checklist are maintained
+in [docs/MARKETPLACE_SUBMISSION.md](docs/MARKETPLACE_SUBMISSION.md).

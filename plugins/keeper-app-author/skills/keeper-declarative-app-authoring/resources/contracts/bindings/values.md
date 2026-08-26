@@ -10,7 +10,10 @@ fallback: ""
 Standard sites allow `state.*`, `route.*`, `source.*`, and `context.*`. Row/card actions and
 `record_form.on_success` also allow `record.*`. Provider follow-ups also allow
 `action.result.*`. App-agent descriptors use only `input.*`, `result.*`, and `system.nowIso`.
-Workflow descriptors use only `input.*`, `step.*`, and `system.nowIso`.
+Workflow descriptors use only `input.*`, `step.*`, and the workflow `system.*` bindings
+`system.nowIso`, `system.actorUserId`, `system.actorEmail`, `system.appRole`,
+`system.workspaceAccessMode`, and `system.workflowId`; the `system.actor*` bindings resolve only
+when the workflow runs with an actor (`actor_required: true`).
 Binding roots are reserved runtime vocabulary; they are not domain-owned identifiers.
 
 Bindings resolve to primitives. Object/array results become fallback or null except where action

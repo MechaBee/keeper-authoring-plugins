@@ -1,13 +1,13 @@
 {
   "name": "keeper-app-author",
-  "version": "1.0.0",
-  "description": "Describe how you or your team works and get a real app for it — notes, records, boards, dashboards, and workflows — with every change reviewed before it goes live.",
+  "version": "1.0.1",
+  "description": "Build and safely evolve complete Keeper apps from Codex, with validated candidates, reviewed deployment, and live-record protection.",
   "author": {
     "name": "MechaBee",
     "email": "info@mechabee.com",
     "url": "https://mechabee.com/"
   },
-  "homepage": "https://mechabee.com/keeper#codex-plugin",
+  "homepage": "https://mechabee.com/keeper/app-author",
   "repository": "https://github.com/MechaBee/keeper-authoring-plugins",
   "keywords": [
     "keeper",
@@ -24,30 +24,35 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Keeper App Author",
-    "shortDescription": "Build apps around your work",
-    "longDescription": "Describe how you work — what you track, who does what, a normal week — and Keeper App Author builds a real app for it: a personal tracker or notebook, or shared customer and job records, boards, dashboards, and the workflows that tie them together. More capable than a spreadsheet, at a fraction of the time and cost of custom software or an ERP — live on desktop and mobile, in the same MechaBee workspace as your files, chats, and agents.\n\nGreat for one person turning captured ideas into next actions, and for small teams running day-to-day operations. Start from a plain-language brief or improve an app you already run. Every change is shown to you as a clear before/after that you approve before it goes live, and your existing records are protected by default. Change how you work? Describe the change and the app follows — no admin console, no development queue.",
+    "shortDescription": "Build and safely evolve Keeper apps",
+    "longDescription": "Turn a plain-language operational brief into a complete MechaBee Keeper app from Codex. Keeper App Author can create connected records, lists, tables, boards, dashboards, forms, navigation, workflows, providers, access rules, and in-app agent actions—not just a starter screen. The resulting app runs on desktop and mobile beside your MechaBee files, chats, and agents.\n\nUse it to create a new personal or team app, or to inspect, repair, and evolve an app that is already live. The plugin reads the current Keeper contract, validates the complete candidate, previews a path-by-path diff, and stages the exact change for approval before deployment. Definition-only changes preserve existing live records by default; raw-data changes require explicit intent and the corresponding authority.",
     "developerName": "MechaBee",
     "category": "Developer Tools",
     "capabilities": [
-      "Build a working app from a plain-language description",
-      "Personal trackers or shared team records — boards, dashboards, and workflows",
-      "Workflows and in-app agent actions that work on your data",
-      "Improve and fix apps you already run, without losing data",
-      "Review every change before it goes live",
-      "Live on desktop and mobile — open it with one click"
+      "Build a complete app from a plain-language operational brief",
+      "Create connected records, boards, dashboards, forms, and workflows",
+      "Add in-app agent actions that work from authorized app data",
+      "Inspect, repair, and evolve apps that are already live",
+      "Validate and review a path-by-path diff before deployment",
+      "Preserve live records during definition-only changes"
     ],
-    "websiteURL": "https://mechabee.com/keeper#codex-plugin",
+    "websiteURL": "https://mechabee.com/keeper/app-author",
     "privacyPolicyURL": "https://mechabee.com/privacy",
     "termsOfServiceURL": "https://mechabee.com/terms",
     "defaultPrompt": [
-      "Turn my scattered notes into a personal tracker with tasks, statuses, and a weekly review.",
-      "Build a service dispatch board with customer and equipment records and a parts list.",
-      "Add an approval step and a status dashboard to my app, and show me exactly what changes before it goes live."
+      "Build a service dispatch app with customers, equipment, technicians, and recurring maintenance.",
+      "Turn my project workflow into records, a delivery board, forms, and a weekly summary action.",
+      "Add an approval step to my existing app without changing its live records."
     ],
     "brandColor": "#1483B5",
     "composerIcon": "./assets/composer-icon.svg",
     "logo": "./assets/logo.svg",
-    "logoDark": "./assets/logo-dark.svg"
+    "logoDark": "./assets/logo-dark.svg",
+    "screenshots": [
+      "./assets/service-desk-desktop.png",
+      "./assets/service-desk-mobile.png",
+      "./assets/agent-report-action.png"
+    ]
   },
   "mcpServers": "./.mcp.json"
 }

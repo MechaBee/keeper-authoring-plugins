@@ -33,4 +33,20 @@ on_row_click:
 Required: `data_source` and non-empty `columns`. Column entries are a field id or an object with
 `field`, optional `label`, `align: left|center|right`, `empty_text`, and `wrap`. Optional component
 keys are `title`, `description`, `search`, `sort`, `density: comfortable|compact`, `selection`,
-`empty_message`, and `on_row_click`. Every referenced field must exist in the resolved schema.
+`empty_message`, `on_row_click`, and `export`. Every referenced field must exist in the resolved
+schema.
+
+`export` adds a CSV download:
+
+```yaml
+export:
+  enabled: true
+  label: Export CSV
+  filename: entries.csv
+  fields: [work_date, project_id, duration_minutes]  # columns to include
+  scope: complete        # `page` exports the loaded page; `complete` streams every
+                         # policy-visible row up to `max_records`
+  max_records: 10000
+```
+
+Pair `scope: complete` with a `bounded_scan` source `performance` intent for large tables.

@@ -22,8 +22,15 @@ options:
 Never substitute `id`, `name`, or `title` for `value`. Stored values must match option values.
 
 Reference fields require `referenceTable`. Optional `reference_filters[]` entries contain
-`record_field`, `value_field`, and optional `when_empty: none|all`. Load the referenced table in a
-view that must render labels or provide a dropdown.
+`record_field`, `value_field`, and optional `when_empty: none|all`. Optional `reference_where` is a
+static equality filter on the referenced table (for example `{archived: false}`) that narrows the
+offered options; it is reference-only and combines with any `reference_filters`. Load the referenced
+table in a view that must render labels or provide a dropdown.
+
+`referenceTable: keeper_principals` is a runtime-owned principal reference, not an application
+schema or JSONL file. For an app-admin form, Keeper supplies a bounded directory typeahead and
+returns the selected opaque ID. Ordinary editors receive only contextual options already allowed by
+their row policy. Never ask a user to type, derive, or seed a principal ID manually.
 
 `computed.kind` supports only `now`. Computed fields support timestamps only:
 

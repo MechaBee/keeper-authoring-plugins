@@ -14,6 +14,7 @@ component, not a separate view descriptor type.
 | Small all-in-one CRUD surface | [`record-collection.md`](contracts/components/record-collection.md) |
 | View or edit one record | [`record-detail.md`](contracts/components/record-detail.md) |
 | Standalone create form | [`record-form.md`](contracts/components/record-form.md) |
+| Weekly time matrix (rows × days) | [`timesheet-week-grid.md`](contracts/components/timesheet-week-grid.md) |
 | Render record markdown | [`markdown-panel.md`](contracts/components/markdown-panel.md) |
 | Run an app agent | [`agent-action-panel.md`](contracts/components/agent-action-panel.md) |
 | Local controls | [`toolbar.md`](contracts/components/toolbar.md) and [`action-bar.md`](contracts/components/action-bar.md) |

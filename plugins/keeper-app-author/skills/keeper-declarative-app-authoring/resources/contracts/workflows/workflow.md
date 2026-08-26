@@ -20,8 +20,10 @@ invalidate: [tasks]
 ```
 
 Required: id matching filename, `title`, `input_fields` array, and non-empty `steps`. Optional:
-`appearance: default|secondary|destructive`, `input_sections`, `input_defaults`, `preview`,
-`result`, `on_success`, `on_error`, `success_message`, and `invalidate: "*"|[...]`.
+`appearance: default|secondary|destructive`, `allowed_roles` (non-empty array of roles permitted to
+run it), `actor_required` (require a resolved actor so `system.actor*` bindings resolve),
+`input_sections`, `input_defaults`, `preview`, `result`, `on_success`, `on_error`,
+`success_message`, and `invalidate: "*"|[...]`.
 
 Input sections group existing input field ids and may use `visible_when`. Preview/result names a
 step and optional dotted `path`. Follow-up actions use the component action contract. Read

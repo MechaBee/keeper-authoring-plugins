@@ -5,6 +5,8 @@ apps from a conversation. Describe the records, views, workflows, and access mod
 plugin turns that brief into a complete declarative app package and validates it against the live
 Keeper contract.
 
+Install and support documentation: <https://mechabee.com/keeper/app-author>
+
 ## What you can build
 
 - Boards, lists, tables, dashboards, and record workspaces
@@ -30,5 +32,5 @@ See the [MechaBee privacy policy](https://mechabee.com/privacy) and
 
 ## Get help
 
-Visit [Keeper App Author support](https://mechabee.com/keeper#codex-plugin-support) or email
+Visit [Keeper App Author support](https://mechabee.com/keeper/app-author#support) or email
 [info@mechabee.com](mailto:info@mechabee.com).

@@ -7,19 +7,19 @@
   },
   "metadata": {
     "description": "MechaBee Keeper plugins for building and maintaining declarative apps from a conversation.",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   "plugins": [
     {
       "name": "keeper-app-author",
       "source": "./claude-plugins/keeper-app-author",
-      "version": "1.0.0",
-      "description": "Build and safely evolve Keeper apps—records, boards, dashboards, and workflows—from a conversation.",
+      "version": "1.0.1",
+      "description": "Build and safely evolve complete Keeper apps with validation, reviewed deployment, and live-record protection.",
       "author": {
         "name": "MechaBee",
         "email": "info@mechabee.com"
       },
-      "homepage": "https://mechabee.com/keeper",
+      "homepage": "https://mechabee.com/keeper/app-author",
       "repository": "https://github.com/MechaBee/keeper-authoring-plugins",
       "category": "Developer Tools",
       "keywords": [

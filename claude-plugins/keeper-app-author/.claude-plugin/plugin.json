@@ -1,14 +1,14 @@
 {
   "name": "keeper-app-author",
   "displayName": "Keeper App Author",
-  "version": "1.0.0",
-  "description": "Describe how you or your team works and get a real app for it — notes, records, boards, dashboards, and workflows — with every change reviewed before it goes live.",
+  "version": "1.0.1",
+  "description": "Build and safely evolve complete Keeper apps from Claude Code, with validated candidates, reviewed deployment, and live-record protection.",
   "author": {
     "name": "MechaBee",
     "email": "info@mechabee.com",
     "url": "https://mechabee.com/"
   },
-  "homepage": "https://mechabee.com/keeper",
+  "homepage": "https://mechabee.com/keeper/app-author",
   "repository": "https://github.com/MechaBee/keeper-authoring-plugins",
   "keywords": [
     "keeper",
