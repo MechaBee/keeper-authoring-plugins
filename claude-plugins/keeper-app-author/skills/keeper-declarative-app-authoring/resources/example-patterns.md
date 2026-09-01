@@ -13,7 +13,9 @@ Read contracts first. Patterns choose and connect valid types; they never define
 | Multi-table operational desk with board, dashboard, related records, workflows, sharing, and agent writeback | [`operations-desk/README.md`](operations-desk/README.md) and all descriptors |
 | Effective-dated versions with a materialized current snapshot | [`effective-dated-rules/README.md`](effective-dated-rules/README.md) and all descriptors |
 | One compact capture/CRUD surface | [`hello-notes/README.md`](hello-notes/README.md) and all descriptors |
+| Small DynamoDB-backed CRUD surface | [`dynamodb-notes/README.md`](dynamodb-notes/README.md) and all descriptors |
 
-Select the smallest matching pattern. Do not blend unrelated patterns merely to make an app look
-more sophisticated. Treat the two complete advanced examples as mutually exclusive starting
-points unless the brief independently requires both operational coordination and effective dating.
+The selection principles for this table — smallest matching pattern, no blending, and the two
+advanced examples as mutually exclusive anchors — live in
+[`design/README.md`](design/README.md). Decide the archetype there, then read every descriptor of
+the one example you pick.

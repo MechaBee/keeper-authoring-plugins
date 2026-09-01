@@ -70,16 +70,10 @@ For focused edits, read every file that names the touched table, field, view, wo
 
 ## High-Risk Changes
 
-Treat these as migrations:
-
-- field rename
-- table rename
-- view rename
-- primary key change
-- required field added to a table with existing rows
-- select/multi-select options tightened
-- reference field added without relation and reference-table loading
-- editable UI backed by projected/provider synthetic data
+The changes that must be treated as data migrations — renames, primary-key changes, a required field
+added to a populated table, tightened options, and editable UI over synthetic data — are listed with
+their handling in [`design/data-and-access.md`](design/data-and-access.md) under "Changes that are
+migrations." Confirm intent and inspect data before making any of them.
 
 ## When To Ask Before Editing
 

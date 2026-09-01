@@ -25,6 +25,6 @@ run it), `actor_required` (require a resolved actor so `system.actor*` bindings 
 `input_sections`, `input_defaults`, `preview`, `result`, `on_success`, `on_error`,
 `success_message`, and `invalidate: "*"|[...]`.
 
-Input sections group existing input field ids and may use `visible_when`. Preview/result names a
+Input sections group existing input field ids, may set `columns` (1–3), and may use `visible_when`. Preview/result names a
 step and optional dotted `path`. Follow-up actions use the component action contract. Read
 [`steps.md`](steps.md) for the closed step vocabulary.

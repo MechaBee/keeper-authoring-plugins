@@ -9,6 +9,16 @@ Common optional keys are `required`, `readonly`, `default`, `helpText`, `content
 `visible_when`. Numeric fields also accept `min`, `max`, `step`, `unit`, and `currency`.
 `contentFormat` is only `plain_text` or `markdown`.
 
+A field marked `workflowOnly: true` is written only by workflow steps: it is excluded from direct
+create/update forms and provider defaults and is rejected on direct writes, so workflow logic owns
+its value. It cannot be combined with `readonly` or `computed`. Use it for references a workflow
+stamps — for example a parent `timesheet_id` or accounting `period_id`.
+
+`input` optionally controls form presentation. Its `placeholder` is a non-empty string. A semantic
+`time` field may set `input.variant: flexible_text` to render a text box instead of the time picker.
+The runtime accepts an hour (`9`, `09`), compact time (`930`, `0930`), or colon time (`9:30`,
+`09:30`), normalizes it to `HH:MM`, and validates it again on the server.
+
 Select options are non-empty strings or exact `{value, label}` objects:
 
 ```yaml

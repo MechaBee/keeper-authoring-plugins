@@ -24,11 +24,11 @@ access:
   users: []
 ```
 
-Optional keys: `description` and `icon`. `id` must match the app folder and `defaultView` must name
-an existing view. The runtime accepts a missing `access` block for legacy apps, but every newly
-authored app must materialize `access` with `default_role: none` and `users: []`. Broaden that
-baseline only when the approved brief explicitly requires wider membership. Do not list the
-workspace owner or a `manage` collaborator solely to preserve their authority; those workspace
+Optional keys: `description`, `icon`, `status` (`active` or `archived`), and `storage`. `id` must
+match the app folder and `defaultView` must name an existing view. The runtime accepts a missing `access` block for legacy
+apps, but every newly authored app must materialize `access` with `default_role: none` and `users: []`.
+Broaden that baseline only when the approved brief explicitly requires wider membership. Do not list
+the workspace owner or a `manage` collaborator solely to preserve their authority; those workspace
 modes receive implicit app-admin capabilities.
 
 `access.default_role` is `none`, `viewer`, `editor`, `developer`, or `admin`; `access.users[]` maps
@@ -40,3 +40,22 @@ and live-data administrators. Existing access-policy changes require admin autho
 
 All descriptor identifiers use `[A-Za-z0-9_-]+`. View, schema, workflow, and agent filename stems
 must match their descriptor ids.
+
+## Storage
+
+Omit `storage` for the default JSONL engine. A new DynamoDB-backed app declares only its logical
+storage intent; Keeper owns table names, keys, indexes, shard counts, and all other physical layout:
+
+```yaml
+storage:
+  engine: dynamodb
+  performance: high_throughput # optional; `standard` is the other supported value
+```
+
+`performance` is valid only with `engine: dynamodb`. A DynamoDB candidate must not include live
+`data/*.jsonl` files. Do not add physical storage settings or infer them from an example.
+
+Normal uploads cannot change an installed app's storage engine. Use the explicit, revision-pinned
+conversion workflow only when the user asks to migrate an installed JSONL app. DynamoDB-to-JSONL is
+not supported. Read [DynamoDB authoring](../dynamodb-authoring.md) after `contract_read` for the
+current server workflow and available tools.

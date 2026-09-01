@@ -1,7 +1,8 @@
 # Pattern: Record Workspace
 
-Use a hidden route-bound detail view for a primary record that needs related context, explicit
-editing, workflow actions, or a stable deep link.
+Composition recipe for a route-bound record workspace. Select this shape in
+[`design/shape-and-views.md`](../design/shape-and-views.md); use it for a primary record that needs
+related context, explicit editing, workflow actions, or a stable deep link.
 
 ```yaml
 view: {id: item-detail, title: Work item}

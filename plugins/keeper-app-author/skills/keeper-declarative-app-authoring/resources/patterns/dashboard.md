@@ -1,7 +1,9 @@
 # Pattern: Read-only Dashboard Projection
 
-Use only when a join, derived field, or richer filter is required. Create an output schema for every
-mapped projection field, then render the projection with read-only components.
+Composition recipe for a read-only dashboard. Select this shape in
+[`design/shape-and-views.md`](../design/shape-and-views.md) — reach for a projection only when a
+join, derived field, or richer filter is required. Create an output schema for every mapped
+projection field, then render the projection with read-only components.
 
 ```yaml
 view: {id: dashboard, title: Open work}

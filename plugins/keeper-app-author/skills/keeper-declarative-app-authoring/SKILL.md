@@ -43,16 +43,21 @@ domain argument to a tool. Keep the selected `agentId` and `workspaceId` explici
 task. If discovery cannot select either one unambiguously, ask before querying or changing an app.
 Never guess a write target.
 
-## Read only the contracts needed
+## Design first, then read only the contracts needed
 
-Start with the [file contract index](resources/file-contracts.md), then follow it to the exact
-focused contracts required by the brief:
+Make the design decisions in [the design index](resources/design/README.md) before opening leaf
+contracts: choose the app archetype and each view's component, decide the storage engine and table
+modeling and whether any write, validation, or index policy is warranted, and choose any automation
+mechanism. Then start with the [file contract index](resources/file-contracts.md) and follow it to
+the exact focused contracts those decisions require:
 
 - Views and components: [component and layout index](resources/components-and-layout.md)
 - Schemas and JSONL: [data and schema index](resources/data-and-schema-evolution.md)
 - Bindings and navigation: [runtime index](resources/runtime-bindings-and-navigation.md)
 - Projected tables and providers:
   [data-source and provider index](resources/projected-tables-and-providers.md)
+- DynamoDB storage, conversion, deployment jobs, or repair:
+  [DynamoDB authoring](resources/dynamodb-authoring.md)
 
 Focused type files are authoritative. Do not infer keys from examples, related types, permissive
 parsing, or desired UI. Read no unrelated type files and do not inspect sibling Keeper apps as
@@ -64,33 +69,14 @@ one matching composition pattern. Patterns never add valid keys. Use the
 
 ## Composition rules
 
-For a board grouped by a select field, read the focused
-[`record_board` contract](resources/contracts/components/record-board.md), then read every file
-listed by the complete, data-free [board example](resources/board-example/README.md).
+Choose the app archetype, each view's component, and the runnable example to anchor on in
+[the design index](resources/design/README.md) and
+[`shape-and-views.md`](resources/design/shape-and-views.md); read every descriptor of the one example
+you pick and adapt only domain identifiers and labels while preserving binding and navigation
+envelopes. Preserve each example's row-scoped mutation strategy; never turn a one-record update into
+a whole-table replacement.
 
-For separate list, detail, add, and edit screens, read every file listed by the canonical
-[four-view CRUD example](resources/four-view-crud/README.md). Adapt only domain-owned identifiers
-and labels while preserving binding and navigation envelopes.
-
-For a multi-table operational application that truly needs a board, joined dashboard, related
-record workspaces, workflows, sharing, and an agent writeback, read the complete
-[operations-desk example](resources/operations-desk/README.md). Preserve its row-scoped mutation
-strategy; do not turn one-record updates into whole-table replacement.
-
-For stable logical records with dated successor versions and a materialized current read model,
-read the complete [effective-dated-rules example](resources/effective-dated-rules/README.md).
-Use this lifecycle only when the brief requires historical “valid on date” semantics.
-
-For one small self-contained CRUD surface, use the
-[hello-notes example](resources/hello-notes/README.md). Do not use `record_collection` for an
-operational queue, complex record workspace, dashboard, or automation.
-
-For every view, classify the interaction first:
-
-- `record_collection`: genuinely small self-contained CRUD.
-- `record_board`: rows grouped by a writable select field.
-- `record_table` or `record_list`: browse.
-- Route-bound `record_detail`: primary record workspace.
+Two guardrails hold regardless of shape.
 
 Binding roots such as `state`, `route`, `source`, `context`, `record`, and `action` are reserved
 runtime vocabulary, never domain identifiers. A projected `path:` alias declared by `from.as` is
@@ -110,7 +96,10 @@ For a new app, produce `app.yaml`, all required schemas, and every view, action,
 descriptor required by the brief. Do not stop after the default view. Include workflows, agents,
 providers, and seed data only when requested, but complete each requested feature in the same
 candidate. New team tables use schema version 2 and explicit `rowAccess`; prefer owner scope for
-member-owned hours, expenses, submissions, and similar records.
+member-owned hours, expenses, submissions, and similar records. When a brief requires access from
+a direct assignment or group membership, read the table-schema contract and use its constrained
+`rowAccess.mode: policy` form. Never imitate resource policy with view filters, workflow code, or
+an app-defined expression.
 
 Every new `app.yaml` must materialize the deny-by-default app policy:
 
@@ -129,7 +118,9 @@ complete UTF-8 `{path, content}` entries; do not send partial patches.
 
 ## Validate and upload safely
 
-Use this sequence:
+Before validating, run the design-fitness gate in [`design/review.md`](resources/design/review.md)
+and fix any design issue it surfaces — `app_validate` proves the candidate is legal, not that it is
+well-designed. Then use this sequence:
 
 1. `app_validate` the complete candidate.
 2. Fix all validation errors; do not suppress or reinterpret diagnostics.
@@ -144,6 +135,12 @@ Use this sequence:
 8. Call `app_upload_apply` only after the user has authorized applying that reviewed change.
 9. Pass `expectedRevision` equal to the prepared `baseRevision`, and acknowledge exactly every
    modified or deleted path.
+
+For a JSONL app, a successful apply returns the launch descriptor. For a DynamoDB app, apply instead
+accepts a durable deployment job. Call `app_job_advance` repeatedly for that exact job while the
+user wants processing to continue, and use `app_job_status` for read-only telemetry. Call
+`app_url_get` only after the job is `COMPLETED`. Read [DynamoDB authoring](resources/dynamodb-authoring.md) before creating,
+converting, repairing, or changing a DynamoDB-backed app.
 
 Never retry a stale apply by weakening concurrency checks. Prepare a fresh upload and show the new
 diff. Definition-only stages intentionally tolerate concurrent record activity; data-replacement

@@ -1,7 +1,8 @@
 # Pattern: Workflow And Templated Agent
 
-Create automation only when explicitly requested. Use a workflow for deterministic mutation and an
-agent only for the declared model-generated result.
+The mechanism choice — workflow vs. agent vs. direct action vs. compute — is decided in
+[`design/automation.md`](../design/automation.md); create automation only when the brief asks. This
+recipe shows the workflow-plus-templated-agent composition.
 
 ```yaml
 # workflows/complete_work_item.yaml

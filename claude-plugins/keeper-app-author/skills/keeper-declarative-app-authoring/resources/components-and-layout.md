@@ -1,10 +1,12 @@
 # Keeper Component And Layout Index
 
-Classify the screen, then read the exact component contracts it uses. Do not load every
-component file. A Keeper view is a composition container; a board, table, or detail surface is a
-component, not a separate view descriptor type.
+This is the component-to-contract index. **Decide *which* component a view needs in
+[`design/shape-and-views.md`](design/shape-and-views.md)** (archetype, per-view selection, and the
+anti-patterns); use the table below to find the contract for the component you chose. Do not load
+every component file. A Keeper view is a composition container; a board, table, or detail surface is
+a component, not a separate view descriptor type.
 
-## Choose by interaction
+## Component contracts by interaction
 
 | Interaction | Read |
 | --- | --- |
@@ -26,20 +28,8 @@ component, not a separate view descriptor type.
 | Workspace file list | [`workspace-file-collection.md`](contracts/components/workspace-file-collection.md) |
 | Grouped file lists | [`workspace-file-collection-navigator.md`](contracts/components/workspace-file-collection-navigator.md) |
 
-## Screen archetypes
-
-- Board: read [`patterns/operational-board.md`](patterns/operational-board.md), then all of
-  [`board-example/`](board-example/README.md).
-- Business catalog: use `record_table`; add selection and `record_detail` only when needed.
-- Record workspace: read [`patterns/record-workspace.md`](patterns/record-workspace.md).
-- Dashboard/report: read [`patterns/dashboard.md`](patterns/dashboard.md).
-- Small capture/CRUD surface: use `record_collection`; see the complete `hello-notes/` example.
-- Separate list/detail/add/edit: read all of `four-view-crud/`.
-- Multi-table operations desk: read all of `operations-desk/`; keep its projection sources
-  read-only and workflows row-scoped.
-- Effective-dated register: read all of `effective-dated-rules/`; keep logical identity, version
-  history, and current snapshot as separate tables.
-
-Also read [`contracts/views/layout.md`](contracts/views/layout.md),
+Archetype selection and the runnable example for each screen shape live in
+[`design/shape-and-views.md`](design/shape-and-views.md). Once components are chosen, also read
+[`contracts/views/layout.md`](contracts/views/layout.md),
 [`contracts/views/navigation.md`](contracts/views/navigation.md), and the exact data-source and
 action contracts referenced by the selected components.
