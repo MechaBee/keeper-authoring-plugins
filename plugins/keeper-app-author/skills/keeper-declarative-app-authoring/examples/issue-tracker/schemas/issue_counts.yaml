@@ -1,0 +1,12 @@
+table: issue_counts
+version: 2
+primaryKey: id
+idPrefix: issue_count
+displayField: id
+# Output of the count aggregates: one row per group key (a state, a parent
+# issue or a milestone) with the number of issues in it.
+rowAccess:
+  mode: all
+fields:
+  - {id: id, type: text, label: Group, required: true, readonly: true}
+  - {id: total, type: number, label: Issues, readonly: true}

@@ -1,0 +1,58 @@
+id: add_comment
+title: Comment
+appearance: default
+allowed_roles: [editor, developer, admin]
+actor_required: true
+success_message: Comment posted.
+invalidate: "*"
+input_fields:
+  - {id: issue_id, type: reference, label: Issue, referenceTable: issues, required: true, readonly: true}
+  - {id: body, type: textarea, label: Comment, required: true, contentFormat: markdown}
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: input.issue_id}
+  - id: prepare
+    kind: script
+    label: Check the comment
+    input:
+      issue: {bind: step.issue, fallback: null}
+      body: {bind: input.body}
+      actor: {bind: system.actorUserId}
+      role: {bind: system.appRole}
+    code: |
+      const issue = input.issue;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      const body = String(input.body ?? "").trim();
+      if (!body) helpers.inputError("body", "Write something before posting.");
+      if (issue.locked === true && input.role !== "admin") {
+        helpers.actionError("The conversation is locked. Only admins can comment.");
+      }
+
+      // Every activity row carries a one-line summary; for comments it is a
+      // plain-text excerpt of the markdown.
+      const excerpt = (markdown) => {
+        const text = markdown
+          .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+          .replace(/\\([\\`*_{}\[\]()#+\-.!>~|])/g, "$1")
+          .replace(/(\*\*|__|~~|`)/g, "")
+          .replace(/^\s*(#{1,6}|>|[-*+]|\d+\.)\s+/gm, "")
+          .replace(/\s+/g, " ")
+          .trim();
+        return `commented: ${text.length > 120 ? `${text.slice(0, 117)}...` : text}`;
+      };
+      return {
+        comment_values: {issue_id: issue.id, kind: "comment", summary: excerpt(body), body, actor_user_id: input.actor},
+        issue_values: {comment_count: (Number(issue.comment_count) || 0) + 1},
+      };
+  - id: post_comment
+    kind: create_record
+    table: issue_activity
+    values_from: {bind: step.prepare.comment_values}
+  - id: update_issue
+    kind: update_record
+    table: issues
+    record_id: {bind: input.issue_id}
+    values_from: {bind: step.prepare.issue_values}
+result: {step: post_comment}

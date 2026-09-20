@@ -1,0 +1,191 @@
+id: quick_add_time_entry
+title: Add entry
+appearance: default
+allowed_roles: [editor, developer, admin]
+actor_required: true
+success_message: Time entry created.
+invalidate: [time_entries, timesheets]
+input_fields:
+  - {id: project_id, type: reference, label: Project, referenceTable: projects, required: true, reference_where: {archived: false}}
+  - id: task_id
+    type: reference
+    label: Task
+    referenceTable: tasks
+    reference_where: {archived: false}
+    input: {placeholder: "No task"}
+    reference_filters:
+      - {record_field: project_id, value_field: project_id, when_empty: none}
+  - {id: work_date, type: date, label: Date, required: true}
+  - id: start_time
+    type: time
+    label: Start
+    required: true
+    input: {variant: flexible_text, placeholder: "e.g. 9, 930, or 09:30"}
+  - id: end_time
+    type: time
+    label: End
+    required: true
+    input: {variant: flexible_text, placeholder: "e.g. 11, 1100, or 11:00"}
+  - {id: description, type: text, label: Description}
+  - id: billable_mode
+    type: select
+    label: Billable
+    required: true
+    options:
+      - {value: project, label: Project default}
+      - {value: billable, label: Billable}
+      - {value: not_billable, label: Not billable}
+input_defaults:
+  billable_mode: project
+input_sections:
+  - id: entry
+    columns: 2
+    fields: [project_id, task_id, work_date, billable_mode, start_time, end_time, description]
+steps:
+  - id: selected_project
+    kind: query_records
+    table: projects
+    filter:
+      id: {bind: input.project_id}
+    limit: 2
+  - id: input_flags
+    kind: script
+    input:
+      task_id: {bind: input.task_id, fallback: null}
+    code: |
+      return {has_task: Boolean(input.task_id)};
+  - id: selected_task
+    kind: query_records
+    table: tasks
+    when: {bind: step.input_flags.has_task, fallback: false}
+    filter:
+      id: {bind: input.task_id}
+      archived: false
+    limit: 2
+  - id: calendar
+    kind: script
+    input:
+      work_date: {bind: input.work_date}
+      owner_user_id: {bind: system.actorUserId}
+    code: |
+      const date = String(input.work_date ?? "");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) helpers.inputError("work_date", "Choose a valid work date.");
+      const monday = new Date(`${date}T00:00:00Z`);
+      const offset = (monday.getUTCDay() + 6) % 7;
+      monday.setUTCDate(monday.getUTCDate() - offset);
+      return {
+        owner_user_id: input.owner_user_id,
+        week_start: monday.toISOString().slice(0, 10),
+        period_key: date.slice(0, 7),
+      };
+  - id: period_rows
+    kind: query_records
+    table: periods
+    filter:
+      period_key: {bind: step.calendar.period_key}
+    limit: 2
+  - id: timesheet_rows
+    kind: query_records
+    table: timesheets
+    filter:
+      owner_user_id: {bind: step.calendar.owner_user_id}
+      week_start: {bind: step.calendar.week_start}
+    limit: 2
+  - id: prepare_timesheet
+    kind: script
+    input:
+      calendar: {bind: step.calendar}
+      periods: {bind: step.period_rows}
+      timesheets: {bind: step.timesheet_rows}
+    code: |
+      if (!Array.isArray(input.periods) || input.periods.length !== 1) {
+        helpers.inputError("work_date", "The accounting period for this date is not configured.");
+      }
+      if (input.periods[0].status !== "open") helpers.inputError("work_date", "The accounting period is locked.");
+      if (!Array.isArray(input.timesheets) || input.timesheets.length > 1) {
+        helpers.actionError("The weekly sheet configuration is ambiguous.");
+      }
+      const existing = input.timesheets[0] ?? null;
+      return {
+        create_timesheet: !existing,
+        timesheet_values: {
+          owner_user_id: input.calendar.owner_user_id,
+          week_start: input.calendar.week_start,
+        },
+      };
+  - id: create_timesheet
+    kind: create_record
+    table: timesheets
+    when: {bind: step.prepare_timesheet.create_timesheet}
+    values_from: {bind: step.prepare_timesheet.timesheet_values}
+  - id: prepare_entry
+    kind: script
+    input:
+      calendar: {bind: step.calendar}
+      periods: {bind: step.period_rows}
+      existing_timesheets: {bind: step.timesheet_rows}
+      created_timesheet: {bind: step.create_timesheet}
+      project_id: {bind: input.project_id}
+      task_id: {bind: input.task_id, fallback: null}
+      tasks: {bind: step.selected_task, fallback: null}
+      work_date: {bind: input.work_date}
+      start_time: {bind: input.start_time}
+      end_time: {bind: input.end_time}
+      description: {bind: input.description, fallback: null}
+      projects: {bind: step.selected_project, fallback: null}
+      billable_mode: {bind: input.billable_mode, fallback: project}
+    code: |
+      const timesheet = input.existing_timesheets[0] ?? input.created_timesheet;
+      if (!timesheet || !timesheet.id) helpers.actionError("A weekly sheet could not be prepared.");
+
+      const project = Array.isArray(input.projects) ? input.projects[0] : null;
+      if (!project || project.id !== input.project_id) helpers.inputError("project_id", "Choose an active project.");
+      const billable = input.billable_mode === "billable" ? true
+        : input.billable_mode === "not_billable" ? false
+        : project.billable_by_default !== false;
+
+      if (input.task_id) {
+        const task = Array.isArray(input.tasks) ? input.tasks[0] : null;
+        if (!task || task.id !== input.task_id) helpers.inputError("task_id", "Choose an active task.");
+        if (task.project_id !== input.project_id) helpers.inputError("task_id", "Choose a task from the selected project.");
+      }
+
+      const validDuration = (minutes) => Number.isInteger(minutes) && minutes >= 15 && minutes % 15 === 0;
+      const start = String(input.start_time ?? "");
+      const end = String(input.end_time ?? "");
+      const [startHour, startMinute] = start.split(":").map(Number);
+      const [endHour, endMinute] = end.split(":").map(Number);
+      if (!Number.isFinite(startHour) || !Number.isFinite(startMinute)) {
+        helpers.inputError("start_time", "Enter a valid start time.");
+      }
+      if (!Number.isFinite(endHour) || !Number.isFinite(endMinute)) {
+        helpers.inputError("end_time", "Enter a valid end time.");
+      }
+      const durationMinutes = endHour * 60 + endMinute - (startHour * 60 + startMinute);
+      if (durationMinutes <= 0) {
+        helpers.inputError("end_time", "End time must be later than start time on the same day.");
+      }
+      if (!validDuration(durationMinutes)) {
+        helpers.inputError("end_time", "The time range must use 15-minute increments.");
+      }
+
+      return {
+        values: {
+          owner_user_id: input.calendar.owner_user_id,
+          project_id: input.project_id,
+          task_id: input.task_id || null,
+          timesheet_id: timesheet.id,
+          period_id: input.periods[0].id,
+          work_date: input.work_date,
+          duration_minutes: durationMinutes,
+          started_at: `${input.work_date}T${start}`,
+          ended_at: `${input.work_date}T${end}`,
+          description: input.description || null,
+          billable,
+        },
+      };
+  - id: create_entry
+    kind: create_record
+    table: time_entries
+    values_from: {bind: step.prepare_entry.values}
+result: {step: create_entry}

@@ -1,0 +1,34 @@
+table: favorite_projects
+version: 2
+primaryKey: id
+idPrefix: favorite_project
+displayField: project_id
+rowAccess:
+  mode: policy
+  allOf:
+    - kind: resource_grant
+      resourceField: project_id
+      directGrants: {table: project_user_access, resourceField: project_id, principalField: user_id}
+      groupGrants: {table: project_group_access, resourceField: project_id, groupField: group_id}
+      groupMemberships: {table: group_memberships, groupField: group_id, principalField: user_id}
+    - kind: owner
+      ownerField: owner_user_id
+mutationPolicy:
+  allowedRoles: [editor, developer, admin]
+validationPolicy:
+  unique:
+    - fields: [owner_user_id, project_id]
+      message: This project is already a favourite.
+queryPaths:
+  - id: by_owner
+    equalityFields: [owner_user_id]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: owner_user_id, type: reference, label: Owner, referenceTable: keeper_principals, required: true, readonly: true}
+  - {id: project_id, type: reference, label: Project, referenceTable: projects, required: true, reference_where: {archived: false}}
+  - {id: created_at, type: datetime, label: Created, readonly: true, computed: {kind: now, on: create, format: datetime}}
+  - {id: updated_at, type: datetime, label: Updated, readonly: true, computed: {kind: now, on: always, format: datetime}}
+relations:
+  - field: project_id
+    references: {table: projects, field: id}
+    onDelete: block

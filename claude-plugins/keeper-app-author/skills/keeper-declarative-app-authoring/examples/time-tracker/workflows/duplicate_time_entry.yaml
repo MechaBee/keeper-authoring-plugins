@@ -1,0 +1,137 @@
+id: duplicate_time_entry
+title: Duplicate entry
+appearance: secondary
+allowed_roles: [editor, developer, admin]
+actor_required: true
+success_message: Duplicate entry created.
+invalidate: [time_entries, timesheets]
+input_fields:
+  - {id: entry_id, type: reference, label: Entry, referenceTable: time_entries, required: true, readonly: true}
+  - {id: work_date, type: date, label: New date, required: true}
+  - id: start_time
+    type: time
+    label: Start
+    input: {variant: flexible_text, placeholder: "Leave empty to keep it cleared"}
+  - id: end_time
+    type: time
+    label: End
+    input: {variant: flexible_text, placeholder: "Leave empty to keep it cleared"}
+  - {id: description, type: text, label: Description, placeholder: Leave empty to copy the original}
+input_sections:
+  - id: duplicate
+    title: Duplicate entry
+    description: The project, task, duration, and billable state are copied. Set start and end to override them (and recompute duration); leave description empty to copy the original.
+    columns: 2
+    fields: [entry_id, work_date, start_time, end_time, description]
+steps:
+  - id: source_entry
+    kind: get_record
+    table: time_entries
+    record_id: {bind: input.entry_id}
+  - id: calendar
+    kind: script
+    input:
+      source_entry: {bind: step.source_entry}
+      work_date: {bind: input.work_date}
+    code: |
+      if (!input.source_entry) throw new Error("The source entry is unavailable.");
+      const date = String(input.work_date ?? "");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Choose a valid work date.");
+      const monday = new Date(`${date}T00:00:00Z`);
+      monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
+      return {
+        owner_user_id: input.source_entry.owner_user_id,
+        week_start: monday.toISOString().slice(0, 10),
+        period_key: date.slice(0, 7),
+      };
+  - id: period_rows
+    kind: query_records
+    table: periods
+    filter: {period_key: {bind: step.calendar.period_key}}
+    limit: 2
+  - id: timesheet_rows
+    kind: query_records
+    table: timesheets
+    filter:
+      owner_user_id: {bind: step.calendar.owner_user_id}
+      week_start: {bind: step.calendar.week_start}
+    limit: 2
+  - id: prepare_timesheet
+    kind: script
+    input:
+      calendar: {bind: step.calendar}
+      periods: {bind: step.period_rows}
+      timesheets: {bind: step.timesheet_rows}
+    code: |
+      if (!Array.isArray(input.periods) || input.periods.length !== 1) throw new Error("The accounting period for this date is not configured.");
+      if (input.periods[0].status !== "open") throw new Error("The accounting period is locked.");
+      if (!Array.isArray(input.timesheets) || input.timesheets.length > 1) throw new Error("The weekly sheet configuration is ambiguous.");
+      return {
+        create_timesheet: input.timesheets.length === 0,
+        timesheet_values: {owner_user_id: input.calendar.owner_user_id, week_start: input.calendar.week_start},
+      };
+  - id: create_timesheet
+    kind: create_record
+    table: timesheets
+    when: {bind: step.prepare_timesheet.create_timesheet}
+    values_from: {bind: step.prepare_timesheet.timesheet_values}
+  - id: prepare_entry
+    kind: script
+    input:
+      source_entry: {bind: step.source_entry}
+      calendar: {bind: step.calendar}
+      periods: {bind: step.period_rows}
+      existing_timesheets: {bind: step.timesheet_rows}
+      created_timesheet: {bind: step.create_timesheet}
+      work_date: {bind: input.work_date}
+      start_time: {bind: input.start_time, fallback: null}
+      end_time: {bind: input.end_time, fallback: null}
+      description: {bind: input.description, fallback: null}
+    code: |
+      const timesheet = input.existing_timesheets[0] ?? input.created_timesheet;
+      if (!timesheet || !timesheet.id) throw new Error("A weekly sheet could not be prepared.");
+
+      const source = input.source_entry;
+      const start = String(input.start_time ?? "").trim();
+      const end = String(input.end_time ?? "").trim();
+
+      let durationMinutes = source.duration_minutes;
+      let startedAt = null;
+      let endedAt = null;
+
+      if (start || end) {
+        if (!start) helpers.inputError("start_time", "Enter a start time, or clear the end time to keep both empty.");
+        if (!end) helpers.inputError("end_time", "Enter an end time, or clear the start time to keep both empty.");
+        const validDuration = (minutes) => Number.isInteger(minutes) && minutes >= 15 && minutes % 15 === 0;
+        const [startHour, startMinute] = start.split(":").map(Number);
+        const [endHour, endMinute] = end.split(":").map(Number);
+        if (!Number.isFinite(startHour) || !Number.isFinite(startMinute)) helpers.inputError("start_time", "Enter a valid start time.");
+        if (!Number.isFinite(endHour) || !Number.isFinite(endMinute)) helpers.inputError("end_time", "Enter a valid end time.");
+        durationMinutes = endHour * 60 + endMinute - (startHour * 60 + startMinute);
+        if (durationMinutes <= 0) helpers.inputError("end_time", "End time must be later than start time on the same day.");
+        if (!validDuration(durationMinutes)) helpers.inputError("end_time", "The time range must use 15-minute increments.");
+        startedAt = `${input.work_date}T${start}`;
+        endedAt = `${input.work_date}T${end}`;
+      }
+
+      const overrideDescription = typeof input.description === "string" && input.description.trim();
+      const description = overrideDescription ? input.description : (source.description || null);
+
+      return {values: {
+        owner_user_id: input.calendar.owner_user_id,
+        project_id: source.project_id,
+        task_id: source.task_id || null,
+        timesheet_id: timesheet.id,
+        period_id: input.periods[0].id,
+        work_date: input.work_date,
+        duration_minutes: durationMinutes,
+        started_at: startedAt,
+        ended_at: endedAt,
+        description,
+        billable: source.billable,
+      }};
+  - id: create_entry
+    kind: create_record
+    table: time_entries
+    values_from: {bind: step.prepare_entry.values}
+result: {step: create_entry}

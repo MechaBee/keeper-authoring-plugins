@@ -1,0 +1,394 @@
+view:
+  id: issues
+  title: Issues
+nav:
+  order: 10
+  icon: list-todo
+  group: {id: work, label: Work, icon: list-todo, order: 10}
+state:
+  project_id: null
+  state: open
+  label: null
+  issue_type: null
+  assignee_user_id: null
+  milestone_id: null
+  q: null
+route_state:
+  project_id: {route: project, mode: sync}
+  state: {route: state, mode: sync}
+  label: {route: label, mode: sync}
+  issue_type: {route: type, mode: sync}
+  assignee_user_id: {route: assignee, mode: sync}
+  milestone_id: {route: milestone, mode: sync}
+  q: {route: q, mode: sync}
+actions:
+  - id: new_issue
+    kind: action_set
+    data_source: new_issue_action
+filters:
+  - id: search
+    kind: state_input
+    label: Search
+    state_key: q
+    input_type: text
+    placeholder: Search issues
+  - id: project
+    kind: state_select
+    label: Project
+    state_key: project_id
+    options_source: projects
+    value_field: id
+    label_field: name
+    placeholder: All projects
+    clearable: true
+    clear_label: All projects
+    on_change:
+      - {type: set_state, key: milestone_id, value: null}
+  - id: state
+    kind: state_select
+    label: State
+    state_key: state
+    options_source: state_options
+    value_field: value
+    label_field: label
+    placeholder: Open and closed
+    clearable: true
+    clear_label: Open and closed
+  - id: label
+    kind: state_select
+    label: Label
+    state_key: label
+    options_source: label_options
+    value_field: id
+    label_field: name
+    placeholder: Any label
+    clearable: true
+    clear_label: Any label
+  - id: type
+    kind: state_select
+    label: Type
+    state_key: issue_type
+    options_source: type_options
+    value_field: id
+    label_field: name
+    placeholder: Any type
+    clearable: true
+    clear_label: Any type
+  - id: assignee
+    kind: state_select
+    label: Assignee
+    state_key: assignee_user_id
+    options_source: members
+    value_field: user_id
+    label_field: display_name
+    placeholder: Anyone
+    clearable: true
+    clear_label: Anyone
+  - id: milestone
+    kind: state_select
+    label: Milestone
+    state_key: milestone_id
+    options_source: filter_milestones
+    value_field: id
+    label_field: title
+    placeholder: Any milestone
+    clearable: true
+    clear_label: Any milestone
+data_sources:
+  projects:
+    kind: table
+    table: projects
+    sort: {field: name, direction: asc}
+  members:
+    kind: table
+    table: members
+    sort: {field: display_name, direction: asc}
+  filter_milestones:
+    kind: table
+    table: milestones
+    where:
+      all:
+        - {field: project_id, op: equals, value: {bind: state.project_id}, when_empty: ignore}
+    sort: {field: title, direction: asc}
+    refresh_on: [state.project_id]
+  state_catalog:
+    kind: table
+    table: filter_options
+    filter: {group: state}
+    sort: {field: position, direction: asc}
+  label_options:
+    kind: table
+    table: labels
+    filter: {active: true}
+    sort: {field: position, direction: asc}
+  type_options:
+    kind: table
+    table: issue_types
+    filter: {active: true}
+    sort: {field: position, direction: asc}
+  # Ranks priorities for sorting; the list joins it onto each issue.
+  priorities:
+    kind: table
+    table: priorities
+    sort: {field: position, direction: asc}
+  templates:
+    kind: table
+    table: issue_templates
+    filter: {active: true}
+    sort: {field: position, direction: asc}
+
+  # Every issue matching the filters that don't split by state. Both the list
+  # and the Open/Closed counts derive from it, so the two always agree.
+  scope_issues:
+    kind: table
+    table: issues
+    where:
+      all:
+        - {field: project_id, op: equals, value: {bind: state.project_id}, when_empty: ignore}
+        - {field: issue_type, op: equals, value: {bind: state.issue_type}, when_empty: ignore}
+        - {field: assignee_user_id, op: equals, value: {bind: state.assignee_user_id}, when_empty: ignore}
+        - {field: milestone_id, op: equals, value: {bind: state.milestone_id}, when_empty: ignore}
+        - {field: labels, op: includes, value: {bind: state.label}, when_empty: ignore}
+    sort: {field: updated_at, direction: desc}
+    performance: {intent: bounded_scan}
+    refresh_on: [state.project_id, state.issue_type, state.assignee_user_id, state.milestone_id, state.label]
+  child_issues:
+    kind: table
+    table: issues
+    where:
+      all:
+        - {field: parent_issue_id, op: is_not_null}
+        - {field: project_id, op: equals, value: {bind: state.project_id}, when_empty: ignore}
+    refresh_on: [state.project_id]
+  closed_child_issues:
+    kind: table
+    table: issues
+    where:
+      all:
+        - {field: parent_issue_id, op: is_not_null}
+        - {field: state, op: equals, value: closed}
+        - {field: project_id, op: equals, value: {bind: state.project_id}, when_empty: ignore}
+    refresh_on: [state.project_id]
+  child_totals:
+    kind: aggregate_table
+    schema: issue_counts
+    from: {source: child_issues}
+    group_by:
+      - {field: parent_issue_id, as: id}
+    metrics:
+      - {operation: count, as: total}
+  closed_child_totals:
+    kind: aggregate_table
+    schema: issue_counts
+    from: {source: closed_child_issues}
+    group_by:
+      - {field: parent_issue_id, as: id}
+    metrics:
+      - {operation: count, as: total}
+  scope_rows:
+    kind: projected_table
+    schema: issue_rows
+    from: {source: scope_issues, as: issue}
+    lookups:
+      - {source: child_totals, as: children, local: issue.id, foreign: id, mode: left}
+      - {source: closed_child_totals, as: closed_children, local: issue.id, foreign: id, mode: left}
+      - {source: priorities, as: priority_row, local: issue.priority, foreign: id, mode: left}
+    where:
+      - kind: script
+        label: Apply the search filter
+        input:
+          ref: {path: issue.ref}
+          title: {path: issue.title}
+          body: {path: issue.body}
+          query: {bind: state.q}
+        code: |
+          const query = String(input.query ?? "").trim().toLowerCase();
+          if (!query) return true;
+          const text = [input.ref, input.title, input.body].map((value) => String(value ?? "").toLowerCase()).join("\n");
+          return query.split(/\s+/).every((term) => text.includes(term));
+    fields:
+      - {field: id, value: {path: issue.id}}
+      - {field: project_id, value: {path: issue.project_id}}
+      - {field: ref, value: {path: issue.ref}}
+      - {field: number, value: {path: issue.number}}
+      - {field: title, value: {path: issue.title}}
+      - {field: state, value: {path: issue.state}}
+      # An open issue has no resolution; the state filter already says it's open.
+      - field: status
+        value:
+          kind: script
+          input:
+            state: {path: issue.state}
+            reason: {path: issue.state_reason}
+          code: |
+            if (input.state !== "closed") return null;
+            return input.reason || "completed";
+      - {field: issue_type, value: {path: issue.issue_type}}
+      - {field: priority, value: {path: issue.priority}}
+      - {field: priority_rank, value: {path: priority_row.position}}
+      - {field: labels, value: {path: issue.labels}}
+      - {field: author_user_id, value: {path: issue.author_user_id}}
+      - {field: assignee_member_id, value: {path: issue.assignee_member_id}}
+      - {field: milestone_id, value: {path: issue.milestone_id}}
+      # A zero count is left blank so the rows that do have a conversation stand out.
+      - field: comment_count
+        value:
+          kind: script
+          input:
+            count: {path: issue.comment_count}
+          code: |
+            const count = Number(input.count) || 0;
+            return count > 0 ? count : null;
+      - field: sub_progress
+        value:
+          kind: script
+          input:
+            total: {path: children.total}
+            closed: {path: closed_children.total}
+          code: |
+            const total = Number(input.total) || 0;
+            if (total === 0) return null;
+            return `${Number(input.closed) || 0} of ${total}`;
+      - {field: created_at, value: {path: issue.created_at}}
+      - {field: updated_at, value: {path: issue.updated_at}}
+    refresh_on: [state.q]
+  state_counts:
+    kind: aggregate_table
+    schema: issue_counts
+    from: {source: scope_rows}
+    group_by:
+      - {field: state, as: id}
+    metrics:
+      - {operation: count, as: total}
+  state_options:
+    kind: projected_table
+    schema: option_rows
+    from: {source: state_catalog, as: option}
+    lookups:
+      - {source: state_counts, as: counted, local: option.value, foreign: id, mode: left}
+    fields:
+      - {field: id, value: {path: option.id}}
+      - {field: value, value: {path: option.value}}
+      - field: label
+        value:
+          kind: script
+          input:
+            label: {path: option.label}
+            total: {path: counted.total}
+          code: |
+            return `${input.label} · ${Number(input.total) || 0}`;
+      - {field: position, value: {path: option.position}}
+    sort: {field: position, direction: asc}
+  issue_rows:
+    kind: projected_table
+    schema: issue_rows
+    from: {source: scope_rows, as: row}
+    where:
+      - kind: script
+        label: Apply the state filter
+        input:
+          state: {path: row.state}
+          selected: {bind: state.state}
+        code: |
+          return !input.selected || input.state === input.selected;
+    fields:
+      - {field: id, value: {path: row.id}}
+      - {field: project_id, value: {path: row.project_id}}
+      - {field: ref, value: {path: row.ref}}
+      - {field: number, value: {path: row.number}}
+      - {field: title, value: {path: row.title}}
+      - {field: state, value: {path: row.state}}
+      - {field: status, value: {path: row.status}}
+      - {field: issue_type, value: {path: row.issue_type}}
+      - {field: priority, value: {path: row.priority}}
+      - {field: priority_rank, value: {path: row.priority_rank}}
+      - {field: labels, value: {path: row.labels}}
+      - {field: author_user_id, value: {path: row.author_user_id}}
+      - {field: assignee_member_id, value: {path: row.assignee_member_id}}
+      - {field: milestone_id, value: {path: row.milestone_id}}
+      - {field: comment_count, value: {path: row.comment_count}}
+      - {field: sub_progress, value: {path: row.sub_progress}}
+      - {field: created_at, value: {path: row.created_at}}
+      - {field: updated_at, value: {path: row.updated_at}}
+    sort: {field: updated_at, direction: desc}
+    refresh_on: [state.state]
+
+  new_issue_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: open_issue
+      label: New issue
+      input__project_id: {bind: state.project_id}
+    action_dialog:
+      preview: false
+      # The template cards choose the template; a second template picker would repeat them.
+      # A sub-issue is added from its parent's page instead.
+      hidden_inputs: [template_id, parent_issue_id]
+      preset_groups:
+        - id: templates
+          label: Start from a template
+          placement: {before_field: title}
+          presentation: {variant: cards, mode: section}
+          source:
+            kind: records
+            data_source: templates
+            limit: 6
+            item:
+              label: {bind: record.name}
+              description: {bind: record.description, fallback: ""}
+              values:
+                template_id: {bind: record.id}
+                title: {bind: record.title_prefix, fallback: ""}
+                body: {bind: record.body, fallback: ""}
+                issue_type: {bind: record.issue_type}
+          apply: {type: patch_input}
+    refresh_on: [state.project_id]
+    on_success:
+      - type: navigate
+        viewId: issue
+        query:
+          issueId: {bind: action.result.id}
+
+components:
+  issue_list:
+    kind: record_table
+    title: Issues
+    # The view is already called Issues; the card keeps only its controls.
+    show_title: false
+    data_source: issue_rows
+    columns:
+      - {field: ref, label: Issue, sticky: true, hideable: false, width: narrow}
+      - {field: title, label: Title, wrap: true, width: wide, hideable: false}
+      - {field: labels, label: Labels, wrap: true, empty_text: ""}
+      - {field: assignee_member_id, label: Assignee, empty_text: ""}
+      - {field: milestone_id, label: Milestone, empty_text: ""}
+      - {field: status, label: Resolution, width: narrow, empty_text: ""}
+      - {field: comment_count, label: Comments, align: right, width: narrow, empty_text: ""}
+      - {field: updated_at, label: Updated, width: narrow}
+      - {field: issue_type, label: Type, width: narrow, hidden: true}
+      - {field: priority, label: Priority, width: narrow, empty_text: "", hidden: true}
+      - {field: priority_rank, label: Priority order, width: narrow, empty_text: "", hidden: true}
+      - {field: sub_progress, label: Sub-issues, width: narrow, empty_text: "", hidden: true}
+      - {field: author_user_id, label: Opened by, hidden: true}
+      - {field: created_at, label: Opened, width: narrow, hidden: true}
+    sort: {enabled: true, default: {field: updated_at, direction: desc}}
+    paging: {page_size: 50}
+    column_visibility: {enabled: true}
+    density: compact
+    on_row_click:
+      - type: navigate
+        viewId: issue
+        query:
+          issueId: {bind: record.id}
+    export:
+      enabled: true
+      label: Export CSV
+      filename: issues.csv
+      fields: [ref, title, status, labels, issue_type, priority, assignee_member_id, milestone_id, sub_progress, comment_count, author_user_id, created_at, updated_at]
+      scope: complete
+      max_records: 20000
+    empty_message: No issues match these filters.
+layout:
+  component: issue_list

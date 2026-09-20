@@ -1,0 +1,157 @@
+id: open_issue
+title: New issue
+appearance: default
+allowed_roles: [editor, developer, admin]
+actor_required: true
+success_message: Issue opened.
+invalidate: "*"
+input_fields:
+  - {id: project_id, type: reference, label: Project, referenceTable: projects, required: true, reference_where: {archived: false}}
+  - {id: template_id, type: reference, label: Template, referenceTable: issue_templates, reference_where: {active: true}, input: {placeholder: Blank issue}}
+  - {id: title, type: text, label: Title, required: true}
+  - {id: body, type: textarea, label: Description, contentFormat: markdown}
+  - {id: issue_type, type: reference, label: Type, referenceTable: issue_types, reference_where: {active: true}, required: true}
+  - {id: priority, type: reference, label: Priority, referenceTable: priorities, reference_where: {active: true}, input: {placeholder: No priority}}
+  - {id: labels, type: reference, label: Labels, referenceTable: labels, reference_where: {active: true}, multiple: true}
+  - {id: member_id, type: reference, label: Assignee, referenceTable: members, reference_where: {active: true}, input: {placeholder: Unassigned}}
+  - id: milestone_id
+    type: reference
+    label: Milestone
+    referenceTable: milestones
+    reference_where: {state: open}
+    input: {placeholder: No milestone}
+    reference_filters:
+      - {record_field: project_id, value_field: project_id, when_empty: none}
+  - id: parent_issue_id
+    type: reference
+    label: Sub-issue of
+    referenceTable: issues
+    input: {variant: search, placeholder: Not a sub-issue}
+    reference_filters:
+      - {record_field: project_id, value_field: project_id, when_empty: none}
+input_defaults:
+  issue_type: task
+input_sections:
+  - id: issue
+    fields: [project_id, template_id, title, body]
+  - id: triage
+    title: Triage
+    columns: 2
+    fields: [issue_type, priority, labels, member_id, milestone_id, parent_issue_id]
+steps:
+  - id: project
+    kind: get_record
+    table: projects
+    record_id: {bind: input.project_id}
+  - id: flags
+    kind: script
+    input:
+      template_id: {bind: input.template_id, fallback: null}
+      member_id: {bind: input.member_id, fallback: null}
+      milestone_id: {bind: input.milestone_id, fallback: null}
+      parent_issue_id: {bind: input.parent_issue_id, fallback: null}
+    code: |
+      return {
+        has_template: Boolean(input.template_id),
+        has_member: Boolean(input.member_id),
+        has_milestone: Boolean(input.milestone_id),
+        has_parent: Boolean(input.parent_issue_id),
+      };
+  - id: template
+    kind: get_record
+    table: issue_templates
+    when: {bind: step.flags.has_template, fallback: false}
+    record_id: {bind: input.template_id}
+  - id: member
+    kind: get_record
+    table: members
+    when: {bind: step.flags.has_member, fallback: false}
+    record_id: {bind: input.member_id}
+  - id: milestone
+    kind: get_record
+    table: milestones
+    when: {bind: step.flags.has_milestone, fallback: false}
+    record_id: {bind: input.milestone_id}
+  - id: parent
+    kind: get_record
+    table: issues
+    when: {bind: step.flags.has_parent, fallback: false}
+    record_id: {bind: input.parent_issue_id}
+  - id: prepare
+    kind: script
+    label: Number the issue
+    input:
+      project: {bind: step.project, fallback: null}
+      template: {bind: step.template, fallback: null}
+      member: {bind: step.member, fallback: null}
+      milestone: {bind: step.milestone, fallback: null}
+      parent: {bind: step.parent, fallback: null}
+      title: {bind: input.title}
+      body: {bind: input.body, fallback: null}
+      issue_type: {bind: input.issue_type}
+      priority: {bind: input.priority, fallback: null}
+      labels: {bind: input.labels, fallback: null}
+      actor: {bind: system.actorUserId}
+    code: |
+      const project = input.project;
+      if (!project) helpers.inputError("project_id", "Choose a project you have access to.");
+      if (project.archived === true) helpers.inputError("project_id", "This project is archived and accepts no new issues.");
+
+      const title = String(input.title ?? "").trim();
+      if (!title) helpers.inputError("title", "Give the issue a title.");
+      if (input.member && input.member.active === false) {
+        helpers.inputError("member_id", "This member can no longer be assigned.");
+      }
+      if (input.milestone && input.milestone.project_id !== project.id) {
+        helpers.inputError("milestone_id", "Choose a milestone from this project.");
+      }
+      if (input.milestone && input.milestone.state !== "open") {
+        helpers.inputError("milestone_id", "This milestone is closed.");
+      }
+      if (input.parent && input.parent.project_id !== project.id) {
+        helpers.inputError("parent_issue_id", "Choose a parent issue from this project.");
+      }
+
+      // Template labels are added to whatever the author picked.
+      const labels = new Set(Array.isArray(input.labels) ? input.labels : []);
+      if (input.template && Array.isArray(input.template.default_labels)) {
+        input.template.default_labels.forEach((label) => labels.add(label));
+      }
+
+      // The counter row is read and written in this transaction, so two people
+      // opening issues at once cannot receive the same number.
+      const number = Number.isInteger(project.next_number) && project.next_number > 0 ? project.next_number : 1;
+      return {
+        project_values: {next_number: number + 1},
+        issue_values: {
+          project_id: project.id,
+          number,
+          ref: `${project.key}#${number}`,
+          title,
+          body: input.body || null,
+          issue_type: input.issue_type,
+          priority: input.priority || null,
+          state: "open",
+          author_user_id: input.actor,
+          assignee_member_id: input.member ? input.member.id : null,
+          assignee_user_id: input.member ? input.member.user_id : null,
+          labels: [...labels],
+          milestone_id: input.milestone ? input.milestone.id : null,
+          parent_issue_id: input.parent ? input.parent.id : null,
+          board_status: "backlog",
+          position: number * 1000,
+          board_hidden: false,
+          locked: false,
+          comment_count: 0,
+        },
+      };
+  - id: bump_counter
+    kind: update_record
+    table: projects
+    record_id: {bind: input.project_id}
+    values_from: {bind: step.prepare.project_values}
+  - id: issue
+    kind: create_record
+    table: issues
+    values_from: {bind: step.prepare.issue_values}
+result: {step: issue}

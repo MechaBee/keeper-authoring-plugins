@@ -1,0 +1,227 @@
+view:
+  id: milestones
+  title: Milestones
+nav:
+  order: 40
+  icon: calendar
+  group: {id: work, label: Work, icon: list-todo, order: 10}
+state:
+  project_id: null
+  state: open
+  selected_milestone_id: null
+route_state:
+  project_id: {route: project, mode: sync}
+  state: {route: state, mode: sync}
+  selected_milestone_id: {route: milestone, mode: sync}
+actions:
+  - id: new_milestone
+    kind: action_set
+    data_source: milestone_create_action
+filters:
+  - id: project
+    kind: state_select
+    label: Project
+    state_key: project_id
+    options_source: projects
+    value_field: id
+    label_field: name
+    placeholder: All projects
+    clearable: true
+    clear_label: All projects
+    on_change:
+      - {type: set_state, key: selected_milestone_id, value: null}
+  - id: state
+    kind: state_select
+    label: State
+    state_key: state
+    options_source: state_catalog
+    value_field: value
+    label_field: label
+    placeholder: Open and closed
+    clearable: true
+    clear_label: Open and closed
+data_sources:
+  projects:
+    kind: table
+    table: projects
+    sort: {field: name, direction: asc}
+  state_catalog:
+    kind: table
+    table: filter_options
+    filter: {group: state}
+    sort: {field: position, direction: asc}
+  milestones:
+    kind: table
+    table: milestones
+    where:
+      all:
+        - {field: project_id, op: equals, value: {bind: state.project_id}, when_empty: ignore}
+        - {field: state, op: equals, value: {bind: state.state}, when_empty: ignore}
+    sort: {field: due_on, direction: asc}
+    refresh_on: [state.project_id, state.state]
+  open_milestone_issues:
+    kind: table
+    table: issues
+    where:
+      all:
+        - {field: milestone_id, op: is_not_null}
+        - {field: state, op: equals, value: open}
+        - {field: project_id, op: equals, value: {bind: state.project_id}, when_empty: ignore}
+    refresh_on: [state.project_id]
+  closed_milestone_issues:
+    kind: table
+    table: issues
+    where:
+      all:
+        - {field: milestone_id, op: is_not_null}
+        - {field: state, op: equals, value: closed}
+        - {field: project_id, op: equals, value: {bind: state.project_id}, when_empty: ignore}
+    refresh_on: [state.project_id]
+  open_counts:
+    kind: aggregate_table
+    schema: issue_counts
+    from: {source: open_milestone_issues}
+    group_by:
+      - {field: milestone_id, as: id}
+    metrics:
+      - {operation: count, as: total}
+  closed_counts:
+    kind: aggregate_table
+    schema: issue_counts
+    from: {source: closed_milestone_issues}
+    group_by:
+      - {field: milestone_id, as: id}
+    metrics:
+      - {operation: count, as: total}
+  milestone_rows:
+    kind: projected_table
+    schema: milestone_rows
+    from: {source: milestones, as: milestone}
+    lookups:
+      - {source: open_counts, as: open_issues, local: milestone.id, foreign: id, mode: left}
+      - {source: closed_counts, as: closed_issues, local: milestone.id, foreign: id, mode: left}
+    fields:
+      - {field: id, value: {path: milestone.id}}
+      - {field: project_id, value: {path: milestone.project_id}}
+      - {field: title, value: {path: milestone.title}}
+      - {field: due_on, value: {path: milestone.due_on}}
+      - {field: state, value: {path: milestone.state}}
+      - field: open_count
+        value: {op: coalesce, values: [{path: open_issues.total}, {literal: 0}]}
+      - field: closed_count
+        value: {op: coalesce, values: [{path: closed_issues.total}, {literal: 0}]}
+      - field: percent_done
+        value:
+          kind: script
+          input:
+            open: {path: open_issues.total}
+            closed: {path: closed_issues.total}
+          code: |
+            const open = Number(input.open) || 0;
+            const closed = Number(input.closed) || 0;
+            return open + closed === 0 ? 0 : Math.round((closed / (open + closed)) * 100);
+      - field: progress
+        value:
+          kind: script
+          input:
+            open: {path: open_issues.total}
+            closed: {path: closed_issues.total}
+          code: |
+            const open = Number(input.open) || 0;
+            const closed = Number(input.closed) || 0;
+            if (open + closed === 0) return "No issues yet";
+            return `${closed} of ${open + closed} closed`;
+      - field: timing
+        value:
+          kind: script
+          input:
+            due: {path: milestone.due_on}
+            state: {path: milestone.state}
+            today: {bind: context.nowIso}
+          code: |
+            if (input.state === "closed") return "Closed";
+            const due = String(input.due ?? "");
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(due)) return "No due date";
+            const today = String(input.today ?? "").slice(0, 10);
+            const days = Math.round((Date.parse(`${due}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86400000);
+            if (!Number.isFinite(days)) return "No due date";
+            if (days === 0) return "Due today";
+            if (days > 0) return days === 1 ? "Due tomorrow" : `Due in ${days} days`;
+            return days === -1 ? "Overdue by 1 day" : `Overdue by ${-days} days`;
+    sort: {field: due_on, direction: asc}
+  selected_milestone:
+    kind: record
+    table: milestones
+    id: {bind: state.selected_milestone_id}
+    refresh_on: [state.selected_milestone_id]
+  milestone_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: milestones
+      label: New milestone
+      fields: project_id,title,due_on,description
+      field__project_id: {bind: state.project_id}
+      field__state: open
+    refresh_on: [state.project_id]
+    on_success:
+      - {type: refresh, data_sources: [milestones]}
+      - {type: set_state, key: selected_milestone_id, value: {bind: action.result.id}}
+components:
+  milestone_table:
+    kind: record_table
+    title: Progress by milestone
+    data_source: milestone_rows
+    columns:
+      - {field: title, label: Milestone, sticky: true, hideable: false}
+      - {field: project_id, label: Project}
+      - {field: due_on, label: Due, width: narrow, empty_text: ""}
+      - {field: timing, label: Timing, width: narrow}
+      - {field: progress, label: Progress}
+      - {field: percent_done, label: Done, align: right, width: narrow}
+      - {field: state, label: State, width: narrow, hidden: true}
+    sort: {enabled: true, default: {field: due_on, direction: asc}}
+    column_visibility: {enabled: true}
+    density: compact
+    selection:
+      state_key: selected_milestone_id
+      desktop: split
+      mobile: page
+      reconcile: clear
+    detail:
+      title: Milestone
+      table: milestones
+      data_source: selected_milestone
+      mode: editable
+      save_mode: explicit
+      save_label: Save milestone
+      density: compact
+      show_primary_key: false
+      header:
+        title_field: {field: title, mode: edit}
+        meta_fields:
+          - {field: project_id, mode: display, ui: {variant: reference_chip}}
+      fields:
+        - {field: due_on, mode: edit}
+        - {field: state, mode: edit}
+        - {field: description, mode: edit, ui: {variant: markdown, width: full, empty_text: No description yet.}}
+    empty_message: No milestones match these filters.
+  milestone_links:
+    kind: toolbar
+    items:
+      - id: show_issues
+        kind: link
+        label: Show this milestone's issues
+        viewId: issues
+        appearance: secondary
+        query:
+          milestone: {bind: state.selected_milestone_id}
+          project: {bind: source.selected_milestone.record.project_id, fallback: null}
+    presentation: {variant: compact}
+layout:
+  kind: stack
+  gap: md
+  children:
+    - component: milestone_links
+    - component: milestone_table

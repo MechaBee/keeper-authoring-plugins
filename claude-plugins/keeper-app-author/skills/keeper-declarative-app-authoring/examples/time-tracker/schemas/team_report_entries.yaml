@@ -1,0 +1,25 @@
+table: team_report_entries
+version: 2
+primaryKey: id
+idPrefix: team_report_entry
+displayField: work_date
+rowAccess:
+  mode: policy
+  allOf:
+    - kind: app_role
+      anyOf: [admin]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: client_id, type: reference, label: Client, referenceTable: clients, required: true, readonly: true}
+  - {id: client_name, type: text, label: Client, required: true, readonly: true}
+  - {id: project_id, type: reference, label: Project, referenceTable: projects, required: true, readonly: true}
+  - {id: project_name, type: text, label: Project, required: true, readonly: true}
+  - {id: task_name, type: text, label: Task, readonly: true}
+  - {id: member_email, type: text, label: User, required: true, readonly: true}
+  - {id: member_alias, type: text, label: User alias, required: true, readonly: true}
+  - {id: billable, type: boolean, label: Billable, required: true, readonly: true}
+  - {id: work_date, type: date, label: Work date, required: true, readonly: true}
+  - {id: duration_minutes, type: number, label: Duration, required: true, readonly: true, min: 15, step: 15, unit: min}
+  - {id: description, type: textarea, label: Description, readonly: true, contentFormat: plain_text}
+  - {id: start_time, type: text, label: Start, readonly: true}
+  - {id: end_time, type: text, label: End, readonly: true}

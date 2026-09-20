@@ -1,0 +1,65 @@
+id: set_labels
+title: Labels
+appearance: secondary
+allowed_roles: [editor, developer, admin]
+actor_required: true
+success_message: Labels updated.
+invalidate: "*"
+input_fields:
+  - {id: issue_id, type: reference, label: Issue, referenceTable: issues, required: true, readonly: true}
+  - {id: add_labels, type: reference, label: Add, referenceTable: labels, reference_where: {active: true}, multiple: true}
+  - {id: remove_labels, type: reference, label: Remove, referenceTable: labels, multiple: true}
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: input.issue_id}
+  - id: prepare
+    kind: script
+    label: Work out the new labels
+    input:
+      issue: {bind: step.issue, fallback: null}
+      add: {bind: input.add_labels, fallback: null}
+      remove: {bind: input.remove_labels, fallback: null}
+      actor: {bind: system.actorUserId}
+    code: |
+      const issue = input.issue;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      const current = Array.isArray(issue.labels) ? issue.labels : [];
+      const add = Array.isArray(input.add) ? input.add : [];
+      const remove = Array.isArray(input.remove) ? input.remove : [];
+      const clash = add.filter((label) => remove.includes(label));
+      if (clash.length > 0) helpers.inputError("remove_labels", `Choose either Add or Remove for ${clash.join(", ")}.`);
+
+      const next = [...new Set([...current, ...add])].filter((label) => !remove.includes(label));
+      const added = next.filter((label) => !current.includes(label));
+      const removed = current.filter((label) => !next.includes(label));
+      if (added.length === 0 && removed.length === 0) {
+        helpers.actionError("That leaves the labels unchanged.");
+      }
+
+      const parts = [];
+      if (added.length > 0) parts.push(`added ${added.join(", ")}`);
+      if (removed.length > 0) parts.push(`removed ${removed.join(", ")}`);
+      return {
+        issue_values: {labels: next},
+        event_values: {issue_id: issue.id, kind: "labeled", summary: parts.join(" and "), actor_user_id: input.actor},
+        preview: {
+          title: `${issue.ref} ${issue.title}`,
+          items: [
+            {label: "Now", value: current.length > 0 ? current.join(", ") : "No labels"},
+            {label: "After", value: next.length > 0 ? next.join(", ") : "No labels"},
+          ],
+        },
+      };
+  - id: update_issue
+    kind: update_record
+    table: issues
+    record_id: {bind: input.issue_id}
+    values_from: {bind: step.prepare.issue_values}
+  - id: record_event
+    kind: create_record
+    table: issue_activity
+    values_from: {bind: step.prepare.event_values}
+preview: {step: prepare, path: preview}
+result: {step: update_issue}

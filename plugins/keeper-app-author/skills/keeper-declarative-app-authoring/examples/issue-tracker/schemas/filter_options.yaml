@@ -1,0 +1,30 @@
+table: filter_options
+version: 2
+primaryKey: id
+idPrefix: option
+displayField: label
+# One stable row per selectable value, for the view-bar filters. Each group
+# mirrors the options of a select field on issues: keep them in step when a
+# label, type or priority is added to the schema.
+rowAccess:
+  mode: all
+mutationPolicy:
+  allowedRoles: [admin]
+validationPolicy:
+  unique:
+    - fields: [group, value]
+      message: This value is already listed in the group.
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - id: group
+    type: select
+    label: Filter
+    required: true
+    options:
+      - {value: state, label: State}
+      - {value: type, label: Type}
+      - {value: priority, label: Priority}
+      - {value: label, label: Label}
+  - {id: value, type: text, label: Value, required: true}
+  - {id: label, type: text, label: Shown as, required: true}
+  - {id: position, type: number, label: Order, required: true, step: 1}

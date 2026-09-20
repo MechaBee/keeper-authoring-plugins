@@ -1,0 +1,31 @@
+table: milestone_rows
+version: 2
+primaryKey: id
+idPrefix: milestone_row
+displayField: title
+# Output of the milestone progress projection.
+rowAccess:
+  mode: policy
+  allOf:
+    - kind: resource_grant
+      resourceField: project_id
+      directGrants: {table: project_user_access, resourceField: project_id, principalField: user_id}
+      groupGrants: {table: project_group_access, resourceField: project_id, groupField: group_id}
+      groupMemberships: {table: group_memberships, groupField: group_id, principalField: user_id}
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: project_id, type: reference, label: Project, referenceTable: projects, readonly: true}
+  - {id: title, type: text, label: Milestone, readonly: true}
+  - {id: due_on, type: date, label: Due, readonly: true}
+  - id: state
+    type: select
+    label: State
+    readonly: true
+    options:
+      - {value: open, label: Open}
+      - {value: closed, label: Closed}
+  - {id: open_count, type: number, label: Open issues, readonly: true}
+  - {id: closed_count, type: number, label: Closed issues, readonly: true}
+  - {id: percent_done, type: number, label: Done, unit: "%", readonly: true}
+  - {id: progress, type: text, label: Progress, readonly: true}
+  - {id: timing, type: text, label: Timing, readonly: true}

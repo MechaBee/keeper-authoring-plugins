@@ -1,7 +1,7 @@
 {
   "name": "keeper-app-author",
   "displayName": "Keeper App Author",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Build and safely evolve complete Keeper apps from Claude Code, with validated candidates, reviewed deployment, and live-record protection.",
   "author": {
     "name": "MechaBee",

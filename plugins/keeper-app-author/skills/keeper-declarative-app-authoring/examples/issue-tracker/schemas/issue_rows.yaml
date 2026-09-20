@@ -1,0 +1,49 @@
+table: issue_rows
+version: 2
+primaryKey: id
+idPrefix: issue_row
+displayField: title
+# Output of the issue list projection. Rows are derived from issues the reader
+# can already see; nothing is stored under this name.
+rowAccess:
+  mode: policy
+  allOf:
+    - kind: resource_grant
+      resourceField: project_id
+      directGrants: {table: project_user_access, resourceField: project_id, principalField: user_id}
+      groupGrants: {table: project_group_access, resourceField: project_id, groupField: group_id}
+      groupMemberships: {table: group_memberships, groupField: group_id, principalField: user_id}
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: project_id, type: reference, label: Project, referenceTable: projects, readonly: true}
+  - {id: ref, type: text, label: Issue, readonly: true}
+  - {id: number, type: number, label: Number, readonly: true}
+  - {id: title, type: text, label: Title, readonly: true}
+  - id: state
+    type: select
+    label: State
+    readonly: true
+    options:
+      - {value: open, label: Open}
+      - {value: closed, label: Closed}
+  # How a closed issue was closed; empty while the issue is open.
+  - id: status
+    type: select
+    label: Resolution
+    readonly: true
+    options:
+      - {value: completed, label: Completed}
+      - {value: not_planned, label: Not planned}
+      - {value: duplicate, label: Duplicate}
+  - {id: issue_type, type: reference, label: Type, referenceTable: issue_types, readonly: true}
+  - {id: priority, type: reference, label: Priority, referenceTable: priorities, readonly: true}
+  # The priority's own order, so the list sorts urgent-first instead of alphabetically.
+  - {id: priority_rank, type: number, label: Priority order, readonly: true}
+  - {id: labels, type: reference, label: Labels, referenceTable: labels, multiple: true, readonly: true}
+  - {id: author_user_id, type: reference, label: Opened by, referenceTable: keeper_principals, readonly: true}
+  - {id: assignee_member_id, type: reference, label: Assignee, referenceTable: members, readonly: true}
+  - {id: milestone_id, type: reference, label: Milestone, referenceTable: milestones, readonly: true}
+  - {id: comment_count, type: number, label: Comments, readonly: true}
+  - {id: sub_progress, type: text, label: Sub-issues, readonly: true}
+  - {id: created_at, type: datetime, label: Opened, readonly: true}
+  - {id: updated_at, type: datetime, label: Updated, readonly: true}

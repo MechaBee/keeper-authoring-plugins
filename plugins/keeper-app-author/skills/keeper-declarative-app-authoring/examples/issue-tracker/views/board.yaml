@@ -1,0 +1,143 @@
+view:
+  id: board
+  title: Board
+  description: Drag issues between columns as work moves. Closing an issue is still done from the issue itself.
+nav:
+  order: 30
+  icon: folder-kanban
+  group: {id: work, label: Work, icon: list-todo, order: 10}
+state:
+  project_id: null
+  selected_issue_id: null
+route_state:
+  project_id: {route: project, mode: sync}
+  selected_issue_id: {route: issue, mode: sync}
+actions:
+  - id: new_issue
+    kind: action_set
+    data_source: new_issue_action
+filters:
+  - id: project
+    kind: state_select
+    label: Project
+    state_key: project_id
+    options_source: projects
+    value_field: id
+    label_field: name
+    placeholder: Choose a project
+    on_change:
+      - {type: set_state, key: selected_issue_id, value: null}
+data_sources:
+  projects:
+    kind: table
+    table: projects
+    filter: {archived: false}
+    sort: {field: name, direction: asc}
+  members:
+    kind: table
+    table: members
+    sort: {field: display_name, direction: asc}
+  board_issues:
+    kind: table
+    table: issues
+    filter:
+      project_id: {bind: state.project_id}
+    sort: {field: position, direction: asc}
+    refresh_on: [state.project_id]
+  selected_activity:
+    kind: table
+    table: issue_activity
+    filter:
+      issue_id: {bind: state.selected_issue_id}
+    sort: {field: occurred_at, direction: desc}
+    limit: 30
+    refresh_on: [state.selected_issue_id]
+  new_issue_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: open_issue
+      label: New issue
+      input__project_id: {bind: state.project_id}
+    action_dialog: {preview: false, hidden_inputs: [template_id, parent_issue_id]}
+    refresh_on: [state.project_id]
+    on_success:
+      - {type: set_state, key: selected_issue_id, value: {bind: action.result.id}}
+components:
+  issue_board:
+    kind: record_board
+    title: Board
+    show_title: false
+    table: issues
+    data_source: board_issues
+    group_by:
+      field: board_status
+    # Title first; the reference and milestone need no labels to be recognised.
+    card:
+      title_field: title
+      meta_fields:
+        - {field: ref, label: ""}
+        - {field: milestone_id, label: ""}
+      signals:
+        - {field: assignee_member_id, kind: avatar, label: Assignee}
+        - {field: priority, kind: badge}
+        - {field: labels, kind: labels}
+        - {field: comment_count, kind: count, label: Comments}
+    groups:
+      - {value: backlog, label: Backlog}
+      - {value: ready, label: Ready, color: "#2b7fd6"}
+      - {value: in_progress, label: In progress, color: "#d99a0b", limit: 5}
+      - {value: in_review, label: In review, color: "#8a4fd0"}
+      - {value: done, label: Done, color: "#1d7f45", done: true}
+    search:
+      enabled: true
+      placeholder: Search this board
+      fields: [ref, title, labels]
+    filters:
+      - {field: labels, label: Label}
+      - {field: issue_type, label: Type}
+      - {field: priority, label: Priority}
+      - {field: assignee_member_id, label: Assignee}
+      - {field: milestone_id, label: Milestone}
+      - {field: state, label: State}
+    ordering:
+      field: position
+      step: 1000
+    archiving:
+      field: board_hidden
+    selection:
+      state_key: selected_issue_id
+      mobile: page
+    detail:
+      mode: editable
+      save_mode: autosave
+      detail_view: issue
+      show_primary_key: false
+      header:
+        title_field: {field: title, mode: edit}
+        meta_fields:
+          - {field: state, mode: display, ui: {variant: badge, show_label: false}}
+          - {field: ref, mode: display, ui: {show_label: false}}
+      fields:
+        - {field: board_status, mode: edit}
+        - {field: issue_type, mode: edit}
+        - {field: priority, mode: edit}
+        - {field: assignee_member_id, mode: display, ui: {variant: reference_chip, empty_text: No one yet}}
+        - {field: labels, mode: display, ui: {empty_text: None yet}}
+        - {field: body, mode: display, ui: {variant: markdown, width: full, empty_text: No description yet.}}
+      related_sections:
+        - id: activity
+          kind: activity
+          title: Activity
+          table: issue_activity
+          data_source: selected_activity
+          body_field: summary
+          author_field: actor_user_id
+          occurred_at_field: created_at
+          type_field: kind
+          empty_message: Nothing has happened yet.
+    allow_group_change: true
+    empty_message: Choose a project to see its board.
+layout:
+  component: issue_board

@@ -1,0 +1,68 @@
+id: lock_conversation
+title: Lock conversation
+appearance: secondary
+allowed_roles: [admin]
+actor_required: true
+success_message: Conversation updated.
+invalidate: "*"
+input_fields:
+  - {id: issue_id, type: reference, label: Issue, referenceTable: issues, required: true, readonly: true}
+  - id: mode
+    type: select
+    label: Conversation
+    required: true
+    options:
+      - {value: lock, label: Lock it}
+      - {value: unlock, label: Unlock it}
+  - id: reason
+    type: select
+    label: Reason
+    input: {placeholder: No reason given}
+    options:
+      - {value: off_topic, label: Off-topic}
+      - {value: too_heated, label: Too heated}
+      - {value: resolved, label: Resolved}
+      - {value: spam, label: Spam}
+    visible_when:
+      - {field: mode, operator: equals, value: lock}
+input_defaults:
+  mode: lock
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: input.issue_id}
+  - id: prepare
+    kind: script
+    label: Check the lock
+    input:
+      issue: {bind: step.issue, fallback: null}
+      mode: {bind: input.mode}
+      reason: {bind: input.reason, fallback: null}
+      actor: {bind: system.actorUserId}
+    code: |
+      const issue = input.issue;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      const locking = input.mode === "lock";
+      const isLocked = issue.locked === true;
+      if (locking && isLocked) helpers.inputError("mode", "The conversation is already locked.");
+      if (!locking && !isLocked) helpers.inputError("mode", "The conversation isn't locked.");
+
+      const reasons = {off_topic: "off-topic", too_heated: "too heated", resolved: "resolved", spam: "spam"};
+      const summary = locking
+        ? (input.reason ? `locked the conversation as ${reasons[input.reason]}` : "locked the conversation")
+        : "unlocked the conversation";
+      return {
+        issue_values: {locked: locking},
+        event_values: {issue_id: issue.id, kind: locking ? "locked" : "unlocked", summary, actor_user_id: input.actor},
+      };
+  - id: update_issue
+    kind: update_record
+    table: issues
+    record_id: {bind: input.issue_id}
+    values_from: {bind: step.prepare.issue_values}
+  - id: record_event
+    kind: create_record
+    table: issue_activity
+    values_from: {bind: step.prepare.event_values}
+result: {step: update_issue}

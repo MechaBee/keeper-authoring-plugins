@@ -1,0 +1,315 @@
+id: create_time_entry
+title: Add entry
+appearance: default
+allowed_roles: [editor, developer, admin]
+actor_required: true
+success_message: Time entry created.
+invalidate: [time_entries, timesheets]
+input_fields:
+  - {id: project_id, type: reference, label: Project, referenceTable: projects, required: true, reference_where: {archived: false}}
+  - id: task_id
+    type: reference
+    label: Task
+    referenceTable: tasks
+    reference_where: {archived: false}
+    reference_filters:
+      - {record_field: project_id, value_field: project_id, when_empty: none}
+  - {id: work_date, type: date, label: Work date, required: true, helpText: The day when the work was completed.}
+  - id: entry_method
+    type: select
+    label: How do you want to enter time?
+    required: true
+    default: duration
+    options:
+      - {value: duration, label: Total time}
+      - {value: exact, label: Exact start and end times}
+  - id: duration_text
+    type: text
+    label: Time spent
+    required: true
+    helpText: Enter minutes or a duration such as 90m, 1h 30m, 1.5h, or 1:30. Time is recorded in 15-minute increments.
+    visible_when:
+      - {field: source_mode, operator: not_equals, value: grid}
+      - {field: entry_method, operator: equals, value: duration}
+  - id: start_time
+    type: time
+    label: Start time
+    required: true
+    helpText: Enter an hour or time such as 9, 930, 0930, 9:30, or 09:30. It will be saved as HH:MM.
+    input:
+      variant: flexible_text
+      placeholder: e.g. 9, 930, or 09:30
+    visible_when:
+      - {field: source_mode, operator: not_equals, value: grid}
+      - {field: entry_method, operator: equals, value: exact}
+  - id: end_time
+    type: time
+    label: End time
+    required: true
+    helpText: Enter an hour or time such as 11, 1100, or 11:00. It will be saved as HH:MM.
+    input:
+      variant: flexible_text
+      placeholder: e.g. 11, 1100, or 11:00
+    visible_when:
+      - {field: source_mode, operator: not_equals, value: grid}
+      - {field: entry_method, operator: equals, value: exact}
+  - id: duration_minutes
+    type: number
+    label: Time spent
+    required: true
+    min: 15
+    step: 15
+    visible_when:
+      - {field: source_mode, operator: equals, value: grid}
+  - {id: description, type: textarea, label: Description, contentFormat: plain_text}
+  - id: billable_mode
+    type: select
+    label: Billable
+    required: true
+    options:
+      - {value: project, label: Project default}
+      - {value: billable, label: Billable}
+      - {value: not_billable, label: Not billable}
+    visible_when:
+      - {field: source_mode, operator: not_equals, value: grid}
+  - id: billable
+    type: boolean
+    label: Billable
+    required: true
+    default: true
+    helpText: Grid rows carry their own billable status.
+    visible_when:
+      - {field: source_mode, operator: equals, value: grid}
+  - id: timesheet_id
+    type: reference
+    label: Selected week
+    referenceTable: timesheets
+    readonly: true
+    visible_when:
+      - {field: source_mode, operator: equals, value: grid}
+  - id: source_mode
+    type: select
+    label: Entry source
+    readonly: true
+    default: dialog
+    options:
+      - {value: dialog, label: Dialog}
+      - {value: grid, label: Weekly grid}
+    visible_when:
+      - {field: source_mode, operator: equals, value: hidden}
+input_defaults:
+  source_mode: dialog
+  entry_method: duration
+  billable_mode: project
+  billable: true
+input_sections:
+  - id: work
+    title: Work
+    description: Choose what the time belongs to and when the work was done.
+    fields: [project_id, task_id, work_date]
+  - id: time
+    title: Time
+    description: Total time is simplest. Use exact times only when the actual clock times matter.
+    fields: [entry_method, duration_text]
+    visible_when:
+      - {field: source_mode, operator: not_equals, value: grid}
+  - id: exact_time
+    title: Exact times
+    description: Start and end must be on the selected work date; the duration is calculated automatically.
+    fields: [start_time, end_time]
+    visible_when:
+      - {field: source_mode, operator: not_equals, value: grid}
+      - {field: entry_method, operator: equals, value: exact}
+  - id: details
+    title: Optional details
+    fields: [description, billable_mode, billable]
+  - id: grid_values
+    fields: [duration_minutes, timesheet_id]
+    visible_when:
+      - {field: source_mode, operator: equals, value: grid}
+  - id: internal
+    fields: [source_mode]
+    visible_when:
+      - {field: source_mode, operator: equals, value: hidden}
+steps:
+  - id: selected_project
+    kind: query_records
+    table: projects
+    filter:
+      id: {bind: input.project_id}
+    limit: 2
+  - id: calendar
+    kind: script
+    input:
+      work_date: {bind: input.work_date}
+      owner_user_id: {bind: system.actorUserId}
+      timesheet_id: {bind: input.timesheet_id, fallback: null}
+    code: |
+      const date = String(input.work_date ?? "");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) helpers.inputError("work_date", "Choose a valid work date.");
+      const monday = new Date(`${date}T00:00:00Z`);
+      const offset = (monday.getUTCDay() + 6) % 7;
+      monday.setUTCDate(monday.getUTCDate() - offset);
+      return {
+        owner_user_id: input.owner_user_id,
+        supplied_timesheet_id: input.timesheet_id || null,
+        week_start: monday.toISOString().slice(0, 10),
+        period_key: date.slice(0, 7),
+      };
+  - id: period_rows
+    kind: query_records
+    table: periods
+    filter:
+      period_key: {bind: step.calendar.period_key}
+    limit: 2
+  - id: timesheet_rows
+    kind: query_records
+    table: timesheets
+    filter:
+      owner_user_id: {bind: step.calendar.owner_user_id}
+      week_start: {bind: step.calendar.week_start}
+    limit: 2
+  - id: prepare_timesheet
+    kind: script
+    input:
+      calendar: {bind: step.calendar}
+      periods: {bind: step.period_rows}
+      timesheets: {bind: step.timesheet_rows}
+    code: |
+      if (!Array.isArray(input.periods) || input.periods.length !== 1) {
+        helpers.inputError("work_date", "The accounting period for this date is not configured.");
+      }
+      if (input.periods[0].status !== "open") helpers.inputError("work_date", "The accounting period is locked.");
+      if (!Array.isArray(input.timesheets) || input.timesheets.length > 1) {
+        helpers.actionError("The weekly sheet configuration is ambiguous.");
+      }
+      const existing = input.timesheets[0] ?? null;
+      if (input.calendar.supplied_timesheet_id && (!existing || existing.id !== input.calendar.supplied_timesheet_id)) {
+        helpers.actionError("The selected week does not belong to this entry owner or work date.");
+      }
+      return {
+        create_timesheet: !existing,
+        timesheet_values: {
+          owner_user_id: input.calendar.owner_user_id,
+          week_start: input.calendar.week_start,
+        },
+      };
+  - id: create_timesheet
+    kind: create_record
+    table: timesheets
+    when: {bind: step.prepare_timesheet.create_timesheet}
+    values_from: {bind: step.prepare_timesheet.timesheet_values}
+  - id: prepare_entry
+    kind: script
+    input:
+      calendar: {bind: step.calendar}
+      periods: {bind: step.period_rows}
+      existing_timesheets: {bind: step.timesheet_rows}
+      created_timesheet: {bind: step.create_timesheet}
+      project_id: {bind: input.project_id}
+      task_id: {bind: input.task_id, fallback: null}
+      work_date: {bind: input.work_date}
+      source_mode: {bind: input.source_mode, fallback: dialog}
+      entry_method: {bind: input.entry_method, fallback: duration}
+      duration_text: {bind: input.duration_text, fallback: null}
+      duration_minutes: {bind: input.duration_minutes, fallback: null}
+      start_time: {bind: input.start_time, fallback: null}
+      end_time: {bind: input.end_time, fallback: null}
+      description: {bind: input.description, fallback: null}
+      billable: {bind: input.billable, fallback: true}
+      billable_mode: {bind: input.billable_mode, fallback: project}
+      projects: {bind: step.selected_project, fallback: null}
+    code: |
+      const timesheet = input.existing_timesheets[0] ?? input.created_timesheet;
+      if (!timesheet || !timesheet.id) helpers.actionError("A weekly sheet could not be prepared.");
+
+      const validDuration = (minutes) => Number.isInteger(minutes) && minutes >= 15 && minutes % 15 === 0;
+      const parseDuration = (value) => {
+        const raw = String(value ?? "").trim().toLowerCase().replace(",", ".");
+        if (!raw) helpers.inputError("duration_text", "Enter the total time spent.");
+        const compact = raw.replace(/\s+/g, "");
+        let minutes = null;
+        let match = null;
+
+        if (/^\d+$/.test(compact)) {
+          minutes = Number(compact);
+        } else if ((match = compact.match(/^(\d+):([0-5]\d)$/))) {
+          minutes = Number(match[1]) * 60 + Number(match[2]);
+        } else if ((match = compact.match(/^(\d+(?:\.\d+)?)h$/))) {
+          minutes = Number(match[1]) * 60;
+        } else if ((match = compact.match(/^(\d+)h(\d{1,2})m?$/))) {
+          minutes = Number(match[1]) * 60 + Number(match[2]);
+        } else if ((match = compact.match(/^(\d+)m(?:in(?:utes?)?)?$/))) {
+          minutes = Number(match[1]);
+        } else {
+          helpers.inputError("duration_text", "Enter time as minutes, 1h 30m, 1.5h, or 1:30.");
+        }
+
+        if (!validDuration(minutes)) {
+          helpers.inputError("duration_text", "Time spent must be at least 15 minutes and use 15-minute increments.");
+        }
+        return minutes;
+      };
+
+      const suppliedGridMinutes = Number(input.duration_minutes);
+      const isGridEntry = input.source_mode === "grid"
+        || (!input.duration_text && !input.start_time && !input.end_time && Number.isFinite(suppliedGridMinutes));
+      const entryMethod = isGridEntry ? "grid" : input.entry_method;
+      let durationMinutes = null;
+      let startedAt = null;
+      let endedAt = null;
+
+      if (entryMethod === "grid") {
+        if (!validDuration(suppliedGridMinutes)) {
+          helpers.inputError("duration_minutes", "Time spent must be at least 15 minutes and use 15-minute increments.");
+        }
+        durationMinutes = suppliedGridMinutes;
+      } else if (entryMethod === "duration") {
+        durationMinutes = parseDuration(input.duration_text);
+      } else if (entryMethod === "exact") {
+        const start = String(input.start_time);
+        const end = String(input.end_time);
+        const [startHour, startMinute] = start.split(":").map(Number);
+        const [endHour, endMinute] = end.split(":").map(Number);
+        durationMinutes = endHour * 60 + endMinute - (startHour * 60 + startMinute);
+        if (durationMinutes <= 0) {
+          helpers.inputError("end_time", "End time must be later than start time on the same work date.");
+        }
+        if (!validDuration(durationMinutes)) {
+          helpers.inputError("end_time", "The exact time range must use 15-minute increments.");
+        }
+        startedAt = `${input.work_date}T${start}`;
+        endedAt = `${input.work_date}T${end}`;
+      } else {
+        helpers.inputError("entry_method", "Choose how you want to enter time.");
+      }
+
+      // Grid rows are keyed by billable status, so a grid entry keeps its row's value;
+      // dialog entries inherit the project's default unless the user overrides it.
+      const project = Array.isArray(input.projects) ? input.projects[0] : null;
+      if (!project || project.id !== input.project_id) helpers.inputError("project_id", "Choose an active project.");
+      const billable = entryMethod === "grid" ? input.billable !== false
+        : input.billable_mode === "billable" ? true
+        : input.billable_mode === "not_billable" ? false
+        : project.billable_by_default !== false;
+
+      return {
+        values: {
+          owner_user_id: input.calendar.owner_user_id,
+          project_id: input.project_id,
+          task_id: input.task_id || null,
+          timesheet_id: timesheet.id,
+          period_id: input.periods[0].id,
+          work_date: input.work_date,
+          duration_minutes: durationMinutes,
+          started_at: startedAt,
+          ended_at: endedAt,
+          description: input.description || null,
+          billable,
+        },
+      };
+  - id: create_entry
+    kind: create_record
+    table: time_entries
+    values_from: {bind: step.prepare_entry.values}
+result: {step: create_entry}

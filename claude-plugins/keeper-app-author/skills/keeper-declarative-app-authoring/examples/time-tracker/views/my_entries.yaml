@@ -1,0 +1,243 @@
+view:
+  id: my_entries
+  title: My entries
+  description: Record and maintain your own project time.
+nav:
+  order: 10
+  icon: clock
+access:
+  allowed_roles: [viewer, editor, developer, admin]
+state:
+  selected_entry_id: null
+  last_project_id: null
+  last_task_id: null
+  selected_period_id: null
+  selected_week_id: null
+route_state:
+  selected_entry_id: {route: entry, mode: sync}
+  selected_period_id: {route: period, mode: sync}
+  selected_week_id: {route: week, mode: sync}
+filters:
+  - id: period
+    kind: state_select
+    label: Period
+    state_key: selected_period_id
+    options_source: entry_periods
+    value_field: id
+    label_field: period_key
+    placeholder: All periods
+    on_change:
+      - {type: set_state, key: selected_week_id, value: null}
+  - id: week
+    kind: state_select
+    label: Week
+    state_key: selected_week_id
+    options_source: entry_timesheets
+    value_field: id
+    label_field: week_start
+    placeholder: All weeks
+actions:
+  - id: add_entry
+    kind: action_set
+    data_source: add_entry_action
+data_sources:
+  my_entries:
+    kind: table
+    table: time_entries
+    filter:
+      owner_user_id: {bind: context.userId}
+    where:
+      all:
+        - {field: period_id, op: equals, value: {bind: state.selected_period_id}, when_empty: ignore}
+        - {field: timesheet_id, op: equals, value: {bind: state.selected_week_id}, when_empty: ignore}
+    sort: {field: work_date, direction: desc}
+    limit: 200
+    performance: {intent: indexed}
+  selected_entry:
+    kind: record
+    table: time_entries
+    id: {bind: state.selected_entry_id}
+  entry_clients:
+    kind: table
+    table: clients
+    sort: {field: name, direction: asc}
+  entry_projects:
+    kind: table
+    table: projects
+    sort: {field: name, direction: asc}
+  entry_tasks:
+    kind: table
+    table: tasks
+    filter: {archived: false}
+    sort: {field: name, direction: asc}
+  entry_timesheets:
+    kind: table
+    table: timesheets
+    filter: {owner_user_id: {bind: context.userId}}
+    sort: {field: week_start, direction: desc}
+    limit: 52
+  entry_periods:
+    kind: table
+    table: periods
+    sort: {field: period_key, direction: desc}
+  my_favorite_projects:
+    kind: table
+    table: favorite_projects
+    filter: {owner_user_id: {bind: context.userId}}
+  add_entry_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: quick_add_time_entry
+      label: Add entry
+      input__project_id: {bind: state.last_project_id}
+      input__task_id: {bind: state.last_task_id}
+    action_dialog:
+      preview: false
+      preset_groups:
+        - id: favourite_projects
+          placement: {after_field: project_id}
+          presentation: {variant: chips, mode: inline, primary_field: project_id}
+          source:
+            kind: records
+            data_source: my_favorite_projects
+            limit: 8
+            item:
+              values:
+                project_id: {bind: record.project_id}
+          apply: {type: patch_input}
+        - id: work_date_shortcuts
+          placement: {after_field: work_date}
+          presentation: {variant: chips, mode: inline}
+          source:
+            kind: generator
+            generator: relative_dates
+            items: [today, yesterday]
+            item:
+              label: {bind: record.label}
+              values:
+                work_date: {bind: record.value}
+          apply: {type: patch_input}
+    refresh_on: [state.last_project_id, state.last_task_id]
+    on_success:
+      - type: refresh
+        data_sources: [my_entries, entry_timesheets]
+      - {type: set_state, key: selected_entry_id, value: {bind: action.result.id}}
+      - {type: set_state, key: last_project_id, value: {bind: action.result.project_id}}
+      - {type: set_state, key: last_task_id, value: {bind: action.result.task_id}}
+  duplicate_entry_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: duplicate_time_entry
+      label: Duplicate entry
+      input__entry_id: {bind: state.selected_entry_id}
+    action_dialog:
+      preview: false
+    refresh_on: [state.selected_entry_id]
+    on_success:
+      - type: refresh
+        data_sources: [my_entries, entry_timesheets]
+      - {type: set_state, key: selected_entry_id, value: {bind: action.result.id}}
+components:
+  entries_table:
+    kind: record_table
+    title: My recent entries
+    data_source: my_entries
+    columns:
+      - {field: work_date, label: Work date}
+      - {field: project_id, label: Project}
+      - {field: billable, label: Billable, align: center}
+      - field: duration_minutes
+        label: Time (hrs)
+        align: right
+        duration_presentation: {storage_unit: minutes, display_unit: hours, display_format: hh_mm}
+      - {field: task_id, label: Task, empty_text: No task}
+      - {field: description, label: Description, wrap: true, empty_text: "—"}
+    search: {enabled: true, placeholder: Search descriptions, fields: [description]}
+    sort: {enabled: true, default: {field: work_date, direction: desc}}
+    density: compact
+    selection: {state_key: selected_entry_id, reconcile: clear}
+    on_row_click:
+      - type: set_state
+        key: selected_entry_id
+        value: {bind: record.id}
+  entry_detail:
+    kind: record_detail
+    title: Entry detail
+    table: time_entries
+    data_source: selected_entry
+    mode: editable
+    save_mode: explicit
+    show_primary_key: false
+    actions_source: duplicate_entry_action
+    empty_message: Select an entry to review or edit it.
+    header:
+      title_field: work_date
+      meta_fields: [project_id, duration_minutes]
+    sections:
+      - id: work
+        title: Work
+        columns: 2
+        fields:
+          - {field: description, ui: {width: full}}
+          - {field: project_id, mode: edit}
+          - {field: task_id, mode: edit}
+          - {field: started_at, mode: edit, ui: {input: {variant: flexible_text, date_field: work_date, placeholder: "e.g. 9, 930, or 09:30"}}}
+          - {field: ended_at, mode: edit, ui: {input: {variant: flexible_text, date_field: work_date, placeholder: "e.g. 11, 1100, or 11:00"}}}
+          - {field: duration_minutes, mode: edit}
+          - {field: billable, mode: edit}
+      - id: context
+        title: Accounting context
+        columns: 2
+        fields:
+          - {field: timesheet_id, mode: display}
+          - {field: period_id, mode: display}
+    actions:
+      - id: delete_entry
+        label: Delete entry
+        appearance: destructive
+        confirm: Delete this time entry? This cannot be undone.
+        action:
+          type: provider_action
+          provider: workspace
+          action: delete_record
+          params:
+            table: time_entries
+            recordId: {bind: record.id}
+            mode: block
+          on_success:
+            - type: set_state
+              key: selected_entry_id
+              value: null
+            - type: refresh
+              data_sources: [my_entries]
+    compute:
+      rules:
+        - id: duration_from_range
+          target: duration_minutes
+          when: {on: change, of: [started_at, ended_at]}
+          script: |
+            if (!fields.started_at || !fields.ended_at) return;
+            const mins = (new Date(fields.ended_at) - new Date(fields.started_at)) / 60000;
+            return Number.isFinite(mins) && mins > 0 ? Math.round(mins) : undefined;
+        - id: end_from_duration
+          target: ended_at
+          when: {on: change, of: [duration_minutes]}
+          script: |
+            const minutes = Number(fields.duration_minutes);
+            if (!fields.started_at || !Number.isFinite(minutes) || minutes <= 0) return;
+            const base = new Date(fields.started_at);
+            if (!Number.isFinite(base.getTime())) return;
+            const d = new Date(base.getTime() + minutes * 60000);
+            const pad = (n) => String(n).padStart(2, "0");
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+layout:
+  kind: split
+  direction: horizontal
+  sizes: [3, 2]
+  children:
+    - component: entries_table
+    - component: entry_detail

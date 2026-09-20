@@ -1,0 +1,70 @@
+table: issue_activity
+version: 2
+primaryKey: id
+idPrefix: activity
+displayField: summary
+# Comments and timeline events share one table. A row is visible exactly when
+# its issue is, so a transferred issue takes its whole conversation with it.
+# The policy is checked against issues that already exist, so the workflow that
+# creates an issue cannot also write its first activity row; the issue's own
+# author and created time record the opening.
+rowAccess:
+  mode: policy
+  allOf:
+    - kind: related_resource_grant
+      resourceTable: issues
+      resourceField: id
+      targetField: issue_id
+# Only workflows write here, so the actor is always stamped, never supplied.
+# Admins can still moderate rows directly.
+mutationPolicy:
+  allowedRoles: [editor, developer, admin]
+  bypassRoles: [admin]
+  channels:
+    workflow:
+      operations: [create]
+      workflowIds:
+        - close_issue
+        - reopen_issue
+        - add_comment
+        - assign_issue
+        - set_labels
+        - set_milestone
+        - lock_conversation
+        - transfer_issue
+        - link_issues
+        - unlink_issues
+queryPaths:
+  - id: by_issue_occurred
+    equalityFields: [issue_id]
+    orderFields: [occurred_at]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: issue_id, type: reference, label: Issue, referenceTable: issues, required: true, workflowOnly: true}
+  - id: kind
+    type: select
+    label: Kind
+    required: true
+    workflowOnly: true
+    options:
+      - {value: comment, label: Comment}
+      - {value: closed, label: Closed}
+      - {value: reopened, label: Reopened}
+      - {value: assigned, label: Assignment}
+      - {value: labeled, label: Labels}
+      - {value: milestoned, label: Milestone}
+      - {value: locked, label: Locked}
+      - {value: unlocked, label: Unlocked}
+      - {value: transferred, label: Transferred}
+      - {value: linked, label: Linked}
+      - {value: unlinked, label: Unlinked}
+  - {id: summary, type: text, label: What happened, required: true, workflowOnly: true}
+  - {id: body, type: textarea, label: Comment, contentFormat: markdown}
+  - {id: actor_user_id, type: reference, label: By, referenceTable: keeper_principals, required: true, workflowOnly: true}
+  - {id: created_at, type: datetime, label: When, readonly: true, computed: {kind: now, on: create, format: datetime}}
+  # Full-precision timestamp, used only to order rows written within the same minute.
+  - {id: occurred_at, type: text, label: Recorded at, readonly: true, computed: {kind: now, on: create, format: iso}}
+relations:
+  - field: issue_id
+    references: {table: issues, field: id}
+    onDelete: cascade

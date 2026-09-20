@@ -1,0 +1,133 @@
+id: close_issue
+title: Close issue
+appearance: default
+allowed_roles: [editor, developer, admin]
+actor_required: true
+success_message: Issue closed.
+invalidate: "*"
+input_fields:
+  - {id: issue_id, type: reference, label: Issue, referenceTable: issues, required: true, readonly: true}
+  # Scopes the duplicate picker to the issue's own project.
+  - {id: project_id, type: reference, label: Project, referenceTable: projects, required: true, readonly: true}
+  - id: reason
+    type: select
+    label: Reason
+    required: true
+    options:
+      - {value: completed, label: Completed}
+      - {value: not_planned, label: Not planned}
+      - {value: duplicate, label: Duplicate of another issue}
+  - id: duplicate_of_id
+    type: reference
+    label: Original issue
+    referenceTable: issues
+    input: {variant: search, placeholder: Find the original issue}
+    reference_filters:
+      - {record_field: project_id, value_field: project_id, when_empty: none}
+    visible_when:
+      - {field: reason, operator: equals, value: duplicate}
+  - {id: comment, type: textarea, label: Comment, contentFormat: markdown, helpText: Optional. Posted to the conversation with the change.}
+  # Local "now" for closed_at. Computed inputs use the reader's time zone, as
+  # computed record fields do; the condition keeps it out of the dialog.
+  - id: changed_at
+    type: datetime
+    label: Changed at
+    computed: {kind: now, on: create, format: datetime}
+    visible_when:
+      - {field: changed_at, operator: equals, value: never}
+input_defaults:
+  reason: completed
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: input.issue_id}
+  - id: flags
+    kind: script
+    input:
+      reason: {bind: input.reason}
+      duplicate_of_id: {bind: input.duplicate_of_id, fallback: null}
+    code: |
+      return {has_original: input.reason === "duplicate" && Boolean(input.duplicate_of_id)};
+  - id: original
+    kind: get_record
+    table: issues
+    when: {bind: step.flags.has_original, fallback: false}
+    record_id: {bind: input.duplicate_of_id}
+  - id: prepare
+    kind: script
+    label: Check the change
+    input:
+      issue: {bind: step.issue, fallback: null}
+      original: {bind: step.original, fallback: null}
+      reason: {bind: input.reason}
+      comment: {bind: input.comment, fallback: null}
+      actor: {bind: system.actorUserId}
+      role: {bind: system.appRole}
+      changed_at: {bind: input.changed_at, fallback: null}
+      now: {bind: system.nowIso}
+    code: |
+      const issue = input.issue;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      if (issue.state === "closed") helpers.actionError("This issue is already closed. Reopen it first to close it another way.");
+      const reason = String(input.reason ?? "");
+      const comment = String(input.comment ?? "").trim();
+      const original = input.original;
+
+      if (reason === "duplicate") {
+        if (!original) helpers.inputError("duplicate_of_id", "Choose the issue this one duplicates.");
+        if (original.id === issue.id) helpers.inputError("duplicate_of_id", "An issue can't duplicate itself.");
+        if (original.project_id !== issue.project_id) {
+          helpers.inputError("duplicate_of_id", "Choose an issue from the same project.");
+        }
+      }
+      if (comment && issue.locked === true && input.role !== "admin") {
+        helpers.inputError("comment", "The conversation is locked. Only admins can comment.");
+      }
+
+      // Plain-text excerpt of the optional comment, for its activity summary.
+      const excerpt = (markdown) => {
+        const text = markdown
+          .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+          .replace(/\\([\\`*_{}\[\]()#+\-.!>~|])/g, "$1")
+          .replace(/(\*\*|__|~~|`)/g, "")
+          .replace(/^\s*(#{1,6}|>|[-*+]|\d+\.)\s+/gm, "")
+          .replace(/\s+/g, " ")
+          .trim();
+        return `commented: ${text.length > 120 ? `${text.slice(0, 117)}...` : text}`;
+      };
+      const summaries = {
+        completed: "closed this as completed",
+        not_planned: "closed this as not planned",
+        duplicate: original ? `closed this as a duplicate of ${original.ref}` : "closed this as a duplicate",
+      };
+      const issueValues = {
+        state: "closed",
+        state_reason: reason,
+        duplicate_of_id: reason === "duplicate" ? original.id : null,
+        closed_at: input.changed_at || String(input.now ?? "").slice(0, 16),
+        closed_by_user_id: input.actor,
+      };
+      if (comment) issueValues.comment_count = (Number(issue.comment_count) || 0) + 1;
+
+      return {
+        issue_values: issueValues,
+        has_comment: Boolean(comment),
+        comment_values: {issue_id: issue.id, kind: "comment", summary: excerpt(comment), body: comment || null, actor_user_id: input.actor},
+        event_values: {issue_id: issue.id, kind: "closed", summary: summaries[reason], actor_user_id: input.actor},
+      };
+  - id: post_comment
+    kind: create_record
+    table: issue_activity
+    when: {bind: step.prepare.has_comment, fallback: false}
+    values_from: {bind: step.prepare.comment_values}
+  - id: update_issue
+    kind: update_record
+    table: issues
+    record_id: {bind: input.issue_id}
+    values_from: {bind: step.prepare.issue_values}
+  - id: record_event
+    kind: create_record
+    table: issue_activity
+    values_from: {bind: step.prepare.event_values}
+result: {step: update_issue}

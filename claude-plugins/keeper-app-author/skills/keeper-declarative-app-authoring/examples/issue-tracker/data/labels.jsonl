@@ -1,0 +1,10 @@
+{"id": "needs-triage", "name": "needs-triage", "description": "Nobody has reviewed it yet.", "color": "#b8900a", "position": 10, "active": true, "created_at": "2026-09-17T09:00", "updated_at": "2026-09-17T09:00"}
+{"id": "good-first-issue", "name": "good-first-issue", "description": "Suitable for someone new to the project.", "color": "#2f9a4d", "position": 20, "active": true, "created_at": "2026-09-17T09:00", "updated_at": "2026-09-17T09:00"}
+{"id": "help-wanted", "name": "help-wanted", "description": "The assignee would like a hand.", "color": "#1a8f86", "position": 30, "active": true, "created_at": "2026-09-17T09:00", "updated_at": "2026-09-17T09:00"}
+{"id": "blocked", "name": "blocked", "description": "Waiting on something outside the team.", "color": "#c2417e", "position": 40, "active": true, "created_at": "2026-09-17T09:00", "updated_at": "2026-09-17T09:00"}
+{"id": "regression", "name": "regression", "description": "Something that used to work.", "color": "#d1383d", "position": 50, "active": true, "created_at": "2026-09-17T09:00", "updated_at": "2026-09-17T09:00"}
+{"id": "security", "name": "security", "description": "Has security impact. Keep details factual.", "color": "#8a2f6b", "position": 60, "active": true, "created_at": "2026-09-17T09:00", "updated_at": "2026-09-17T09:00"}
+{"id": "performance", "name": "performance", "description": "Slowness or resource use.", "color": "#e0780f", "position": 70, "active": true, "created_at": "2026-09-17T09:00", "updated_at": "2026-09-17T09:00"}
+{"id": "ux", "name": "ux", "description": "How something looks or feels.", "color": "#2b7fd6", "position": 80, "active": true, "created_at": "2026-09-17T09:00", "updated_at": "2026-09-17T09:00"}
+{"id": "documentation", "name": "documentation", "description": "Docs or help text.", "color": "#1a8f86", "position": 90, "active": true, "created_at": "2026-09-17T09:00", "updated_at": "2026-09-17T09:00"}
+{"id": "breaking-change", "name": "breaking-change", "description": "Will need others to change something.", "color": "#8a4fd0", "position": 100, "active": true, "created_at": "2026-09-17T09:00", "updated_at": "2026-09-17T09:00"}

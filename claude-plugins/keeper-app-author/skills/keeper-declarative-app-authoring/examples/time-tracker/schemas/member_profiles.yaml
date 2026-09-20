@@ -1,0 +1,31 @@
+table: member_profiles
+version: 2
+primaryKey: id
+idPrefix: member
+displayField: alias
+rowAccess:
+  mode: policy
+  allOf:
+    - kind: owner
+      ownerField: user_id
+      adminCreateAssignment: resolved_principal
+mutationPolicy:
+  allowedRoles: [admin]
+validationPolicy:
+  unique:
+    - fields: [user_id]
+      message: A member profile already exists for this Keeper user.
+    - fields: [alias]
+      message: Member aliases must be unique.
+queryPaths:
+  - id: by_alias
+    equalityFields: []
+    orderFields: [alias]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: user_id, type: reference, label: Member, referenceTable: keeper_app_members, required: true, readonly: true}
+  - {id: alias, type: text, label: Alias, required: true}
+  - {id: full_name, type: text, label: Full name}
+  - {id: active, type: boolean, label: Reporting profile active, required: true, default: true, helpText: Time-tracker profile status only. App membership is managed from Access & sharing.}
+  - {id: created_at, type: datetime, label: Created, readonly: true, computed: {kind: now, on: create, format: datetime}}
+  - {id: updated_at, type: datetime, label: Updated, readonly: true, computed: {kind: now, on: always, format: datetime}}

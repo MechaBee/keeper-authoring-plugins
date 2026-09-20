@@ -1,0 +1,16 @@
+id: issue-tracker
+title: Issues
+description: Team issue tracking with projects, labels, milestones, sub-issues and a board.
+icon: list-todo
+version: 1
+schemaVersion: 2
+defaultView: issues
+docs:
+  entry: docs/guide.md
+  title: How to use Issues
+  entry_title: Start here
+  summary: Report problems, keep work visible, and close the loop with your team.
+  show_on_first_open: true
+  topics:
+    - {id: working-on-issues, title: Working on an issue, path: docs/working-on-issues.md}
+    - {id: setting-up, title: Setting up a project, path: docs/setting-up.md}

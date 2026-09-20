@@ -1,0 +1,91 @@
+id: assign_issue
+title: Assign
+appearance: secondary
+allowed_roles: [editor, developer, admin]
+actor_required: true
+success_message: Assignee updated.
+invalidate: "*"
+input_fields:
+  - {id: issue_id, type: reference, label: Issue, referenceTable: issues, required: true, readonly: true}
+  - id: member_id
+    type: reference
+    label: Assignee
+    referenceTable: members
+    reference_where: {active: true}
+    helpText: Leave empty to unassign.
+    input: {placeholder: Nobody}
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: input.issue_id}
+  - id: flags
+    kind: script
+    input:
+      member_id: {bind: input.member_id, fallback: null}
+      current_member_id: {bind: step.issue.assignee_member_id, fallback: null}
+    code: |
+      return {
+        has_member: Boolean(input.member_id),
+        has_current: Boolean(input.current_member_id),
+        current_member_id: input.current_member_id,
+      };
+  - id: member
+    kind: get_record
+    table: members
+    when: {bind: step.flags.has_member, fallback: false}
+    record_id: {bind: input.member_id}
+  - id: current
+    kind: get_record
+    table: members
+    when: {bind: step.flags.has_current, fallback: false}
+    record_id: {bind: step.flags.current_member_id}
+  - id: prepare
+    kind: script
+    label: Check the assignee
+    input:
+      issue: {bind: step.issue, fallback: null}
+      member: {bind: step.member, fallback: null}
+      current: {bind: step.current, fallback: null}
+      actor: {bind: system.actorUserId}
+    code: |
+      const issue = input.issue;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      const next = input.member;
+      const current = input.current;
+      if (next && next.active === false) helpers.inputError("member_id", "This member can no longer be assigned.");
+      if ((next?.id ?? null) === (issue.assignee_member_id ?? null)) {
+        helpers.inputError("member_id", next ? `${next.display_name} is already assigned.` : "Nobody is assigned yet.");
+      }
+
+      const currentName = current ? current.display_name : "a former member";
+      const summary = !next
+        ? `unassigned ${currentName}`
+        : issue.assignee_member_id
+          ? `reassigned this from ${currentName} to ${next.display_name}`
+          : `assigned ${next.display_name}`;
+      return {
+        issue_values: {
+          assignee_member_id: next ? next.id : null,
+          assignee_user_id: next ? next.user_id : null,
+        },
+        event_values: {issue_id: issue.id, kind: "assigned", summary, actor_user_id: input.actor},
+        preview: {
+          title: `${issue.ref} ${issue.title}`,
+          items: [
+            {label: "Now", value: issue.assignee_member_id ? currentName : "Unassigned"},
+            {label: "After", value: next ? next.display_name : "Unassigned"},
+          ],
+        },
+      };
+  - id: update_issue
+    kind: update_record
+    table: issues
+    record_id: {bind: input.issue_id}
+    values_from: {bind: step.prepare.issue_values}
+  - id: record_event
+    kind: create_record
+    table: issue_activity
+    values_from: {bind: step.prepare.event_values}
+preview: {step: prepare, path: preview}
+result: {step: update_issue}

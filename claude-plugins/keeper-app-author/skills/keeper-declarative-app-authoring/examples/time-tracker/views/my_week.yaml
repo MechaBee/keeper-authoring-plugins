@@ -1,0 +1,275 @@
+view:
+  id: my_week
+  title: My week
+  description: Review weekly totals and open the individual entries behind each grid cell.
+nav:
+  order: 20
+  icon: calendar
+access:
+  allowed_roles: [viewer, editor, developer, admin]
+state:
+  selected_timesheet_id: null
+  selected_work_date: null
+  selected_project_id: null
+  selected_task_id: null
+  selected_billable: null
+  selected_entry_id: null
+  last_project_id: null
+  last_task_id: null
+route_state:
+  selected_timesheet_id: {route: week, mode: sync}
+  selected_entry_id: {route: entry, mode: sync}
+actions:
+  - id: add_week_entry
+    kind: action_set
+    data_source: add_week_entry_action
+data_sources:
+  my_timesheets:
+    kind: table
+    table: timesheets
+    filter: {owner_user_id: {bind: context.userId}}
+    sort: {field: week_start, direction: desc}
+    limit: 52
+  selected_timesheet:
+    kind: record
+    table: timesheets
+    id: {bind: state.selected_timesheet_id}
+  week_entries:
+    kind: table
+    table: time_entries
+    filter: {timesheet_id: {bind: state.selected_timesheet_id}}
+    sort: {field: work_date, direction: asc}
+    limit: 200
+  selected_cell_entries:
+    kind: table
+    table: time_entries
+    filter:
+      timesheet_id: {bind: state.selected_timesheet_id}
+      work_date: {bind: state.selected_work_date}
+      project_id: {bind: state.selected_project_id}
+      task_id: {bind: state.selected_task_id}
+      billable: {bind: state.selected_billable}
+    sort: {field: started_at, direction: asc}
+    limit: 50
+  selected_entry:
+    kind: record
+    table: time_entries
+    id: {bind: state.selected_entry_id}
+  week_clients:
+    kind: table
+    table: clients
+    sort: {field: name, direction: asc}
+  week_projects:
+    kind: table
+    table: projects
+    sort: {field: name, direction: asc}
+  week_tasks:
+    kind: table
+    table: tasks
+    filter: {archived: false}
+    sort: {field: name, direction: asc}
+  week_periods:
+    kind: table
+    table: periods
+    sort: {field: period_key, direction: desc}
+  create_timesheet_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params: {table: timesheets, label: Create week, fields: week_start}
+    on_success:
+      - type: refresh
+        data_sources: [my_timesheets]
+      - {type: set_state, key: selected_timesheet_id, value: {bind: action.result.id}}
+      - {type: set_state, key: selected_work_date, value: null}
+      - {type: set_state, key: selected_project_id, value: null}
+      - {type: set_state, key: selected_task_id, value: null}
+      - {type: set_state, key: selected_billable, value: null}
+      - {type: set_state, key: selected_entry_id, value: null}
+  grid_entry_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: create_time_entry
+      label: Add grid time
+      input__source_mode: grid
+      input__timesheet_id: {bind: state.selected_timesheet_id}
+    refresh_on: [state.selected_timesheet_id]
+    on_success:
+      - type: refresh
+        data_sources: [week_entries, selected_cell_entries, my_timesheets]
+      - {type: set_state, key: selected_entry_id, value: {bind: action.result.id}}
+  add_week_entry_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: create_time_entry
+      label: Add entry
+      input__timesheet_id: {bind: state.selected_timesheet_id}
+      input__project_id: {bind: state.last_project_id}
+      input__task_id: {bind: state.last_task_id}
+    refresh_on: [state.selected_timesheet_id, state.last_project_id, state.last_task_id]
+    on_success:
+      - type: refresh
+        data_sources: [week_entries, selected_cell_entries, my_timesheets]
+      - {type: set_state, key: selected_work_date, value: {bind: action.result.work_date}}
+      - {type: set_state, key: selected_project_id, value: {bind: action.result.project_id}}
+      - {type: set_state, key: selected_task_id, value: {bind: action.result.task_id}}
+      - {type: set_state, key: selected_billable, value: {bind: action.result.billable}}
+      - {type: set_state, key: selected_entry_id, value: {bind: action.result.id}}
+      - {type: set_state, key: last_project_id, value: {bind: action.result.project_id}}
+      - {type: set_state, key: last_task_id, value: {bind: action.result.task_id}}
+  duplicate_entry_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: duplicate_time_entry
+      label: Duplicate entry
+      input__entry_id: {bind: state.selected_entry_id}
+    refresh_on: [state.selected_entry_id]
+    on_success:
+      - type: refresh
+        data_sources: [week_entries, selected_cell_entries, my_timesheets]
+      - {type: set_state, key: selected_work_date, value: {bind: action.result.work_date}}
+      - {type: set_state, key: selected_project_id, value: {bind: action.result.project_id}}
+      - {type: set_state, key: selected_task_id, value: {bind: action.result.task_id}}
+      - {type: set_state, key: selected_billable, value: {bind: action.result.billable}}
+      - {type: set_state, key: selected_entry_id, value: {bind: action.result.id}}
+components:
+  week_grid:
+    kind: timesheet_week_grid
+    title: Weekly overview
+    description: Values are summed by project, task, billable status, and day. A numbered cell contains multiple entries; select it to review them below.
+    table: time_entries
+    data_source: week_entries
+    period:
+      data_source: selected_timesheet
+      start_field: week_start
+      column_field: work_date
+      column_count: 7
+      entry_context_field: timesheet_id
+    period_navigation:
+      data_source: my_timesheets
+      selection_state_key: selected_timesheet_id
+      create_data_source: create_timesheet_action
+      empty_message: No weekly sheets overlap this month.
+    rows:
+      identity_fields: [project_id, task_id, billable]
+      primary_label_field: project_id
+      secondary_label_field: task_id
+      metadata_fields: [billable]
+    cells:
+      value_field: duration_minutes
+      detail_fields: [description]
+      empty_behavior: delete_record
+      multi_record_behavior: aggregate_drilldown
+      duration_presentation:
+        storage_unit: minutes
+        display_unit: hours
+        input_formats: [decimal_hours, hh_mm]
+        minute_increment: 15
+    selection:
+      column_state_key: selected_work_date
+      identity_state_keys:
+        project_id: selected_project_id
+        task_id: selected_task_id
+        billable: selected_billable
+      record_state_key: selected_entry_id
+    editing:
+      create_data_source: grid_entry_action
+      save_mode: autosave
+    totals:
+      target: 2400
+      show_row_totals: true
+      show_column_totals: true
+    empty_message: Add a project or task row to begin this week.
+  cell_entries:
+    kind: record_table
+    title: Entries in selected cell
+    description: Select an entry to review its exact times and details. The grid total is the sum of these rows.
+    data_source: selected_cell_entries
+    columns:
+      - {field: work_date, label: Work date}
+      - {field: project_id, label: Project}
+      - {field: billable, label: Billable, align: center}
+      - field: duration_minutes
+        label: Time (hrs)
+        align: right
+        duration_presentation: {storage_unit: minutes, display_unit: hours, display_format: hh_mm}
+      - {field: task_id, label: Task, empty_text: No task}
+      - {field: description, label: Description, wrap: true, empty_text: "—"}
+    sort: {enabled: true, default: {field: started_at, direction: asc}}
+    density: compact
+    selection: {state_key: selected_entry_id, reconcile: clear}
+    empty_message: Select a populated grid cell to review its entries.
+    on_row_click:
+      - type: set_state
+        key: selected_entry_id
+        value: {bind: record.id}
+  entry_detail:
+    kind: record_detail
+    title: Selected entry
+    table: time_entries
+    data_source: selected_entry
+    mode: editable
+    save_mode: explicit
+    show_primary_key: false
+    actions_source: duplicate_entry_action
+    empty_message: Select an entry from the selected cell.
+    header:
+      title_field: work_date
+      meta_fields: [project_id, duration_minutes]
+    sections:
+      - id: work
+        title: Time and description
+        columns: 2
+        fields:
+          - {field: description, mode: edit, ui: {width: full}}
+          - {field: started_at, mode: edit}
+          - {field: ended_at, mode: edit}
+          - {field: duration_minutes, mode: edit}
+      - id: allocation
+        title: Grid allocation
+        description: Project, task, and billable status define the selected grid row.
+        columns: 3
+        fields:
+          - {field: project_id, mode: display}
+          - {field: task_id, mode: display}
+          - {field: billable, mode: display}
+      - id: context
+        title: Accounting context
+        columns: 2
+        fields:
+          - {field: timesheet_id, mode: display}
+          - {field: period_id, mode: display}
+    actions:
+      - id: delete_entry
+        label: Delete entry
+        appearance: destructive
+        confirm: Delete this time entry? This cannot be undone.
+        action:
+          type: provider_action
+          provider: workspace
+          action: delete_record
+          params:
+            table: time_entries
+            recordId: {bind: record.id}
+            mode: block
+          on_success:
+            - {type: set_state, key: selected_entry_id, value: null}
+            - type: refresh
+              data_sources: [week_entries, selected_cell_entries]
+layout:
+  kind: stack
+  gap: md
+  children:
+    - component: week_grid
+    - kind: split
+      direction: horizontal
+      sizes: [3, 2]
+      children:
+        - component: cell_entries
+        - component: entry_detail

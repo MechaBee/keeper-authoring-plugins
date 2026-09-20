@@ -1,0 +1,29 @@
+table: group_memberships
+version: 2
+primaryKey: id
+idPrefix: group_membership
+displayField: group_id
+rowAccess:
+  mode: policy
+  allOf:
+    - kind: app_role
+      anyOf: [admin]
+mutationPolicy:
+  allowedRoles: [admin]
+validationPolicy:
+  unique:
+    - fields: [group_id, user_id]
+      message: This user is already a member of the group.
+queryPaths:
+  - id: by_group
+    equalityFields: [group_id]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: group_id, type: reference, label: Group, referenceTable: groups, required: true}
+  - {id: user_id, type: reference, label: Member, referenceTable: keeper_app_members, required: true}
+  - {id: created_at, type: datetime, label: Created, readonly: true, computed: {kind: now, on: create, format: datetime}}
+  - {id: updated_at, type: datetime, label: Updated, readonly: true, computed: {kind: now, on: always, format: datetime}}
+relations:
+  - field: group_id
+    references: {table: groups, field: id}
+    onDelete: block

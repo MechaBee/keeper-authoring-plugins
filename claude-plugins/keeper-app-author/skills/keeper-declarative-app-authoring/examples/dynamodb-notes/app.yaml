@@ -1,0 +1,10 @@
+id: dynamodb-notes
+title: DynamoDB Notes
+description: A small note-taking app with logical DynamoDB storage intent.
+version: 1
+defaultView: home
+icon: file-text
+schemaVersion: 2
+storage:
+  engine: dynamodb
+  performance: high_throughput

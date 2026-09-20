@@ -1,0 +1,225 @@
+view:
+  id: administration
+  title: Administration
+  description: Maintain clients, projects, tasks, and accounting periods.
+nav:
+  title: Setup
+  order: 50
+  icon: settings
+  group:
+    id: admin
+    label: Administration
+    icon: shield
+access:
+  allowed_roles: [admin]
+
+state:
+  active_section: clients
+  selected_client_id: null
+  selected_project_id: null
+  selected_task_id: null
+  selected_period_id: null
+
+data_sources:
+  clients:
+    kind: table
+    table: clients
+    sort: {field: name, direction: asc}
+  projects:
+    kind: table
+    table: projects
+    sort: {field: name, direction: asc}
+  tasks:
+    kind: table
+    table: tasks
+    sort: {field: name, direction: asc}
+  periods:
+    kind: table
+    table: periods
+    sort: {field: period_key, direction: desc}
+
+  client_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: clients
+      label: Add client
+      fields: name
+      field__archived: false
+    on_success:
+      - {type: refresh, data_sources: [clients]}
+      - {type: set_state, key: selected_client_id, value: {bind: action.result.id}}
+  project_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: projects
+      label: Add project
+      fields: client_id,name,billable_by_default,archived
+      field__archived: false
+      field__billable_by_default: true
+    on_success:
+      - {type: refresh, data_sources: [projects]}
+      - {type: set_state, key: selected_project_id, value: {bind: action.result.id}}
+  task_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: tasks
+      label: Add task
+      fields: project_id,name
+      field__archived: false
+    on_success:
+      - {type: refresh, data_sources: [tasks]}
+      - {type: set_state, key: selected_task_id, value: {bind: action.result.id}}
+  period_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: periods
+      label: Add period
+      fields: period_key,period_start,period_end
+      field__status: open
+    on_success:
+      - {type: refresh, data_sources: [periods]}
+      - {type: set_state, key: selected_period_id, value: {bind: action.result.id}}
+
+components:
+  clients_workspace:
+    kind: record_collection
+    title: Clients
+    description: Maintain the client catalog used to organize projects.
+    table: clients
+    data_source: clients
+    search: {enabled: true, placeholder: Search clients, fields: [name]}
+    create: {data_source: client_create_action, label: Add client}
+    archiving: {enabled: true, field: archived, toggle_label: Include archived}
+    selection:
+      state_key: selected_client_id
+      desktop: split
+      mobile: page
+      reconcile: first_available
+    summary:
+      title_field: name
+      meta_fields: [archived]
+    detail:
+      title: Client
+      mode: editable
+      density: compact
+      show_primary_key: false
+      fields:
+        - {field: name, mode: edit}
+      save_label: Save client
+
+  projects_workspace:
+    kind: record_collection
+    title: Projects
+    description: Maintain project ownership, billing defaults, and open or closed availability.
+    table: projects
+    data_source: projects
+    search: {enabled: true, placeholder: Search projects, fields: [name, client_id]}
+    create: {data_source: project_create_action, label: Add project}
+    archiving: {enabled: true, field: archived, toggle_label: Include closed projects}
+    selection:
+      state_key: selected_project_id
+      desktop: split
+      mobile: page
+      reconcile: first_available
+    summary:
+      title_field: name
+      meta_fields: [client_id, billable_by_default, archived]
+    detail:
+      title: Project
+      mode: editable
+      density: compact
+      show_primary_key: false
+      fields:
+        - {field: client_id, mode: edit, ui: {variant: reference_chip}}
+        - {field: name, mode: edit}
+        - {field: billable_by_default, mode: edit}
+      save_label: Save project
+
+  tasks_workspace:
+    kind: record_collection
+    title: Tasks
+    description: Maintain reusable tasks within each project.
+    table: tasks
+    data_source: tasks
+    search: {enabled: true, placeholder: Search tasks, fields: [name, project_id]}
+    create: {data_source: task_create_action, label: Add task}
+    archiving: {enabled: true, field: archived, toggle_label: Include archived}
+    selection:
+      state_key: selected_task_id
+      desktop: split
+      mobile: page
+      reconcile: first_available
+    summary:
+      title_field: name
+      meta_fields: [project_id, archived]
+    detail:
+      title: Task
+      mode: editable
+      density: compact
+      show_primary_key: false
+      fields:
+        - {field: project_id, mode: edit, ui: {variant: reference_chip}}
+        - {field: name, mode: edit}
+      save_label: Save task
+
+  periods_workspace:
+    kind: record_collection
+    title: Accounting periods
+    description: Configure calendar months and control whether entries may be recorded.
+    table: periods
+    data_source: periods
+    search: {enabled: true, placeholder: Search periods, fields: [period_key]}
+    create: {data_source: period_create_action, label: Add period}
+    selection:
+      state_key: selected_period_id
+      desktop: split
+      mobile: page
+      reconcile: first_available
+    summary:
+      title_field: period_key
+      badge_field: status
+      meta_fields: [period_start, period_end]
+    detail:
+      title: Accounting period
+      mode: editable
+      density: compact
+      show_primary_key: false
+      fields:
+        - {field: period_key, mode: display}
+        - {field: period_start, mode: display}
+        - {field: period_end, mode: display}
+        - {field: status, mode: edit, ui: {variant: badge}}
+      save_label: Save period status
+
+layout:
+  kind: tabs
+  state_key: active_section
+  tabs:
+    - id: clients
+      label: Clients
+      icon: briefcase
+      layout:
+        component: clients_workspace
+    - id: projects
+      label: Projects
+      icon: folder-kanban
+      layout:
+        component: projects_workspace
+    - id: tasks
+      label: Tasks
+      icon: list-todo
+      layout:
+        component: tasks_workspace
+    - id: periods
+      label: Periods
+      icon: calendar
+      layout:
+        component: periods_workspace

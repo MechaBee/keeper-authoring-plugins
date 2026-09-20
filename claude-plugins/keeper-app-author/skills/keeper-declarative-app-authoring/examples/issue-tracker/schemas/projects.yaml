@@ -1,0 +1,52 @@
+table: projects
+version: 2
+primaryKey: id
+idPrefix: project
+displayField: name
+referenceLabelTemplate: "${name} (${key})"
+# A member sees a project, and everything filed in it, only through a direct or
+# group grant. App admins see every project.
+rowAccess:
+  mode: policy
+  allOf:
+    - kind: resource_grant
+      resourceField: id
+      directGrants: {table: project_user_access, resourceField: project_id, principalField: user_id}
+      groupGrants: {table: project_group_access, resourceField: project_id, groupField: group_id}
+      groupMemberships: {table: group_memberships, groupField: group_id, principalField: user_id}
+# Admins maintain projects directly. Editors only ever touch a project through
+# the workflows that hand out issue numbers.
+mutationPolicy:
+  allowedRoles: [editor, developer, admin]
+  bypassRoles: [admin]
+  channels:
+    workflow:
+      operations: [update]
+      workflowIds: [open_issue, transfer_issue]
+validationPolicy:
+  unique:
+    - fields: [key]
+      message: Another project already uses this key.
+    - fields: [name]
+      message: Another project already uses this name.
+  checks:
+    - id: key_format
+      operations: [create, update]
+      message: Use 2 to 8 capital letters or digits for the key, starting with a letter.
+      input:
+        candidate: {kind: candidate}
+      code: |
+        return /^[A-Z][A-Z0-9]{1,7}$/.test(String(input.candidate.key ?? ""));
+queryPaths:
+  - id: by_name
+    equalityFields: []
+    orderFields: [name]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: key, type: text, label: Key, required: true, helpText: "Prefix for issue references, for example WEB in WEB#42. Choose it once: existing issues keep the references they were given."}
+  - {id: name, type: text, label: Name, required: true}
+  - {id: description, type: textarea, label: Description, contentFormat: plain_text}
+  - {id: next_number, type: number, label: Next issue number, min: 1, step: 1, workflowOnly: true}
+  - {id: archived, type: boolean, label: Archived, required: true, default: false, helpText: Archived projects keep their issues but accept no new ones.}
+  - {id: created_at, type: datetime, label: Created, readonly: true, computed: {kind: now, on: create, format: datetime}}
+  - {id: updated_at, type: datetime, label: Updated, readonly: true, computed: {kind: now, on: always, format: datetime}}

@@ -1,0 +1,16 @@
+id: time-tracker
+title: Time Tracker
+description: Team time logging with personal and team views, admin and
+  policy-scoped reporting.
+version: 1
+schemaVersion: 2
+defaultView: my_entries
+docs:
+  entry: docs/guide.md
+  title: How to use this app
+  entry_title: Start here
+  summary: Log your hours, keep them tidy, and get the month closed on time.
+  show_on_first_open: true
+  topics:
+    - {id: features, title: What's in the app, path: docs/features.md}
+    - {id: getting-started, title: Setting up and getting started, path: docs/getting-started.md}

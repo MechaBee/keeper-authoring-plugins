@@ -1,0 +1,13 @@
+table: option_rows
+version: 2
+primaryKey: id
+idPrefix: option_row
+displayField: label
+# Output of the state filter projection: each state with its live count.
+rowAccess:
+  mode: all
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: value, type: text, label: Value, readonly: true}
+  - {id: label, type: text, label: Shown as, readonly: true}
+  - {id: position, type: number, label: Order, readonly: true}

@@ -1,0 +1,23 @@
+table: issue_types
+version: 2
+primaryKey: id
+idPrefix: type
+displayField: name
+# Team vocabulary: everyone reads it, admins maintain it. Ids are slugs, so a
+# stored value stays readable and keeps its meaning if a name is edited later.
+rowAccess:
+  mode: all
+mutationPolicy:
+  allowedRoles: [admin]
+validationPolicy:
+  unique:
+    - fields: [name]
+      message: Another entry already uses this name.
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: name, type: text, label: Name, required: true}
+  - {id: color, type: color, label: Colour, helpText: Shown as a dot beside the name.}
+  - {id: position, type: number, label: Order, required: true, default: 100, step: 1}
+  - {id: active, type: boolean, label: Offered, required: true, default: true, helpText: Inactive entries stay on the issues that use them but are no longer offered.}
+  - {id: created_at, type: datetime, label: Created, readonly: true, computed: {kind: now, on: create, format: datetime}}
+  - {id: updated_at, type: datetime, label: Updated, readonly: true, computed: {kind: now, on: always, format: datetime}}

@@ -1,0 +1,29 @@
+table: members
+version: 2
+primaryKey: id
+idPrefix: member
+displayField: display_name
+# Optional issue-tracker profile metadata behind assignee presentation. App
+# membership itself is platform-owned in keeper_app_members; this table never
+# grants or revokes access.
+rowAccess:
+  mode: all
+mutationPolicy:
+  allowedRoles: [admin]
+validationPolicy:
+  unique:
+    - fields: [user_id]
+      message: This Keeper user is already in the directory.
+    - fields: [display_name]
+      message: Another member already uses this name.
+queryPaths:
+  - id: by_user
+    equalityFields: [user_id]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: user_id, type: reference, label: App member, referenceTable: keeper_app_members, required: true}
+  - {id: display_name, type: text, label: Name, required: true}
+  - {id: role_title, type: text, label: Team or role, helpText: "Shown next to the name, for example Frontend or Support."}
+  - {id: active, type: boolean, label: Available for assignment, required: true, default: true, helpText: "Issue-tracker preference only. Clear it to hide this person from new assignee choices without changing their app access or historical assignments."}
+  - {id: created_at, type: datetime, label: Created, readonly: true, computed: {kind: now, on: create, format: datetime}}
+  - {id: updated_at, type: datetime, label: Updated, readonly: true, computed: {kind: now, on: always, format: datetime}}

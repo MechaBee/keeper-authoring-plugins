@@ -1,0 +1,144 @@
+view:
+  id: my_work
+  title: My work
+nav:
+  order: 20
+  icon: user
+  group: {id: work, label: Work, icon: list-todo, order: 10}
+state:
+  state: open
+  active_tab: assigned
+route_state:
+  state: {route: state, mode: sync}
+  active_tab: {route: tab, mode: sync}
+filters:
+  - id: state
+    kind: state_select
+    label: State
+    state_key: state
+    options_source: state_catalog
+    value_field: value
+    label_field: label
+    placeholder: Open and closed
+    clearable: true
+    clear_label: Open and closed
+data_sources:
+  state_catalog:
+    kind: table
+    table: filter_options
+    filter: {group: state}
+    sort: {field: position, direction: asc}
+  members:
+    kind: table
+    table: members
+    sort: {field: display_name, direction: asc}
+  assigned:
+    kind: table
+    table: issues
+    filter:
+      assignee_user_id: {bind: context.userId}
+    where:
+      all:
+        - {field: state, op: equals, value: {bind: state.state}, when_empty: ignore}
+    sort: {field: updated_at, direction: desc}
+    limit: 200
+    refresh_on: [state.state]
+  opened:
+    kind: table
+    table: issues
+    filter:
+      author_user_id: {bind: context.userId}
+    where:
+      all:
+        - {field: state, op: equals, value: {bind: state.state}, when_empty: ignore}
+    sort: {field: updated_at, direction: desc}
+    limit: 200
+    refresh_on: [state.state]
+  # Open work nobody has picked up yet, across every project the reader can see.
+  unassigned:
+    kind: table
+    table: issues
+    filter:
+      assignee_member_id: null
+      state: open
+    sort: {field: created_at, direction: desc}
+    limit: 200
+components:
+  assigned_table:
+    kind: record_table
+    title: Issues assigned to you
+    show_title: false
+    data_source: assigned
+    columns:
+      - {field: ref, label: Issue, width: narrow, hideable: false}
+      - {field: title, label: Title, wrap: true, width: wide, hideable: false}
+      - {field: labels, label: Labels, wrap: true, empty_text: ""}
+      - {field: milestone_id, label: Milestone, empty_text: ""}
+      - {field: updated_at, label: Updated, width: narrow}
+      - {field: state, label: State, width: narrow, hidden: true}
+    sort: {enabled: true, default: {field: updated_at, direction: desc}}
+    column_visibility: {enabled: true}
+    density: compact
+    on_row_click:
+      - type: navigate
+        viewId: issue
+        query:
+          issueId: {bind: record.id}
+    empty_message: Nothing is assigned to you.
+  opened_table:
+    kind: record_table
+    title: Issues you opened
+    show_title: false
+    data_source: opened
+    columns:
+      - {field: ref, label: Issue, width: narrow, hideable: false}
+      - {field: title, label: Title, wrap: true, width: wide, hideable: false}
+      - {field: labels, label: Labels, wrap: true, empty_text: ""}
+      - {field: milestone_id, label: Milestone, empty_text: ""}
+      - {field: updated_at, label: Updated, width: narrow}
+      - {field: state, label: State, width: narrow, hidden: true}
+    sort: {enabled: true, default: {field: updated_at, direction: desc}}
+    column_visibility: {enabled: true}
+    density: compact
+    on_row_click:
+      - type: navigate
+        viewId: issue
+        query:
+          issueId: {bind: record.id}
+    empty_message: You haven't opened any issues with this state.
+  unassigned_table:
+    kind: record_table
+    title: Open issues without an assignee
+    show_title: false
+    data_source: unassigned
+    columns:
+      - {field: ref, label: Issue, width: narrow}
+      - {field: title, label: Title, wrap: true, width: wide}
+      - {field: issue_type, label: Type, width: narrow}
+      - {field: priority, label: Priority, width: narrow, empty_text: ""}
+      - {field: labels, label: Labels, wrap: true, empty_text: ""}
+      - {field: created_at, label: Opened, width: narrow}
+    sort: {enabled: true, default: {field: created_at, direction: desc}}
+    density: compact
+    on_row_click:
+      - type: navigate
+        viewId: issue
+        query:
+          issueId: {bind: record.id}
+    empty_message: Every open issue has an assignee.
+layout:
+  kind: tabs
+  state_key: active_tab
+  tabs:
+    - id: assigned
+      label: Assigned to me
+      icon: user
+      layout: {component: assigned_table}
+    - id: opened
+      label: Opened by me
+      icon: file-text
+      layout: {component: opened_table}
+    - id: unassigned
+      label: Needs an owner
+      icon: users
+      layout: {component: unassigned_table}

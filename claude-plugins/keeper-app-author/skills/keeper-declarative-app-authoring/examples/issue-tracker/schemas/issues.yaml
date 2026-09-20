@@ -1,0 +1,196 @@
+table: issues
+version: 2
+primaryKey: id
+idPrefix: issue
+displayField: title
+referenceLabelTemplate: "${ref} ${title}"
+rowAccess:
+  mode: policy
+  allOf:
+    - kind: resource_grant
+      resourceField: project_id
+      directGrants: {table: project_user_access, resourceField: project_id, principalField: user_id}
+      groupGrants: {table: project_group_access, resourceField: project_id, groupField: group_id}
+      groupMemberships: {table: group_memberships, groupField: group_id, principalField: user_id}
+# Direct edits cover only the fields that are not workflowOnly: title, body,
+# type, priority, parent and the board fields. Every other change goes through a
+# workflow, which records its timeline event in the same transaction.
+# Admins bypass the channels, which is how they delete issues.
+mutationPolicy:
+  allowedRoles: [editor, developer, admin]
+  bypassRoles: [admin]
+  channels:
+    direct:
+      operations: [update]
+    workflow:
+      operations: [create, update]
+      workflowIds:
+        - open_issue
+        - close_issue
+        - reopen_issue
+        - add_comment
+        - assign_issue
+        - set_labels
+        - set_milestone
+        - lock_conversation
+        - transfer_issue
+validationPolicy:
+  unique:
+    - fields: [project_id, number]
+      message: That issue number was just taken. Open the issue again.
+  checks:
+    - id: parent_in_same_project
+      operations: [create, update]
+      message: A parent issue must be a different issue in the same project.
+      input:
+        candidate: {kind: candidate}
+        parent: {kind: related_record, relationField: parent_issue_id}
+      code: |
+        const issue = input.candidate;
+        if (!issue.parent_issue_id) return true;
+        const parent = input.parent;
+        return Boolean(parent && parent.id !== issue.id && parent.project_id === issue.project_id);
+    - id: duplicate_in_same_project
+      operations: [create, update]
+      message: A duplicate must point to a different issue in the same project.
+      input:
+        candidate: {kind: candidate}
+        original: {kind: related_record, relationField: duplicate_of_id}
+      code: |
+        const issue = input.candidate;
+        if (!issue.duplicate_of_id) return true;
+        const original = input.original;
+        return Boolean(original && original.id !== issue.id && original.project_id === issue.project_id);
+    - id: milestone_in_same_project
+      operations: [create, update]
+      message: The milestone belongs to a different project.
+      input:
+        candidate: {kind: candidate}
+        milestone: {kind: related_record, relationField: milestone_id}
+      code: |
+        const issue = input.candidate;
+        if (!issue.milestone_id) return true;
+        return Boolean(input.milestone && input.milestone.project_id === issue.project_id);
+    - id: state_reason_matches_state
+      operations: [create, update]
+      message: Closed issues need a close reason, and open issues can't have one.
+      input:
+        candidate: {kind: candidate}
+      code: |
+        const issue = input.candidate;
+        if (issue.state === "open") return !issue.state_reason && !issue.duplicate_of_id;
+        if (!issue.state_reason) return false;
+        return issue.state_reason === "duplicate" ? Boolean(issue.duplicate_of_id) : !issue.duplicate_of_id;
+queryPaths:
+  - id: by_project_state_updated
+    equalityFields: [project_id, state]
+    orderFields: [updated_at]
+  - id: by_assignee_state_updated
+    equalityFields: [assignee_user_id, state]
+    orderFields: [updated_at]
+  - id: by_author_updated
+    equalityFields: [author_user_id]
+    orderFields: [updated_at]
+  - id: by_parent_number
+    equalityFields: [parent_issue_id]
+    orderFields: [number]
+  - id: by_project_position
+    equalityFields: [project_id]
+    orderFields: [position]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: project_id, type: reference, label: Project, referenceTable: projects, required: true, workflowOnly: true}
+  - {id: number, type: number, label: Number, required: true, min: 1, step: 1, workflowOnly: true}
+  - {id: ref, type: text, label: Issue, required: true, workflowOnly: true}
+  - {id: title, type: text, label: Title, required: true}
+  - {id: body, type: textarea, label: Description, contentFormat: markdown}
+  - id: issue_type
+    type: reference
+    label: Type
+    referenceTable: issue_types
+    reference_where: {active: true}
+    required: true
+    default: task
+  - id: priority
+    type: reference
+    label: Priority
+    referenceTable: priorities
+    reference_where: {active: true}
+    input: {placeholder: No priority}
+  - id: state
+    type: select
+    label: State
+    required: true
+    workflowOnly: true
+    options:
+      - {value: open, label: Open}
+      - {value: closed, label: Closed}
+  - id: state_reason
+    type: select
+    label: Close reason
+    workflowOnly: true
+    options:
+      - {value: completed, label: Completed}
+      - {value: not_planned, label: Not planned}
+      - {value: duplicate, label: Duplicate}
+  - {id: duplicate_of_id, type: reference, label: Duplicate of, referenceTable: issues, workflowOnly: true}
+  - {id: author_user_id, type: reference, label: Opened by, referenceTable: keeper_principals, required: true, workflowOnly: true}
+  - {id: assignee_member_id, type: reference, label: Assignee, referenceTable: members, workflowOnly: true}
+  - {id: assignee_user_id, type: reference, label: Assignee account, referenceTable: keeper_principals, workflowOnly: true}
+  - id: labels
+    type: reference
+    label: Labels
+    referenceTable: labels
+    reference_where: {active: true}
+    multiple: true
+    workflowOnly: true
+  - {id: milestone_id, type: reference, label: Milestone, referenceTable: milestones, workflowOnly: true}
+  - id: parent_issue_id
+    type: reference
+    label: Parent issue
+    referenceTable: issues
+    input: {variant: search, placeholder: No parent}
+    reference_filters:
+      - {record_field: project_id, value_field: project_id, when_empty: none}
+  - id: board_status
+    type: select
+    label: Board column
+    required: true
+    default: backlog
+    options:
+      - {value: backlog, label: Backlog}
+      - {value: ready, label: Ready}
+      - {value: in_progress, label: In progress}
+      - {value: in_review, label: In review}
+      - {value: done, label: Done}
+  - {id: position, type: number, label: Board position}
+  - {id: board_hidden, type: boolean, label: Hidden from board, required: true, default: false}
+  - {id: locked, type: boolean, label: Conversation locked, workflowOnly: true}
+  - {id: comment_count, type: number, label: Comments, min: 0, step: 1, workflowOnly: true}
+  - {id: closed_at, type: datetime, label: Closed, workflowOnly: true}
+  - {id: closed_by_user_id, type: reference, label: Closed by, referenceTable: keeper_principals, workflowOnly: true}
+  - {id: created_at, type: datetime, label: Opened, readonly: true, computed: {kind: now, on: create, format: datetime}}
+  - {id: updated_at, type: datetime, label: Updated, readonly: true, computed: {kind: now, on: always, format: datetime}}
+relations:
+  # Vocabulary rows cannot be deleted while an issue still carries them.
+  - field: labels
+    references: {table: labels, field: id}
+    onDelete: block
+  - field: issue_type
+    references: {table: issue_types, field: id}
+    onDelete: block
+  - field: priority
+    references: {table: priorities, field: id}
+    onDelete: block
+  - field: project_id
+    references: {table: projects, field: id}
+    onDelete: block
+  - field: parent_issue_id
+    references: {table: issues, field: id}
+    onDelete: block
+  - field: duplicate_of_id
+    references: {table: issues, field: id}
+    onDelete: block
+  - field: milestone_id
+    references: {table: milestones, field: id}
+    onDelete: block

@@ -1,0 +1,30 @@
+table: my_report_entries
+version: 2
+primaryKey: id
+idPrefix: my_report_entry
+displayField: work_date
+rowAccess:
+  mode: policy
+  allOf:
+    - kind: resource_grant
+      resourceField: project_id
+      directGrants: {table: project_user_access, resourceField: project_id, principalField: user_id}
+      groupGrants: {table: project_group_access, resourceField: project_id, groupField: group_id}
+      groupMemberships: {table: group_memberships, groupField: group_id, principalField: user_id}
+    - kind: owner
+      ownerField: owner_user_id
+      adminCreateAssignment: resolved_principal
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: owner_user_id, type: reference, label: Owner, referenceTable: keeper_principals, required: true, readonly: true}
+  - {id: client_id, type: reference, label: Client, referenceTable: clients, required: true, readonly: true}
+  - {id: client_name, type: text, label: Client, required: true, readonly: true}
+  - {id: work_date, type: date, label: Work date, required: true, readonly: true}
+  - {id: project_id, type: reference, label: Project, referenceTable: projects, required: true, readonly: true}
+  - {id: project_name, type: text, label: Project, required: true, readonly: true}
+  - {id: billable, type: boolean, label: Billable, required: true, readonly: true}
+  - {id: duration_minutes, type: number, label: Time spent, required: true, readonly: true, min: 15, step: 15, unit: min}
+  - {id: task_id, type: reference, label: Task, referenceTable: tasks, readonly: true}
+  - {id: description, type: textarea, label: Description, readonly: true, contentFormat: plain_text}
+  - {id: started_at, type: datetime, label: Start, readonly: true}
+  - {id: ended_at, type: datetime, label: End, readonly: true}

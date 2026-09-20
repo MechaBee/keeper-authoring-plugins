@@ -1,0 +1,112 @@
+id: transfer_issue
+title: Transfer
+appearance: secondary
+allowed_roles: [editor, developer, admin]
+actor_required: true
+success_message: Issue transferred.
+invalidate: "*"
+input_fields:
+  - {id: issue_id, type: reference, label: Issue, referenceTable: issues, required: true, readonly: true}
+  - {id: target_project_id, type: reference, label: Move to project, referenceTable: projects, required: true, reference_where: {archived: false}}
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: input.issue_id}
+  - id: target
+    kind: get_record
+    table: projects
+    record_id: {bind: input.target_project_id}
+  - id: children
+    kind: query_records
+    table: issues
+    filter:
+      parent_issue_id: {bind: input.issue_id}
+    limit: 1
+  - id: links
+    kind: query_records
+    table: issue_links
+    filter:
+      source_issue_id: {bind: input.issue_id}
+    limit: 1
+  - id: duplicates
+    kind: query_records
+    table: issues
+    filter:
+      duplicate_of_id: {bind: input.issue_id}
+    limit: 1
+  - id: prepare
+    kind: script
+    label: Check the move
+    input:
+      issue: {bind: step.issue, fallback: null}
+      target: {bind: step.target, fallback: null}
+      children: {bind: step.children, fallback: null}
+      links: {bind: step.links, fallback: null}
+      duplicates: {bind: step.duplicates, fallback: null}
+      actor: {bind: system.actorUserId}
+    code: |
+      const issue = input.issue;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      const target = input.target;
+      if (!target) helpers.inputError("target_project_id", "Choose a project you have access to.");
+      if (target.archived === true) helpers.inputError("target_project_id", "That project is archived.");
+      if (target.id === issue.project_id) helpers.inputError("target_project_id", "The issue is already in this project.");
+      // Relationships only hold within one project, so the issue has to stand
+      // alone before it can move.
+      if (Array.isArray(input.children) && input.children.length > 0) {
+        helpers.actionError("Move or detach this issue's sub-issues first.");
+      }
+      if (Array.isArray(input.links) && input.links.length > 0) {
+        helpers.actionError("Remove this issue's links first.");
+      }
+      if (Array.isArray(input.duplicates) && input.duplicates.length > 0) {
+        helpers.actionError("Other issues are closed as duplicates of this one, so it has to stay in this project.");
+      }
+      if (issue.state_reason === "duplicate") {
+        helpers.actionError("Reopen this duplicate, or close it another way, before moving it.");
+      }
+
+      const number = Number.isInteger(target.next_number) && target.next_number > 0 ? target.next_number : 1;
+      const ref = `${target.key}#${number}`;
+      return {
+        project_values: {next_number: number + 1},
+        issue_values: {
+          project_id: target.id,
+          number,
+          ref,
+          milestone_id: null,
+          parent_issue_id: null,
+          position: number * 1000,
+        },
+        event_values: {
+          issue_id: issue.id,
+          kind: "transferred",
+          summary: `moved this from ${issue.ref} to ${ref}`,
+          actor_user_id: input.actor,
+        },
+        preview: {
+          title: `${issue.ref} ${issue.title}`,
+          items: [
+            {label: "New reference", value: ref},
+            {label: "Milestone", value: issue.milestone_id ? "Removed, milestones belong to one project" : "None"},
+            {label: "Parent issue", value: issue.parent_issue_id ? "Removed" : "None"},
+          ],
+        },
+      };
+  - id: bump_counter
+    kind: update_record
+    table: projects
+    record_id: {bind: input.target_project_id}
+    values_from: {bind: step.prepare.project_values}
+  - id: update_issue
+    kind: update_record
+    table: issues
+    record_id: {bind: input.issue_id}
+    values_from: {bind: step.prepare.issue_values}
+  - id: record_event
+    kind: create_record
+    table: issue_activity
+    values_from: {bind: step.prepare.event_values}
+preview: {step: prepare, path: preview}
+result: {step: update_issue}

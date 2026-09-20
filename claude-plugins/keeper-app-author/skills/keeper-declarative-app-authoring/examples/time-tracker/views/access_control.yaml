@@ -1,0 +1,269 @@
+view:
+  id: access_control
+  title: Access control
+  description: Maintain optional reporting profiles, groups, memberships, and project grants. App membership is managed from Access & sharing.
+nav:
+  order: 60
+  icon: user
+  group:
+    id: admin
+    label: Administration
+    icon: shield
+access:
+  allowed_roles: [admin]
+
+state:
+  active_section: members
+  selected_member_profile_id: null
+  selected_group_id: null
+  selected_access_project_id: null
+
+data_sources:
+  clients:
+    kind: table
+    table: clients
+    sort: {field: name, direction: asc}
+  projects:
+    kind: table
+    table: projects
+    sort: {field: name, direction: asc}
+  member_profiles:
+    kind: table
+    table: member_profiles
+    sort: {field: alias, direction: asc}
+  selected_member_profile:
+    kind: record
+    table: member_profiles
+    id: {bind: state.selected_member_profile_id}
+    refresh_on: [state.selected_member_profile_id]
+  groups:
+    kind: table
+    table: groups
+    sort: {field: name, direction: asc}
+  selected_group_memberships:
+    kind: table
+    table: group_memberships
+    filter: {group_id: {bind: state.selected_group_id}}
+    refresh_on: [state.selected_group_id]
+  selected_project_user_access:
+    kind: table
+    table: project_user_access
+    filter: {project_id: {bind: state.selected_access_project_id}}
+    refresh_on: [state.selected_access_project_id]
+  selected_project_group_access:
+    kind: table
+    table: project_group_access
+    filter: {project_id: {bind: state.selected_access_project_id}}
+    refresh_on: [state.selected_access_project_id]
+
+  group_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: groups
+      label: Add group
+      fields: name
+      field__active: true
+    on_success:
+      - {type: refresh, data_sources: [groups]}
+      - {type: set_state, key: selected_group_id, value: {bind: action.result.id}}
+  group_membership_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: group_memberships
+      label: Add member
+      fields: user_id
+      field__group_id: {bind: state.selected_group_id}
+    refresh_on: [state.selected_group_id]
+    on_success:
+      - {type: refresh, data_sources: [selected_group_memberships]}
+  project_user_access_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: project_user_access
+      label: Add member grant
+      fields: user_id
+      field__project_id: {bind: state.selected_access_project_id}
+    refresh_on: [state.selected_access_project_id]
+    on_success:
+      - {type: refresh, data_sources: [selected_project_user_access]}
+  project_group_access_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: project_group_access
+      label: Add group grant
+      fields: group_id
+      field__project_id: {bind: state.selected_access_project_id}
+    refresh_on: [state.selected_access_project_id]
+    on_success:
+      - {type: refresh, data_sources: [selected_project_group_access]}
+
+components:
+  new_member_profile:
+    kind: record_form
+    title: New member profile
+    description: Associate an active Keeper app member with an alias and optional full name.
+    table: member_profiles
+    fields: [user_id, alias, full_name]
+    defaults: {active: true}
+    submit_label: Create member profile
+    on_success:
+      - {type: refresh, data_sources: [member_profiles]}
+      - {type: set_state, key: selected_member_profile_id, value: {bind: record.id}}
+
+  member_profiles_workspace:
+    kind: record_collection
+    title: Member profiles
+    description: Maintain reporting aliases, names, and current-filter eligibility independently from platform app membership.
+    table: member_profiles
+    data_source: member_profiles
+    search: {enabled: true, placeholder: Search members, fields: [alias, full_name]}
+    selection:
+      state_key: selected_member_profile_id
+      desktop: split
+      mobile: page
+      reconcile: first_available
+    summary:
+      title_field: alias
+      badge_field: active
+      meta_fields: [full_name, user_id]
+    detail:
+      title: Member profile
+      mode: editable
+      density: compact
+      show_primary_key: false
+      fields:
+        - {field: user_id, mode: display, ui: {variant: reference_chip}}
+        - {field: alias, mode: edit}
+        - {field: full_name, mode: edit}
+        - {field: active, mode: edit}
+      save_label: Save member profile
+
+  groups_workspace:
+    kind: record_collection
+    title: Groups
+    description: Select a group, then manage its membership below. Directory status is informational and does not change access.
+    table: groups
+    data_source: groups
+    search: {enabled: true, placeholder: Search groups, fields: [name]}
+    create: {data_source: group_create_action, label: Add group}
+    selection:
+      state_key: selected_group_id
+      desktop: split
+      mobile: page
+      reconcile: first_available
+    summary:
+      title_field: name
+      badge_field: active
+    detail:
+      title: Group
+      mode: editable
+      density: compact
+      show_primary_key: false
+      fields:
+        - {field: name, mode: edit}
+        - {field: active, mode: edit}
+      save_label: Save group
+
+  group_memberships_workspace:
+    kind: record_collection
+    title: Members of selected group
+    description: Membership grants access wherever this group has a project grant. Remove a member here to revoke that path.
+    table: group_memberships
+    data_source: selected_group_memberships
+    create: {data_source: group_membership_create_action, label: Add member}
+    delete: {enabled: true, label: Remove, confirm: Remove this member from the group?, mode: block}
+    summary:
+      title_field: user_id
+      meta_fields: [created_at]
+    empty_message: Select a group, or add its first member.
+
+  access_projects_table:
+    kind: record_table
+    title: Project access
+    description: Select a project, then maintain its direct and group grants alongside.
+    data_source: projects
+    columns:
+      - {field: name, label: Project}
+      - {field: client_id, label: Client}
+      - {field: billable_by_default, label: Billable}
+      - {field: archived, label: Archived}
+    search: {enabled: true, placeholder: Search projects, fields: [name, client_id]}
+    sort: {enabled: true, default: {field: name, direction: asc}}
+    paging: {page_size: 15}
+    density: compact
+    selection:
+      state_key: selected_access_project_id
+      reconcile: first_available
+    on_row_click:
+      - {type: set_state, key: selected_access_project_id, value: {bind: record.id}}
+
+  project_user_access_workspace:
+    kind: record_collection
+    title: Direct member grants
+    description: Every member listed here can access the selected project directly.
+    table: project_user_access
+    data_source: selected_project_user_access
+    create: {data_source: project_user_access_create_action, label: Add member grant}
+    delete: {enabled: true, label: Revoke, confirm: Revoke this member grant?, mode: block}
+    summary:
+      title_field: user_id
+      meta_fields: [created_at]
+    empty_message: No direct member grants for the selected project.
+
+  project_group_access_workspace:
+    kind: record_collection
+    title: Group grants
+    description: Every member listed in a granted group's memberships can access the selected project.
+    table: project_group_access
+    data_source: selected_project_group_access
+    create: {data_source: project_group_access_create_action, label: Add group grant}
+    delete: {enabled: true, label: Revoke, confirm: Revoke this group grant?, mode: block}
+    summary:
+      title_field: group_id
+      meta_fields: [created_at]
+    empty_message: No group grants for the selected project.
+
+layout:
+  kind: tabs
+  state_key: active_section
+  tabs:
+    - id: members
+      label: Members
+      icon: user
+      layout:
+        kind: stack
+        gap: lg
+        children:
+          - component: new_member_profile
+          - component: member_profiles_workspace
+    - id: groups
+      label: Groups
+      icon: users
+      layout:
+        kind: stack
+        gap: lg
+        children:
+          - component: groups_workspace
+          - component: group_memberships_workspace
+    - id: project_access
+      label: Project access
+      icon: folder-kanban
+      layout:
+        kind: split
+        direction: horizontal
+        sizes: [3, 2]
+        children:
+          - component: access_projects_table
+          - kind: stack
+            gap: lg
+            children:
+              - component: project_user_access_workspace
+              - component: project_group_access_workspace
