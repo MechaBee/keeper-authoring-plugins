@@ -40,6 +40,9 @@ runs, and generated action sets for workflows or complex inputs.
 under `action_dialog.preset_groups` (a non-empty array). Picking an item patches the dialog inputs;
 presets never add fields the action does not already define.
 
+Set `action_dialog.preview: false` to suppress the workflow preview panel for a `workflow_action`
+dialog (it shows by default). `action_dialog` may carry `preview` on its own, without `preset_groups`.
+
 ```yaml
 action_dialog:
   preset_groups:

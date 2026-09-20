@@ -156,11 +156,32 @@ upload from another authorization, or copy a stage between workspaces.
 
 Call `app_upload_abort` for an unused stage. It removes only the stage, not the installed app.
 
+## DynamoDB deployment, conversion, and repair
+
+Read [DynamoDB authoring](dynamodb-authoring.md) after `contract_read` before working on DynamoDB
+storage. For a new DynamoDB app or a definition update to an installed DynamoDB app, use the normal
+validate, diff, prepare, and reviewed apply flow. Apply accepts a durable deployment job rather than
+returning a launch descriptor. Call `app_job_advance` repeatedly for its exact `deploymentJobId`
+while the user wants processing to continue; use `app_job_status` for read-only telemetry and
+request `app_url_get` only after the job is `COMPLETED`.
+
+Do not change an installed JSONL app to `storage.engine: dynamodb` through an ordinary upload. When
+an app admin explicitly asks for JSONL-to-DynamoDB conversion, use the contract-advertised
+conversion prepare/start tools with the current definition and data revisions. Review the returned
+impact before starting the conversion. DynamoDB-to-JSONL conversion is not supported.
+
+Use the contract-advertised deployment-repair tools only when an installed DynamoDB app reports an
+inconsistent deployment and the user asks to repair it. Preparation is diagnostic and evidence
+producing; start is a separately authorized durable job. Never edit storage identities, registry
+records, pointers, or physical records.
+
 ## Open, preview, or test an app
 
-Use the `launch` descriptor returned by a successful `app_upload_apply`, or call `app_url_get` for
-an already installed app. Omit `viewId` to open the manifest's `defaultView`, or pass an exact
-installed view requested by the user.
+For JSONL, use the `launch` descriptor returned by a successful `app_upload_apply`. For DynamoDB,
+first advance the returned deployment job to `COMPLETED` with `app_job_advance`, then call
+`app_url_get`. For an already
+installed operational app, call `app_url_get` directly. Omit `viewId` to open the manifest's
+`defaultView`, or pass an exact installed view requested by the user.
 
 When the user's intent includes opening, previewing, showing, or testing the app:
 

@@ -8,5 +8,5 @@
   <rect width="512" height="512" rx="120" fill="url(#ctile-c)"/>
   <polygon points="256.0,72.0 415.3,164.0 415.3,348.0 256.0,440.0 96.7,348.0 96.7,164.0" fill="#FFFFFF" fill-opacity="0.92"/>
   <polygon points="256.0,84.0 405.0,170.0 405.0,342.0 256.0,428.0 107.0,342.0 107.0,170.0" fill="url(#cgold-c)"/>
-
+  
 </svg>

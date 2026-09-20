@@ -1,0 +1,33 @@
+view:
+  id: home
+  title: Notes
+  description: Create and edit DynamoDB-backed notes.
+nav:
+  order: 10
+
+data_sources:
+  notes:
+    kind: table
+    table: notes
+    sort:
+      field: updated_at
+      direction: desc
+    performance:
+      intent: indexed
+      maxFallbackRecords: 250
+
+components:
+  notes:
+    kind: record_table
+    table: notes
+    data_source: notes
+    title: Notes
+    columns:
+      - field: title
+        label: Title
+      - field: updated_at
+        label: Updated
+        variant: datetime
+
+layout:
+  component: notes

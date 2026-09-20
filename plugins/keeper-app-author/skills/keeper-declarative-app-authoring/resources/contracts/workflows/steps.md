@@ -22,6 +22,11 @@ Scripts receive only declared input and helpers; no ambient network or process A
 declarative record steps. Bulk replace rewrites a table and requires explicit user authorization
 when existing data may be lost.
 
+For expected user-correctable failures, call `helpers.inputError(fieldId, message)` to return a
+field-level validation error, or `helpers.actionError(message)` for an action-level business
+rejection. Do not use these helpers for unexpected program faults; ordinary thrown errors remain
+internal failures.
+
 `query_records.performance` uses the same logical `intent` (`auto`, `indexed`, or `bounded_scan`)
 and optional positive `maxFallbackRecords` bound as a table data source. It does not authorize or
 describe physical DynamoDB indexes. Read [DynamoDB authoring](../../dynamodb-authoring.md) when the

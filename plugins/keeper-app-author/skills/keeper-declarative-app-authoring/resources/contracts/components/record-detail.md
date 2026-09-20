@@ -51,7 +51,10 @@ Use either `fields` or `sections`. A field is a field id or object with `field` 
 - `when.visible`, `when.editable`, and `when.required` dialog conditions.
 - `ui`: `label`, `show_label`, `help_text`, `placeholder`, `empty_text`, `copyable`,
   `width: full|half|third`, `chrome: default|subtle|plain`,
-  `edit_flow: always|click_to_edit`, and a supported `variant`.
+  `edit_flow: always|click_to_edit`, a supported `variant`, and `input`.
+- `ui.input`: `{variant: default|flexible_text, placeholder}`. `flexible_text` on a
+  `date`/`time`/`datetime` field swaps the native picker for a free-text box ("9", "930",
+  "09:30"); on a `datetime` field it edits the time portion and preserves the stored date.
 
 Variants are `text`, `textarea`, `markdown`, `title`, `subtitle`, `badge`, `checkbox`, `select`,
 `multi_select`, `date`, `datetime`, `reference_chip`, `reference_link`, and
@@ -67,6 +70,10 @@ suppresses the component-title eyebrow and collapses header `meta_fields` into a
 line under the body. The default `form` renders labeled sections. Pair `document` with a
 `record_collection` so pin/color/archive/delete come from the derived affordance bar instead of
 detail fields.
+
+An editable surface may carry a `compute` block for reactive/initialization field values (e.g.
+default a date to today, or keep a duration in sync with a start/end range). See
+[bindings/compute.md](../bindings/compute.md).
 
 `actions_source` names provider sources that resolve to action sets. Inline `actions[]` requires
 `id`, `label`, a documented provider action, and optional `confirm` and
