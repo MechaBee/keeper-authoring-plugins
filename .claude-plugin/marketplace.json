@@ -30,6 +30,27 @@
         "mcp",
         "app-authoring"
       ]
+    },
+    {
+      "name": "keeper-workspace-content",
+      "source": "./claude-plugins/keeper-workspace-content",
+      "version": "1.0.0",
+      "description": "Read and safely revise Markdown and other workspace content from Claude Code, with version checks on every write.",
+      "author": {
+        "name": "MechaBee",
+        "email": "info@mechabee.com"
+      },
+      "homepage": "https://mechabee.com",
+      "repository": "https://github.com/MechaBee/keeper-authoring-plugins",
+      "category": "Productivity",
+      "keywords": [
+        "workspace",
+        "markdown",
+        "content",
+        "documents",
+        "collaboration",
+        "mcp"
+      ]
     }
   ]
 }

@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "workspace": {
+      "type": "http",
+      "url": "https://mechabee.com/mcp/workspace",
+      "auth": "oauth",
+      "oauth_resource": "https://mechabee.com/mcp/workspace",
+      "scopes": [
+        "https://mechabee.com/mcp/workspace/read",
+        "https://mechabee.com/mcp/workspace/write"
+      ],
+      "default_tools_approval_mode": "writes",
+      "enabled": true
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "name": "keeper-workspace-content",
+  "version": "1.0.0",
+  "description": "Read and safely revise Markdown and other content in your MechaBee workspaces.",
+  "author": {
+    "name": "MechaBee",
+    "email": "info@mechabee.com",
+    "url": "https://mechabee.com/"
+  },
+  "homepage": "https://mechabee.com",
+  "keywords": [
+    "workspace",
+    "markdown",
+    "content",
+    "mcp"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Keeper Workspace Content",
+    "shortDescription": "Work with workspace content",
+    "longDescription": "Discover permitted workspace folders, read and revise text with version checks, and transfer assets using short-lived capabilities.",
+    "developerName": "MechaBee",
+    "category": "Productivity",
+    "capabilities": [
+      "Browse shared folders",
+      "Read and revise Markdown",
+      "Transfer assets"
+    ],
+    "websiteURL": "https://mechabee.com",
+    "privacyPolicyURL": "https://mechabee.com/privacy",
+    "termsOfServiceURL": "https://mechabee.com/terms",
+    "defaultPrompt": [
+      "Find my workspace notes and help me revise a draft."
+    ],
+    "brandColor": "#1483B5",
+    "composerIcon": "./assets/composer-icon.svg",
+    "logo": "./assets/logo.svg",
+    "logoDark": "./assets/logo-dark.svg"
+  },
+  "repository": "https://github.com/MechaBee/keeper-authoring-plugins"
+}

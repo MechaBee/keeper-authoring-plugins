@@ -1,0 +1,21 @@
+{
+  "name": "keeper-workspace-content",
+  "displayName": "Keeper Workspace Content",
+  "version": "1.0.0",
+  "description": "Read and safely revise Markdown and other workspace content from Claude Code, with version checks on every write.",
+  "author": {
+    "name": "MechaBee",
+    "email": "info@mechabee.com",
+    "url": "https://mechabee.com/"
+  },
+  "homepage": "https://mechabee.com",
+  "keywords": [
+    "workspace",
+    "markdown",
+    "content",
+    "documents",
+    "collaboration",
+    "mcp"
+  ],
+  "repository": "https://github.com/MechaBee/keeper-authoring-plugins"
+}
