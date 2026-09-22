@@ -33,6 +33,13 @@ file. Its rows contain:
 - `membership_source`: `explicit`, `workspace_owner`, `workspace_manager`, or `app_default`;
 - `email`: visible only to app access managers.
 
+Treat that email visibility as a platform privacy boundary. A requirement that every team member
+see every principal email conflicts with the runtime directory unless those viewers are access
+managers. Surface the conflict and obtain an explicit product or policy decision; do not copy the
+restricted value into an all-readable app table merely to bypass the boundary. When an app needs
+business contact details that are not the platform principal email, model them as separately owned
+profile data with an explicit access policy and provenance.
+
 Only active, resolved principals appear. A pending email invitation is intentionally absent until
 it resolves to a stable principal, so it cannot be stored prematurely as an assignee or grant.
 References to former members remain valid after access is removed; membership controls admission,

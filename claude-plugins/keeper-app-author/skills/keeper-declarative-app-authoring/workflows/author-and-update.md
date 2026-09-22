@@ -32,6 +32,12 @@ retain the existing storage engine, unaffected topology, and policies. Read the 
 [syntax references](../reference/index.md) needed by the change. Do not infer keys from related
 types or silently ignored fields.
 
+Turn the user's brief into a compact acceptance checklist before choosing the topology. Cover each
+required field, relationship, role-visible attribute, lifecycle transition, comment or activity
+surface, and primary create/edit path. Mark requirements that depend on platform-owned identity or
+access policy so they are not accidentally implemented as ordinary app data. Use the checklist to
+review the candidate and later to select smoke tests; do not invent a fixed screen or test count.
+
 An [example](../examples/index.md) is optional. When using a whole app as a starting point, inspect
 its descriptors and dependencies. For one interaction, read its relevant composition only. Adapt
 domain fields and screen count to the brief while preserving runtime binding and action syntax.

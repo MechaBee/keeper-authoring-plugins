@@ -20,6 +20,12 @@ Reuse the established target during follow-up operations. Recheck discovery if t
 the target or the server reports it is no longer accessible. The server pins the domain; do not
 ask for or pass one.
 
+Successful reads prove neither write scope nor that a newly granted scope reached the current MCP
+session. `app_upload_prepare` is the earliest write-scope check in the upload flow. If the user
+reauthenticates and preparation still reports the old authorization, reconnect the Keeper server or
+start a fresh task before diagnosing the app definition. Do not repeatedly rebuild an unchanged
+candidate to work around a stale OAuth session.
+
 ## Read only what the request needs
 
 | Request | Tool and scope |
@@ -45,6 +51,10 @@ Return `launch.url` as a clickable **Open deployed app** link. Its identities ar
 workspace, app, and view; do not replace an agent ID with a product ID or reconstruct the URL.
 When asked to open, preview, show, or test, open the returned URL in the in-app browser when
 available and verify the requested view loads. For a URL-only request, return the link.
+
+Fresh deployments can briefly show a workspace-unavailable, bootstrap, or empty state while the
+runtime becomes ready. Allow a bounded wait and refresh the same tab before declaring failure, then
+confirm the latest visible state rather than relying on the first load.
 
 If the browser reaches MechaBee sign-in, keep the tab open and ask the user to sign in there.
 Continue in the same tab after sign-in. MCP authentication does not sign the browser in, and no

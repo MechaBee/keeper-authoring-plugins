@@ -155,5 +155,12 @@ checklist progress, detail actions, related creation, or editable detail. Search
 filtering intentionally disable exact drag ordering until the constrained view is cleared;
 accessible menu moves remain available.
 
+Inline board creation is intentionally a quick-create path: it supplies only `title_field`, the
+grouping value, and rank, and it does not open a generated form for the action's other writable
+fields. If the target table has other required fields without defaults or presets, do not expose
+`record_board.create`. Put the same create action behind a top-level `record_create_action`, a
+dedicated `record_form`, or another full input surface that collects every required value. Validate
+and smoke-test the chosen path; a syntactically valid board can still fail at record creation.
+
 For a complete, data-free app that composes these capabilities, consult the relevant descriptors in the
 [`board-example`](../../../examples/board-example/README.md).

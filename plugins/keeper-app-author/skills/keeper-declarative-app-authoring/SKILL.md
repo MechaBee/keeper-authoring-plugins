@@ -18,6 +18,7 @@ Read the workflow matching the user's request. Read additional material only whe
 | Find, inspect, download, check, or open an app | [Inspect and open](workflows/inspect-and-open.md) |
 | Create an app or change its definitions | [Author and update](workflows/author-and-update.md) |
 | Apply a prepared definition change | [Apply](workflows/apply.md) |
+| Test deployed behavior or verify a brief | [Verify and test](workflows/verify-and-test.md) |
 | Migrate data, convert storage, or repair deployment | [Migrate and repair](workflows/migrate-and-repair.md) |
 | Permanently delete an app or resume its deletion | [Delete an app](workflows/delete.md) |
 | Inspect, advance, retry, or cancel an existing job | [Job control](workflows/jobs.md) |
@@ -52,4 +53,6 @@ removal is intended; guide authoring advice is in [user guides](design/user-guid
 Use [examples](examples/index.md) when they clarify a composition. There is no required example
 count or fixed screen count. Preserve runtime binding roots and valid action envelopes while
 adapting the domain and topology. Report the result, validation, material data impact, and any
-remaining blocker. When deployment completes, provide the returned launch link.
+remaining blocker. When deployment completes, provide the returned launch link. If the request
+includes testing or end-to-end delivery, follow [Verify and test](workflows/verify-and-test.md);
+schema validation alone does not prove that the primary UI actions work.

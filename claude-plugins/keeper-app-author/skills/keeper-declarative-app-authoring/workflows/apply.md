@@ -17,7 +17,8 @@ Storage conversion and deployment repair use [Migrate and repair](migrate-and-re
    installed guide, carry the guide forward and rebuild the candidate.
 4. Call `app_upload_prepare` when the user requested a workspace change. Preparation validates and
    stages the candidate without changing the installed app. Retain `uploadId`, `baseRevision`,
-   `candidateRevision`, `expiresAt`, and the exact modified/deleted path lists.
+   `candidateRevision`, `expiresAt`, and the exact modified/deleted path lists. Keep a recoverable
+   local candidate or exact source-file inventory until deployment and verification complete.
 
 ## Review and apply
 
@@ -44,6 +45,16 @@ Never substitute a current revision into an old stage. Definition-only stages to
 record activity because they pin the definition revision; data-replacement stages pin the full
 revision. Call `app_upload_abort` for an unused stage.
 
+After apply, compare the returned revision with the staged `candidateRevision` (`definitionRevision`
+for a definition-only stage, `revision` for a data-replacement stage), then confirm it with
+`app_get`. A DynamoDB apply returns a deployment job instead; compare once that job completes. If
+apply rejects, rolls back, or reports a revision mismatch despite an
+unchanged stage, preserve the candidate and classify every path before retrying: app and descriptor
+YAML are definitions, `docs/` files are installed content, and `data/*.jsonl` is live data. Do not
+drop guides, change storage, or replace live data merely to make the revisions agree. Treat a
+server-side revision that cannot be explained by the documented scope as a runtime inconsistency
+and report the exact revisions and path inventory.
+
 ## Complete deployment
 
 - **JSONL:** successful apply returns a launch descriptor. Use [Inspect and open](inspect-and-open.md)
@@ -51,6 +62,11 @@ revision. Call `app_upload_abort` for an unused stage.
 - **DynamoDB:** apply accepts a durable job for the exact compiled target. Use the returned
   `deploymentJobId` as `jobId` in [Job control](jobs.md): `app_job_advance` progresses the job,
   while `app_job_status` only reads telemetry. Call `app_url_get` only after `COMPLETED`.
+
+For an end-to-end delivery or explicit test request, continue with [Verify and test](verify-and-test.md)
+after the installed revision is operational. At minimum, run an installed health check and exercise
+the primary create or update path that the change introduced. A successful apply is not behavioral
+verification.
 
 Report job diagnostics on failure; do not assume partial work has published. The job-control
 workflow owns `app_job_retry` and `app_job_cancel` handling. A changed candidate needs a new
