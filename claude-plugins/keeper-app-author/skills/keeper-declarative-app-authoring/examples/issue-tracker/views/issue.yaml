@@ -132,6 +132,30 @@ data_sources:
     action_dialog: {preview: false, hidden_inputs: [issue_id, project_id]}
     depends_on: [issue]
     refresh_on: [state.issue_id]
+  type_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: set_issue_type
+      label: Change type
+      input__issue_id: {bind: state.issue_id}
+      input__issue_type: {bind: source.issue.record.issue_type, fallback: null}
+    action_dialog: {preview: false, hidden_inputs: [issue_id]}
+    depends_on: [issue]
+    refresh_on: [state.issue_id]
+  board_column_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: move_issue_on_board
+      label: Move on board
+      input__issue_id: {bind: state.issue_id}
+      input__board_status: {bind: source.issue.record.board_status, fallback: null}
+    action_dialog: {preview: false, hidden_inputs: [issue_id]}
+    depends_on: [issue]
+    refresh_on: [state.issue_id]
   subissue_action:
     kind: provider_resource
     provider: workspace
@@ -269,7 +293,7 @@ components:
     save_mode: autosave
     density: compact
     show_primary_key: false
-    actions_source: [assign_action, labels_action, milestone_action]
+    actions_source: [assign_action, labels_action, milestone_action, type_action, board_column_action]
     # Short values pair up whenever the side panel has room for two columns.
     sections:
       - id: properties
@@ -277,9 +301,9 @@ components:
         fields:
           - {field: assignee_member_id, mode: display, ui: {variant: reference_chip, empty_text: No one}}
           - {field: labels, mode: display, ui: {empty_text: None}}
-          - {field: issue_type, mode: edit, ui: {edit_flow: click_to_edit}}
+          - {field: issue_type, mode: display, ui: {variant: reference_chip}}
           - {field: priority, mode: edit, ui: {edit_flow: click_to_edit, empty_text: None}}
-          - {field: board_status, mode: edit, ui: {edit_flow: click_to_edit}}
+          - {field: board_status, mode: display, ui: {variant: badge}}
           - {field: milestone_id, mode: display, ui: {variant: reference_chip, empty_text: None}}
           - field: parent_issue_id
             mode: edit

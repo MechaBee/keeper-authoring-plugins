@@ -64,6 +64,14 @@ data_sources:
     refresh_on: [state.project_id]
     on_success:
       - {type: set_state, key: selected_issue_id, value: {bind: action.result.id}}
+  board_move_activity:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: record_board_move
+      label: Record board move
+    action_dialog: {preview: false}
 components:
   issue_board:
     kind: record_board
@@ -106,6 +114,12 @@ components:
       step: 1000
     archiving:
       field: board_hidden
+    activity:
+      data_source: board_move_activity
+      record_field: issue_id
+      body_field: message
+      from_field: from_status
+      to_field: to_status
     selection:
       state_key: selected_issue_id
       mobile: page

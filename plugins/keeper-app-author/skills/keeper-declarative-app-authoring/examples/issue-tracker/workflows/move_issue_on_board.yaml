@@ -1,0 +1,58 @@
+id: move_issue_on_board
+title: Move on board
+appearance: secondary
+allowed_roles: [editor, developer, admin]
+actor_required: true
+success_message: Board column updated.
+invalidate: "*"
+input_fields:
+  - {id: issue_id, type: reference, label: Issue, referenceTable: issues, required: true, readonly: true}
+  - id: board_status
+    type: select
+    label: Board column
+    required: true
+    helpText: Moving to Done does not close the issue.
+    options:
+      - {value: backlog, label: Backlog}
+      - {value: ready, label: Ready}
+      - {value: in_progress, label: In progress}
+      - {value: in_review, label: In review}
+      - {value: done, label: Done}
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: input.issue_id}
+  - id: prepare
+    kind: script
+    label: Check the board move
+    input:
+      issue: {bind: step.issue, fallback: null}
+      next_status: {bind: input.board_status}
+      actor: {bind: system.actorUserId}
+    code: |
+      const issue = input.issue;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      const names = {backlog: "Backlog", ready: "Ready", in_progress: "In progress", in_review: "In review", done: "Done"};
+      const next = input.next_status;
+      if (!Object.prototype.hasOwnProperty.call(names, next)) helpers.inputError("board_status", "Choose a board column.");
+      if (issue.board_status === next) helpers.inputError("board_status", "The issue is already in this column.");
+      return {
+        issue_values: {board_status: next},
+        event_values: {
+          issue_id: issue.id,
+          kind: "board_moved",
+          summary: "moved this on the board from " + (names[issue.board_status] || issue.board_status) + " to " + names[next],
+          actor_user_id: input.actor,
+        },
+      };
+  - id: update_issue
+    kind: update_record
+    table: issues
+    record_id: {bind: input.issue_id}
+    values_from: {bind: step.prepare.issue_values}
+  - id: record_event
+    kind: create_record
+    table: issue_activity
+    values_from: {bind: step.prepare.event_values}
+result: {step: update_issue}

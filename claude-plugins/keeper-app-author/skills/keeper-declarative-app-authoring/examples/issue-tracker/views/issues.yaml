@@ -361,17 +361,17 @@ components:
     columns:
       - {field: ref, label: Issue, sticky: true, hideable: false, width: narrow}
       - {field: title, label: Title, wrap: true, width: wide, hideable: false}
-      - {field: labels, label: Labels, wrap: true, empty_text: ""}
+      - {field: issue_type, label: Type, width: narrow}
       - {field: assignee_member_id, label: Assignee, empty_text: ""}
       - {field: milestone_id, label: Milestone, empty_text: ""}
-      - {field: status, label: Resolution, width: narrow, empty_text: ""}
-      - {field: comment_count, label: Comments, align: right, width: narrow, empty_text: ""}
+      - {field: author_user_id, label: Created by, width: auto, wrap: true}
       - {field: updated_at, label: Updated, width: narrow}
-      - {field: issue_type, label: Type, width: narrow, hidden: true}
+      - {field: labels, label: Labels, wrap: true, empty_text: "", hidden: true}
+      - {field: status, label: Resolution, width: narrow, empty_text: "", hidden: true}
+      - {field: comment_count, label: Comments, align: right, width: narrow, empty_text: "", hidden: true}
       - {field: priority, label: Priority, width: narrow, empty_text: "", hidden: true}
       - {field: priority_rank, label: Priority order, width: narrow, empty_text: "", hidden: true}
       - {field: sub_progress, label: Sub-issues, width: narrow, empty_text: "", hidden: true}
-      - {field: author_user_id, label: Opened by, hidden: true}
       - {field: created_at, label: Opened, width: narrow, hidden: true}
     sort: {enabled: true, default: {field: updated_at, direction: desc}}
     paging: {page_size: 50}

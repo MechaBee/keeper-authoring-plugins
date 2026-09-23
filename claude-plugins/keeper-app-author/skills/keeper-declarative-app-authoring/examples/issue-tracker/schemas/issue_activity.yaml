@@ -30,6 +30,9 @@ mutationPolicy:
         - assign_issue
         - set_labels
         - set_milestone
+        - set_issue_type
+        - move_issue_on_board
+        - record_board_move
         - lock_conversation
         - transfer_issue
         - link_issues
@@ -53,6 +56,8 @@ fields:
       - {value: assigned, label: Assignment}
       - {value: labeled, label: Labels}
       - {value: milestoned, label: Milestone}
+      - {value: type_changed, label: Type changed}
+      - {value: board_moved, label: Board move}
       - {value: locked, label: Locked}
       - {value: unlocked, label: Unlocked}
       - {value: transferred, label: Transferred}

@@ -1,0 +1,46 @@
+id: set_issue_type
+title: Change type
+appearance: secondary
+allowed_roles: [editor, developer, admin]
+actor_required: true
+success_message: Issue type updated.
+invalidate: "*"
+input_fields:
+  - {id: issue_id, type: reference, label: Issue, referenceTable: issues, required: true, readonly: true}
+  - {id: issue_type, type: reference, label: Type, referenceTable: issue_types, reference_where: {active: true}, required: true}
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: input.issue_id}
+  - id: next_type
+    kind: get_record
+    table: issue_types
+    record_id: {bind: input.issue_type}
+  - id: prepare
+    kind: script
+    label: Check the issue type
+    input:
+      issue: {bind: step.issue, fallback: null}
+      next_type: {bind: step.next_type, fallback: null}
+      actor: {bind: system.actorUserId}
+    code: |
+      const issue = input.issue;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      const next = input.next_type;
+      if (!next || next.active === false) helpers.inputError("issue_type", "Choose an offered type.");
+      if (issue.issue_type === next.id) helpers.inputError("issue_type", "The issue already has this type.");
+      return {
+        issue_values: {issue_type: next.id},
+        event_values: {issue_id: issue.id, kind: "type_changed", summary: "changed type to " + next.name, actor_user_id: input.actor},
+      };
+  - id: update_issue
+    kind: update_record
+    table: issues
+    record_id: {bind: input.issue_id}
+    values_from: {bind: step.prepare.issue_values}
+  - id: record_event
+    kind: create_record
+    table: issue_activity
+    values_from: {bind: step.prepare.event_values}
+result: {step: update_issue}

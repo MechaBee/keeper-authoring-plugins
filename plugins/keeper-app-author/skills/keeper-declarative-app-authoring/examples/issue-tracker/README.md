@@ -8,16 +8,17 @@ It runs on JSONL storage; the manifest omits `storage`.
 
 | View | For | Built from |
 | --- | --- | --- |
-| [Issues](views/issues.yaml) (default) | Everyone | `record_table` over a projection; view-bar filters with live Open/Closed counts; search; CSV export |
-| [Issue](views/issue.yaml) (hidden, `?issueId=`) | Everyone | Editable `record_detail`; one `comment_thread` timeline of comments and events with an inline composer; two-column details panel; compact sub-issue and link lists; state-aware Close/Reopen with rarer actions in the overflow menu |
-| [Board](views/board.yaml) | Everyone | `record_board` per project: saved rank, WIP limit, facets, side-pane detail with activity |
+| [Issues](views/issues.yaml) (default) | Everyone | `record_table` over a projection; Open/Closed filters, search and CSV export; Type and wrapping Created by columns by default |
+| [Issue](views/issue.yaml) (hidden, `?issueId=`) | Everyone | Editable `record_detail`; comment and event timeline; two-column details with Change type and Move on board dialogs; sub-issue and link lists; state-aware Close/Reopen |
+| [Board](views/board.yaml) | Everyone | `record_board` per project: saved rank, WIP limit, facets, side-pane detail, and movement activity |
 | [My work](views/my_work.yaml) | Everyone | Tabs: assigned to me, opened by me, open issues nobody owns |
 | [Milestones](views/milestones.yaml) | Everyone | Progress from two `aggregate_table` counts joined by a projection |
 | [Setup access](views/setup_access.yaml) and the other `setup_*` views | Admins | Projects; labels, types and priorities; issue templates; optional assignment profiles, groups and project grants |
 
-Twelve workflows own every change that should leave a trace: `open_issue`, `close_issue`,
-`reopen_issue`, `add_comment`, `assign_issue`, `set_labels`, `set_milestone`, `link_issues`,
-`unlink_issues`, `transfer_issue`, `lock_conversation` (admins) and `delete_issue` (admins).
+Fifteen workflows own every change that should leave a trace: `open_issue`, `close_issue`,
+`reopen_issue`, `add_comment`, `assign_issue`, `set_labels`, `set_milestone`, `set_issue_type`,
+`move_issue_on_board`, `record_board_move`, `link_issues`, `unlink_issues`, `transfer_issue`,
+`lock_conversation` (admins) and `delete_issue` (admins).
 End-user help is in `docs/`.
 
 Read the selected [component references](../../reference/views/components/index.md),
@@ -43,6 +44,7 @@ requirements for other apps.
 - **Workflow-only fields.** State, reason, author, assignee, labels, milestone, number and
   counters are `workflowOnly`. Direct edits (inline title/body, details panel, board moves) can
   only touch title, body, type, priority, parent and board fields; anything else is ignored.
+  The issue page uses workflows for type and board-column changes so they leave timeline events.
 - **An enriched member profile.** Platform membership comes from `keeper_app_members`. The
   admin-maintained [members](schemas/members.yaml) table adds issue-tracker display and assignment
   settings without granting access. It supplies eligible assignee choices and presentation. Issues
@@ -64,9 +66,9 @@ requirements for other apps.
   workflow with a hidden `mode` preset. Every issue-page dialog hides the preset issue id
   (`action_dialog.hidden_inputs`), so dialogs ask only for what the reader decides.
 - **Quiet list.** `issue_rows.status` is the resolution of a closed issue and empty while open, and
-  a zero comment count is projected as empty, so the default Open list carries no repeated values.
-  The label filter is a real `includes` predicate on the issues source rather than a projection
-  script.
+  a zero comment count is projected as empty. The default list shows Type and Created by; long
+  creator names wrap, while Labels, Resolution and Comments remain optional columns. The label
+  filter is a real `includes` predicate on the issues source rather than a projection script.
 - **`invalidate: "*"` everywhere.** Workflows run from several views whose source keys differ,
   and `invalidate` names view source keys, not tables.
 

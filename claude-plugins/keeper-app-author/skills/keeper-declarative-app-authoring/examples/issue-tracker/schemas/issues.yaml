@@ -32,6 +32,8 @@ mutationPolicy:
         - assign_issue
         - set_labels
         - set_milestone
+        - set_issue_type
+        - move_issue_on_board
         - lock_conversation
         - transfer_issue
 validationPolicy:

@@ -1,8 +1,9 @@
 # Working on an issue
 
-Most changes happen in the **Details** panel on the right of the issue page. Select **Type**,
-**Priority**, **Board column** or **Parent** to change them in place. **Assign**, **Labels** and
-**Milestone** open a small dialog, and each of those changes appears in the conversation.
+Most changes happen in the **Details** panel on the right of the issue page. **Assign**, **Labels**,
+**Milestone**, **Change type** and **Move on board** open small dialogs, and each change appears in
+the conversation. Select **Priority** or **Parent** to edit them in place. Moving an issue to
+**Done** does not close it.
 
 ## Assign someone
 
@@ -54,8 +55,8 @@ Remove a link** removes it from both sides.
 **Board** shows one project's issues as cards, in the columns Backlog, Ready, In progress, In
 review and Done.
 
-- Drag a card to move it, or use the card menu. **In progress** shows a work-in-progress limit of
-  five and is highlighted when it holds more.
+- Drag a card to move it, or use the card menu. The move appears in the issue's activity.
+  **In progress** shows a work-in-progress limit of five and is highlighted when it holds more.
 - Select a card to edit its column, type, priority and title beside the board, and to see its
   recent activity. **Open full page** takes you to the issue page.
 - **Archive card** hides a card from the board without changing the issue. Use it to clear old
