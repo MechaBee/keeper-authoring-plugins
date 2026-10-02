@@ -26,6 +26,8 @@ filters:
     value_field: id
     label_field: period_key
     placeholder: All periods
+    clearable: true
+    clear_label: All periods
     on_change:
       - {type: set_state, key: selected_week_id, value: null}
   - id: week
@@ -36,6 +38,10 @@ filters:
     value_field: id
     label_field: week_start
     placeholder: All weeks
+    clearable: true
+    clear_label: All weeks
+    on_change:
+      - {type: set_state, key: selected_period_id, value: null}
 actions:
   - id: add_entry
     kind: action_set
@@ -159,6 +165,8 @@ components:
       - {field: task_id, label: Task, empty_text: No task, hidden: true}
     column_visibility: {enabled: true}
     group_by:
+      - {field: work_date, bucket: month, direction: desc, summary: header}
+      - {field: work_date, bucket: week, direction: desc, summary: header}
       - {field: work_date, direction: desc, summary: footer}
     search: {enabled: true, placeholder: Search descriptions, fields: [description]}
     sort: {enabled: true, default: {field: started_at, direction: asc}}

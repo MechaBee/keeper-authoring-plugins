@@ -139,9 +139,10 @@ sort:
   gets no footer, since its row already is the total, and a table with a single group drops the
   grand total that would only repeat it. Choose one placement: the same figure in both places is
   noise.
-- Each outer group renders as its own island — a framed block with its heading, rows, and totals,
-  set apart from the next — under a single shared column header. Inner levels are sub-headings
-  inside their island. The grand total becomes its own closing island.
+- Parent group headings render as standalone islands, followed by their children without an
+  enclosing frame. Each leaf group keeps its heading, rows, and totals together in its own island
+  under a single shared column header. Parent footer totals and the grand total get separate
+  closing islands. This presentation applies to every grouping field, including calendar buckets.
 - Groups are ordered by their value (a reference by its label); the table `sort` and header clicks
   order rows *within* each group. Search hides groups that no longer match.
 - Groups, like summaries, cover the **loaded** rows. When more rows match than loaded — a cursor is

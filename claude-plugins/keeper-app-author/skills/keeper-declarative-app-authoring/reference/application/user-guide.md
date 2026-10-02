@@ -23,6 +23,10 @@ Rules:
 - Keep each document under 64 KB; the whole app is still capped at 2 MB and 256 files.
 - Declared documents must exist (`KEEPER_APP_DOCS_MISSING`), and a `docs/*.md` file nothing declares
   is unreachable in the app (`KEEPER_APP_DOCS_UNDECLARED`).
+- The folder and `app.docs` are optional. Missing declared documents are errors; empty or
+  undeclared documents are warnings. Status checks verify presence from inventory without loading
+  prose; explicit `app_validate` checks contents too. Its `scope` states whether JSONL records
+  were also checked. Definition-only reads and downloads include guides and `notifications.yaml`.
 - Documents may link to each other by file name (`[Setting up](getting-started.md)`) and within
   themselves by heading anchor (`[the rules](#the-rules)`); the reader resolves both in place. A
   relative link naming no declared document does nothing — write `http(s)` links for anything
@@ -33,6 +37,12 @@ marketplace copy, but they are excluded from the definition revision, so editing
 requires a redeploy and never blocks a DynamoDB app. They are still part of the candidate — a
 `replace` candidate that omits an installed `docs/*.md` deletes it, and the upload will require that deletion
 to be acknowledged like any other destructive path.
+
+`validationRevision` tracks definition contents, notification contents, guide inventory metadata,
+and JSONL filenames independently of deployment. It is null when guide inventory metadata cannot
+support a freshness comparison; consumers must then expire a report at the next status observation.
+Explicit validation bypasses snapshot caches and also returns `verificationRevision`, which hashes
+the exact checked contents, paths, coverage, validator version and diagnostic limit.
 
 Everyone who can open the app can read the guide, including share-link recipients. Keep internal
 detail out of it.
