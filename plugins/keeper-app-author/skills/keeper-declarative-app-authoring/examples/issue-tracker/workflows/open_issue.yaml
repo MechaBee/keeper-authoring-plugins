@@ -9,7 +9,7 @@ input_fields:
   - {id: project_id, type: reference, label: Project, referenceTable: projects, required: true, reference_where: {archived: false}}
   - {id: template_id, type: reference, label: Template, referenceTable: issue_templates, reference_where: {active: true}, input: {placeholder: Blank issue}}
   - {id: title, type: text, label: Title, required: true}
-  - {id: body, type: textarea, label: Description, contentFormat: markdown}
+  - {id: body, type: textarea, label: Description, contentFormat: markdown, attachments: {sourceTable: issues}}
   - {id: issue_type, type: reference, label: Type, referenceTable: issue_types, reference_where: {active: true}, required: true}
   - {id: priority, type: reference, label: Priority, referenceTable: priorities, reference_where: {active: true}, input: {placeholder: No priority}}
   - {id: labels, type: reference, label: Labels, referenceTable: labels, reference_where: {active: true}, multiple: true}

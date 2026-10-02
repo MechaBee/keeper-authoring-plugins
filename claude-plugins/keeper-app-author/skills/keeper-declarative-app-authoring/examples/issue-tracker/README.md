@@ -39,6 +39,9 @@ requirements for other apps.
 - **No "opened" event.** Row policy is checked against issues that already exist, so the
   transaction that creates an issue can't also write an activity row for it. The issue's author
   and created time record the opening.
+- **Notifications follow commits.** The optional [notifications.yaml](notifications.yaml) addresses
+  the assignee on creation and reassignment, and the issue author and assignee on comments. Each
+  event has its own inbox wording. The app does not store delivery addresses or send messages itself.
 - **Numbers come from a counter row.** `open_issue` and `transfer_issue` read and bump
   `projects.next_number` in the same transaction; `unique [project_id, number]` backs it up.
 - **Workflow-only fields.** State, reason, author, assignee, labels, milestone, number and
@@ -92,7 +95,7 @@ There are no seeded issues or people, because both need real Keeper principals.
 - A label change records the slug it added or removed, not the label's display name.
 - Comments can't be edited or deleted from the UI (admins can moderate data directly).
 - Title and description edits leave no event in the conversation.
-- No attachments, mentions, notifications or reactions.
+- No mentions or reactions.
 - Search is a substring match over reference, title and description of the loaded project
   issues, bounded by the 20,000-record complete-read limit.
 

@@ -103,7 +103,6 @@ data_sources:
   report_members:
     kind: table
     table: member_profiles
-    filter: {active: true}
     sort: {field: alias, direction: asc}
     read: complete
   report_clients:

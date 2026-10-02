@@ -27,6 +27,23 @@ without an edit. Set `search` to get the picker below that threshold, or `defaul
 plain dropdown above it. Under this variant `input.placeholder` is the search box's placeholder.
 Options are matched by label, not by stored id.
 
+A `text` field may set `input.variant: workspace_folder` to link a record to a workspace folder —
+the place a customer's or project's documents live. Forms show a folder picker instead of a text
+box, and the field stores the folder's workspace path while every surface (tables, cards, detail)
+shows only the folder's name. `input.root` (a folder path, no globs or `..`) is where the picker
+opens; people can open subfolders but never browse above it. Pair the field with a
+`file_collection` source whose `folder` param binds to it:
+
+```yaml
+- id: folder_path
+  type: text
+  label: Documents folder
+  input: {variant: workspace_folder, root: Proposals}
+```
+
+The picker lists folders as the viewer, so it shows nothing they could not already list, and hides
+hidden and underscore-prefixed system folders. Share-link viewers get a plain text box.
+
 Select options are non-empty strings or exact `{value, label}` objects:
 
 ```yaml

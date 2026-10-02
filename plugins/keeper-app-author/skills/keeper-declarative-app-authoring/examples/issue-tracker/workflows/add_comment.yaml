@@ -7,7 +7,7 @@ success_message: Comment posted.
 invalidate: "*"
 input_fields:
   - {id: issue_id, type: reference, label: Issue, referenceTable: issues, required: true, readonly: true}
-  - {id: body, type: textarea, label: Comment, required: true, contentFormat: markdown}
+  - {id: body, type: textarea, label: Comment, required: true, contentFormat: markdown, attachments: {sourceTable: issue_activity, ownerTable: issues, ownerIdField: issue_id, requireUnlockedField: locked}}
 steps:
   - id: issue
     kind: get_record

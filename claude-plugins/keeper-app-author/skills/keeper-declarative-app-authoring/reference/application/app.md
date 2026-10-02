@@ -4,6 +4,7 @@ Every app lives under `keeper/apps/{appId}/`:
 
 ```text
 app.yaml
+notifications.yaml              # optional live notification rules and copy
 schemas/{table}.yaml
 views/{viewId}.yaml
 workflows/{workflowId}.yaml      # optional
@@ -33,5 +34,12 @@ upgrade them incidentally during an unrelated edit. Each table schema separately
 
 All descriptor identifiers use `[A-Za-z0-9_-]+`. View, schema, workflow, and agent filename stems
 must match their descriptor ids.
+
+## Commit notifications
+
+`notifications.yaml` is an optional app-root file for commit event rules, recipients, and
+event-specific inbox and push copy. It is live app content outside the deployed definition
+revision. See [commit notifications](notifications.md) for its complete syntax and delivery
+behavior. `app.yaml` must not contain a `notifications` key.
 
 Storage intent is described in [storage](../storage/index.md). Optional end-user guide syntax is in [user-guide.md](user-guide.md). App roles and row policies are explained in [app security](../security/index.md).

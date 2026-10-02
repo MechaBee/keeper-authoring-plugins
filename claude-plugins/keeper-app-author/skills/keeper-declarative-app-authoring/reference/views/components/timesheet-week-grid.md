@@ -62,6 +62,26 @@ Required: `table`, `data_source`, `period`, `rows`, `cells`, and `editing`. Opti
 - **period_navigation** — optional browsing chrome: `data_source`, `selection_state_key`, optional
   `status_field`, `notices`, `create_data_source`, `actions_data_source`, and `empty_message`. The
   selected record is still resolved through `period.data_source`.
+- **period_navigation.notices** — callouts shown above the grid, read from the selected period
+  record (for example a reviewer's rejection comment on a submitted week). Each notice has a unique
+  `id` and a `title`, plus optional:
+  - `content_field` — a field on the period record whose value is the body;
+  - `fallback_content` — body text used when that field is empty;
+  - `supporting_text` — a smaller line under the body;
+  - `tone` — `neutral` (default), `info`, `success`, `warning`, or `danger`;
+  - `hide_when_empty: true` — skip the notice when it has no body;
+  - `visible_when` — `[{field, operator, value}]` conditions on the period record's fields
+    (`equals`, `not_equals`, `includes`, `not_includes`); all must hold.
+
+  ```yaml
+  notices:
+    - id: rejection
+      title: Changes requested
+      content_field: review_comment
+      tone: warning
+      hide_when_empty: true
+      visible_when: [{field: status, operator: equals, value: rejected}]
+  ```
 - **rows** — `identity_fields` (the fields that define one row), `primary_label_field`, optional
   `secondary_label_field`, and optional `metadata_fields`.
 - **cells** — `value_field` (the summed numeric field), optional `detail_fields`, `empty_behavior`

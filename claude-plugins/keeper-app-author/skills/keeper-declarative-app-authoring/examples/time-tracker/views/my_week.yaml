@@ -99,7 +99,6 @@ data_sources:
     on_success:
       - type: refresh
         data_sources: [week_entries, selected_cell_entries, my_timesheets]
-      - {type: set_state, key: selected_entry_id, value: {bind: action.result.id}}
   add_week_entry_action:
     kind: provider_resource
     provider: workspace
@@ -118,7 +117,6 @@ data_sources:
       - {type: set_state, key: selected_project_id, value: {bind: action.result.project_id}}
       - {type: set_state, key: selected_task_id, value: {bind: action.result.task_id}}
       - {type: set_state, key: selected_billable, value: {bind: action.result.billable}}
-      - {type: set_state, key: selected_entry_id, value: {bind: action.result.id}}
       - {type: set_state, key: last_project_id, value: {bind: action.result.project_id}}
       - {type: set_state, key: last_task_id, value: {bind: action.result.task_id}}
   duplicate_entry_action:
@@ -177,7 +175,8 @@ components:
         project_id: selected_project_id
         task_id: selected_task_id
         billable: selected_billable
-      record_state_key: selected_entry_id
+      # Selecting a cell lists its entries below; the editor opens only when an entry is clicked.
+      reset_state: [selected_entry_id]
     editing:
       create_data_source: grid_entry_action
       save_mode: autosave
@@ -192,84 +191,76 @@ components:
     description: Select an entry to review its exact times and details. The grid total is the sum of these rows.
     data_source: selected_cell_entries
     columns:
-      - {field: work_date, label: Work date}
-      - {field: project_id, label: Project}
-      - {field: billable, label: Billable, align: center}
+      - {field: started_at, label: Start, format: time}
+      - {field: ended_at, label: End, format: time}
       - field: duration_minutes
         label: Time (hrs)
         align: right
         duration_presentation: {storage_unit: minutes, display_unit: hours, display_format: hh_mm}
-      - {field: task_id, label: Task, empty_text: No task}
       - {field: description, label: Description, wrap: true, empty_text: "—"}
     sort: {enabled: true, default: {field: started_at, direction: asc}}
     density: compact
-    selection: {state_key: selected_entry_id, reconcile: clear}
+    selection:
+      state_key: selected_entry_id
+      desktop: split
+      mobile: page
+      persist: false
+      reconcile: clear
     empty_message: Select a populated grid cell to review its entries.
-    on_row_click:
-      - type: set_state
-        key: selected_entry_id
-        value: {bind: record.id}
-  entry_detail:
-    kind: record_detail
-    title: Selected entry
-    table: time_entries
-    data_source: selected_entry
-    mode: editable
-    save_mode: explicit
-    show_primary_key: false
-    actions_source: duplicate_entry_action
-    empty_message: Select an entry from the selected cell.
-    header:
-      title_field: work_date
-      meta_fields: [project_id, duration_minutes]
-    sections:
-      - id: work
-        title: Time and description
-        columns: 2
-        fields:
-          - {field: description, mode: edit, ui: {width: full}}
-          - {field: started_at, mode: edit}
-          - {field: ended_at, mode: edit}
-          - {field: duration_minutes, mode: edit}
-      - id: allocation
-        title: Grid allocation
-        description: Project, task, and billable status define the selected grid row.
-        columns: 3
-        fields:
-          - {field: project_id, mode: display}
-          - {field: task_id, mode: display}
-          - {field: billable, mode: display}
-      - id: context
-        title: Accounting context
-        columns: 2
-        fields:
-          - {field: timesheet_id, mode: display}
-          - {field: period_id, mode: display}
-    actions:
-      - id: delete_entry
-        label: Delete entry
-        appearance: destructive
-        confirm: Delete this time entry? This cannot be undone.
-        action:
-          type: provider_action
-          provider: workspace
-          action: delete_record
-          params:
-            table: time_entries
-            recordId: {bind: record.id}
-            mode: block
-          on_success:
-            - {type: set_state, key: selected_entry_id, value: null}
-            - type: refresh
-              data_sources: [week_entries, selected_cell_entries]
+    detail:
+      title: Selected entry
+      table: time_entries
+      data_source: selected_entry
+      mode: editable
+      save_mode: explicit
+      show_primary_key: false
+      actions_source: duplicate_entry_action
+      header:
+        title_field: work_date
+        meta_fields: [project_id, duration_minutes]
+      sections:
+        - id: work
+          title: Time and description
+          columns: 2
+          fields:
+            - {field: description, mode: edit, ui: {width: full}}
+            - {field: started_at, mode: edit}
+            - {field: ended_at, mode: edit}
+            - {field: duration_minutes, mode: edit}
+        - id: allocation
+          title: Grid allocation
+          description: Project, task, and billable status define the selected grid row.
+          columns: 3
+          fields:
+            - {field: project_id, mode: display}
+            - {field: task_id, mode: display}
+            - {field: billable, mode: display}
+        - id: context
+          title: Accounting context
+          columns: 2
+          fields:
+            - {field: timesheet_id, mode: display}
+            - {field: period_id, mode: display}
+      actions:
+        - id: delete_entry
+          label: Delete entry
+          appearance: destructive
+          confirm: Delete this time entry? This cannot be undone.
+          action:
+            type: provider_action
+            provider: workspace
+            action: delete_record
+            params:
+              table: time_entries
+              recordId: {bind: record.id}
+              mode: block
+            on_success:
+              - {type: set_state, key: selected_entry_id, value: null}
+              - type: refresh
+                data_sources: [week_entries, selected_cell_entries]
 layout:
   kind: stack
   gap: md
   children:
     - component: week_grid
-    - kind: split
-      direction: horizontal
-      sizes: [3, 2]
-      children:
-        - component: cell_entries
-        - component: entry_detail
+    - component: cell_entries

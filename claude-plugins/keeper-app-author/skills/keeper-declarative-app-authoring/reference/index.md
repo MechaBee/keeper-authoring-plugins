@@ -5,7 +5,7 @@ and semantics; it does not prescribe a whole app or replace the live MCP contrac
 
 | Layer | Entry point | Owns |
 | --- | --- | --- |
-| Application | [App manifest](application/app.md) | App identity, files, default view; [guide declarations](application/user-guide.md) |
+| Application | [App manifest](application/app.md) | App identity, files, default view; [guide declarations](application/user-guide.md) and [notifications](application/notifications.md) |
 | Schema | [Schema](schema/index.md) | Tables, fields, relations, JSONL, integrity and evolution |
 | Views | [Views](views/index.md) | Screens, components, data sources, providers, bindings, actions, navigation |
 | Automation | [Automation](automation/index.md) | Workflows, steps, agents; choice of execution mechanism |

@@ -53,7 +53,10 @@ Use either `fields` or `sections`. A field is a field id or object with `field` 
 - `ui`: `label`, `show_label`, `help_text`, `placeholder`, `empty_text`, `copyable`,
   `width: full|half|third`, `chrome: default|subtle|plain`,
   `edit_flow: always|click_to_edit`, a supported `variant`, and `input`.
-- `ui.input`: `{variant: default|flexible_text|search, placeholder, date_field}`. `flexible_text`
+- `ui.input`: `{variant: default|flexible_text|search|workspace_folder, placeholder, date_field, root}`.
+  `workspace_folder` (text fields; `root` sets where the picker opens) is described under
+  [fields](../../schema/fields.md) — prefer declaring it on the schema field so every surface shows
+  the folder name. `flexible_text`
   on a `date`/`time`/`datetime` field swaps the native picker for a free-text box ("9", "930",
   "09:30"); on a `datetime` field it edits the time portion and preserves the stored date.
   `search` on a `select`/`reference` field swaps the dropdown for a filterable picker; leaving

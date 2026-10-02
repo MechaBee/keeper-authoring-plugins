@@ -105,7 +105,7 @@ fields:
   - {id: number, type: number, label: Number, required: true, min: 1, step: 1, workflowOnly: true}
   - {id: ref, type: text, label: Issue, required: true, workflowOnly: true}
   - {id: title, type: text, label: Title, required: true}
-  - {id: body, type: textarea, label: Description, contentFormat: markdown}
+  - {id: body, type: textarea, label: Description, contentFormat: markdown, attachments: {}}
   - id: issue_type
     type: reference
     label: Type

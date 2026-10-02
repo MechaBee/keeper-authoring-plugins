@@ -1,0 +1,81 @@
+rules:
+  - id: issue_opened
+    table: issues
+    operation: create
+    recipientFields: [assignee_user_id]
+    delivery: inbox_and_push
+    priority: 80
+    message:
+      inbox: "{ref} was assigned to you."
+      push: "A new issue was assigned to you."
+  - id: issue_assigned
+    table: issues
+    operation: update
+    changedFields: [assignee_user_id]
+    recipientFields: [assignee_user_id]
+    delivery: inbox_and_push
+    priority: 90
+    message:
+      inbox: "{ref} was assigned to you."
+      push: "An issue was assigned to you."
+  - id: issue_commented
+    table: issues
+    operation: update
+    workflowIds: [add_comment]
+    changedFields: [comment_count]
+    recipientFields: [author_user_id, assignee_user_id]
+    delivery: inbox_and_push
+    priority: 70
+    message:
+      inbox: "New comment on {ref}."
+      push: "There is a new comment on an issue."
+  - id: issue_closed
+    table: issues
+    operation: update
+    workflowIds: [close_issue]
+    changedFields: [state]
+    recipientFields: [author_user_id, assignee_user_id]
+    delivery: inbox_and_push
+    priority: 100
+    message:
+      inbox: "{ref} was closed."
+      push: "An issue was closed."
+  - id: issue_reopened
+    table: issues
+    operation: update
+    workflowIds: [reopen_issue]
+    changedFields: [state]
+    recipientFields: [author_user_id, assignee_user_id]
+    delivery: inbox_and_push
+    priority: 100
+    message:
+      inbox: "{ref} was reopened."
+      push: "An issue was reopened."
+  - id: issue_board_status_changed
+    table: issues
+    operation: update
+    changedFields: [board_status]
+    recipientFields: [author_user_id, assignee_user_id]
+    delivery: inbox
+    priority: 40
+    message:
+      inbox: "Board status changed on {ref}."
+  - id: issue_description_changed
+    table: issues
+    operation: update
+    changedFields: [body]
+    recipientFields: [author_user_id, assignee_user_id]
+    delivery: inbox
+    priority: 30
+    message:
+      inbox: "Description changed on {ref}."
+  - id: issue_labels_changed
+    table: issues
+    operation: update
+    workflowIds: [set_labels]
+    changedFields: [labels]
+    recipientFields: [author_user_id, assignee_user_id]
+    delivery: inbox
+    priority: 20
+    message:
+      inbox: "Labels changed on {ref}."

@@ -10,8 +10,8 @@ uniform provider result or generated action set is required:
 | `record_create_action` | Create `action_set`, commonly for `record_collection.create` |
 | `workflow_action` | Workflow `action_set`; requires `workflow_id` |
 | `app_member_access_action` | Admin-only app membership activate/deactivate `action_set` |
-| `file` | `workspace_file`; requires `path` |
-| `file_collection` | File list; requires `pattern`, optional `recursive` |
+| `file` | `workspace_file`; requires `path` (an empty bound path resolves to an empty file; PDFs, images and binaries resolve without content and preview from their bytes) |
+| `file_collection` | File list; exactly one of `pattern` (a glob) or `folder` (a folder path, usually record-bound), optional `recursive` |
 | `file_collection_groups` | Grouped file lists from a table of patterns |
 
 The `params` map is flat. Use `field__{field}` for fixed/bound defaults and a comma-separated

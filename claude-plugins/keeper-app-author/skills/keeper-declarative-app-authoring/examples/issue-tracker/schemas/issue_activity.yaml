@@ -64,7 +64,7 @@ fields:
       - {value: linked, label: Linked}
       - {value: unlinked, label: Unlinked}
   - {id: summary, type: text, label: What happened, required: true, workflowOnly: true}
-  - {id: body, type: textarea, label: Comment, contentFormat: markdown}
+  - {id: body, type: textarea, label: Comment, contentFormat: markdown, attachments: {ownerTable: issues, ownerIdField: issue_id, requireUnlockedField: locked}}
   - {id: actor_user_id, type: reference, label: By, referenceTable: keeper_principals, required: true, workflowOnly: true}
   - {id: created_at, type: datetime, label: When, readonly: true, computed: {kind: now, on: create, format: datetime}}
   # Full-precision timestamp, used only to order rows written within the same minute.

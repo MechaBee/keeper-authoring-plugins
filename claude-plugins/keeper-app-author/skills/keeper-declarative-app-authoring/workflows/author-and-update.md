@@ -15,10 +15,10 @@ A label-only edit does not need that additional reading. Reuse a current contrac
 in this task rather than requesting it repeatedly.
 
 For an existing app, call `app_get`, inspect `effectiveAccess`, and read definitions with
-`app_files_read(contentScope: "definitions")`. Preserve the returned revision, source files, and
-installed guide documents. Read the affected files and every definition that refers to a changed
-table, field, view, workflow, or agent. Inspect actual app definitions, rather than unrelated sibling
-apps as templates.
+`app_files_read(contentScope: "definitions")`. Preserve the returned revision, source files,
+installed guide documents, and `notifications.yaml`. Read the affected files and every definition
+that refers to a changed table, field, view, workflow, or agent. Inspect actual app definitions,
+rather than unrelated sibling apps as templates.
 
 Definition work uses `dataMode: "preserve"` and omits JSONL. Do not obtain live records just to
 carry them forward. Use schema information and synthetic examples to reason about shape. If the
@@ -46,11 +46,14 @@ domain fields and screen count to the brief while preserving runtime binding and
 
 Pass complete UTF-8 `{path, content}` entries, not patches. Paths are app-relative; see the
 [application reference](../reference/application/app.md) for supported file types. Include guide
-documents in the candidate when present. Do not submit absolute paths, traversal, duplicates, or
-binary content. Use MCP candidate tools rather than directly writing an installed app's filesystem.
+documents and `notifications.yaml` in the candidate when present. Do not submit absolute paths,
+traversal, duplicates, or binary content. Use MCP candidate tools rather than directly writing an
+installed app's filesystem.
+Every candidate includes `app.yaml`, even when only `notifications.yaml` is changing.
 
 For a new app, include `app.yaml`, required schemas, all requested views, and the actions/navigation
 that make those views usable. Include workflows, agents, and seed data when needed by the brief.
+Put notification rules in optional `notifications.yaml`, never in `app.yaml`.
 For new apps, use manifest `schemaVersion: 2`. New tables use `version: 2` with explicit `rowAccess`;
 these are separate declarations. Examples containing legacy version-1
 schemas illustrate syntax compatibility, not the default for new team data.
@@ -82,6 +85,8 @@ Check the changed behavior and its dependencies, extending to the whole app for 
 - Labels describe the user's task. Avoid duplicate detail fields and configuration prose in UI copy.
 - Retain installed guides. Update guide content when a changed status, workflow, role, or view makes
   it inaccurate; use [guide design](../design/user-guide.md) for new explanatory content.
+- Retain installed notification rules unless their removal is requested. Validate recipient fields,
+  workflow selectors, message placeholders, and overlap priorities against the effective candidate.
 
 Call candidate-source `app_validate` with the complete effective candidate required by the current
 tool schema; set `includeData: true` when intentionally validating submitted JSONL. A partial upload

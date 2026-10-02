@@ -121,7 +121,7 @@ components:
   member_profiles_workspace:
     kind: record_collection
     title: Member profiles
-    description: Maintain reporting aliases, names, and current-filter eligibility independently from platform app membership.
+    description: Maintain reporting aliases and names independently from platform app membership.
     table: member_profiles
     data_source: member_profiles
     search: {enabled: true, placeholder: Search members, fields: [alias, full_name]}

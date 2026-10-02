@@ -17,6 +17,7 @@ Read the workflow matching the user's request. Read additional material only whe
 | --- | --- |
 | Find, inspect, download, check, or open an app | [Inspect and open](workflows/inspect-and-open.md) |
 | Create an app or change its definitions | [Author and update](workflows/author-and-update.md) |
+| Change notification rules or message copy | [Commit notifications](reference/application/notifications.md), then [Author and update](workflows/author-and-update.md) |
 | Apply a prepared definition change | [Apply](workflows/apply.md) |
 | Test deployed behavior or verify a brief | [Verify and test](workflows/verify-and-test.md) |
 | Migrate data, convert storage, or repair deployment | [Migrate and repair](workflows/migrate-and-repair.md) |
@@ -49,6 +50,7 @@ pages needed to author unfamiliar keys; examples do not extend the supported syn
 Complete the views, actions, navigation, and dependent definitions needed by the brief. Add seeds,
 automation, and sharing only where required. Existing guide documents must be retained unless their
 removal is intended; guide authoring advice is in [user guides](design/user-guide.md).
+Retain an existing `notifications.yaml` unless removing its rules is intentional.
 
 Use [examples](examples/index.md) when they clarify a composition. There is no required example
 count or fixed screen count. Preserve runtime binding roots and valid action envelopes while

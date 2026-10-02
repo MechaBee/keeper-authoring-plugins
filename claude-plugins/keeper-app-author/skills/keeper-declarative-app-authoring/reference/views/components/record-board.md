@@ -106,7 +106,33 @@ allow_group_change: true
 
 Required: `table`, a table-shaped `data_source`, and `group_by.field`. The grouping field must be a
 select field. `card` accepts the legacy title/body/badge/meta fields plus `signals[]`. Signal kinds
-are `text`, `badge`, `date`, `avatar`, `progress`, `count`, and `labels`; progress accepts `max`.
+are `text`, `badge`, `date`, `due`, `avatar`, `progress`, `count`, and `labels`; progress accepts `max`.
+
+`due` is for a deadline on a `date`/`datetime` field. It shows the date, and only when the date
+needs attention it becomes a chip with words: amber for today or within `soon_days` (default 3,
+e.g. "in 3 days"), red once past ("2 days overdue"). Cards in a `done` group, and archived cards,
+show the plain date — finished work is never overdue. Use `date` for dates that are facts rather
+than deadlines (created, sent).
+
+```yaml
+signals:
+  - {field: due_date, kind: due, label: Due, soon_days: 5}
+```
+
+`summary` aggregates one number field per column and states the open total in the board header —
+the shape of a sales pipeline:
+
+```yaml
+summary:
+  field: value_amount     # a number field; its currency/unit formats the totals
+  operation: sum          # sum (default) | avg | min | max | count
+  label: Pipeline value   # tooltip name; defaults to the field label
+```
+
+Each column shows its figure under its title; the header reads "3 open · €97,300.00", counting and
+totalling only groups that are not `done` ("3 cards" when the board has no done group). Totals
+follow what the board shows — search, facets and the archived toggle — like a table's summary
+row. `count` omits the value, since the counts are already on every column.
 Count signals render only above zero, and a meta entry with `label: ""` shows its value alone.
 `show_title: false` hides the board title when the view already supplies it. `empty_message` replaces
 the default empty state. `on_card_click` is an ordered component-action list with the selected row
