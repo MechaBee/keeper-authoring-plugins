@@ -45,6 +45,26 @@ it resolves to a stable principal, so it cannot be stored prematurely as an assi
 References to former members remain valid after access is removed; membership controls admission,
 not historical record identity.
 
+| Capability | `keeper_app_members` | `keeper_principals` |
+| --- | --- | --- |
+| References and view sources | App-scoped active directory | Restricted contextual identity projection |
+| Workflow reads | `get_record`, `query_records`, `collect_records` | Unsupported; use the app-scoped directory |
+| Workflow writes | Read-only; unsupported | Read-only; unsupported |
+| Table-level delete relations | Unsupported | Unsupported |
+| Notification recipient fields | Unsupported currently | Single reference supported |
+
+Workflow member reads use one directory snapshot per attempt, with the same email privacy as views.
+`get_record` returns null for an absent member; queries return no match. Pending invitations are
+absent too: an ordinary lookup cannot distinguish pending from nonmembership. Do not invent a
+principal id for an invitation. `collect_records` returns every matching member up to `maxRecords`
+or fails; it does not use the picker limit.
+
+This snapshot is control-plane state, not an app-data table revision fenced by the storage
+transaction. A membership change during an attempt is not atomically coupled to its app writes.
+Check active membership when creating or changing an assignment, rather than rejecting unrelated
+edits to historical records solely because their previous assignee left the app. Never create
+schemas or JSONL for either built-in directory, or use profile rows as proof of membership.
+
 `keeper_principals` is the restricted global identity projection. Use it for audit fields such as
 `created_by` when a record may refer to somebody outside the app's current membership. Do not use it
 for a picker whose meaning is specifically "one of this app's members."

@@ -27,6 +27,43 @@ field-level validation error, or `helpers.actionError(message)` for an action-le
 rejection. Do not use these helpers for unexpected program faults; ordinary thrown errors remain
 internal failures.
 
+## Guards and optional references
+
+`when` accepts a literal boolean or a binding that resolves to a boolean; strings, reference ids,
+numbers, and null are not truthy/falsy guards. A guard's `fallback` applies only to an unresolved
+binding (`undefined`), not a resolved null or nonboolean. Direct nonboolean input bindings are
+rejected by validation; dynamic script outputs are checked at execution.
+
+For an optional `assignee_id` reference, normalize presence once and guard the lookup:
+
+```yaml
+steps:
+  - id: flags
+    kind: script
+    input:
+      assignee_id: {bind: input.assignee_id, fallback: null}
+    code: 'return {has_assignee: Boolean(input.assignee_id)};'
+  - id: member
+    kind: get_record
+    table: keeper_app_members
+    record_id: {bind: input.assignee_id}
+    when: {bind: step.flags.has_assignee}
+  - id: check_assignment
+    kind: script
+    input:
+      has_assignee: {bind: step.flags.has_assignee}
+      member: {bind: step.member}
+    code: |
+      if (input.has_assignee && !input.member) {
+        helpers.inputError("assignee_id", "Choose an active app member, or leave the assignment empty.");
+      }
+      return true;
+```
+
+An empty assignment skips the lookup and the skipped step produces null. A supplied nonmember id
+returns null and receives the field error. Pending invitations are not active members yet. Built-in
+directory capabilities and privacy are described in [membership](../security/membership.md).
+
 `query_records.performance` uses the same logical `intent` (`auto`, `indexed`, or `bounded_scan`)
 and optional positive `maxFallbackRecords` bound as a table data source. It does not authorize or
 describe physical DynamoDB indexes. Read [Storage](../storage/index.md) when the
@@ -39,7 +76,9 @@ never returns a silently truncated collection. Collect before writing the same t
 
 Workflow reads and writes are staged in memory. A workflow with staged writes submits one logical
 all-or-nothing transaction fence, and read-only tables that informed those writes remain
-revision-guarded at commit. A workflow with no staged writes performs no storage commit. DynamoDB
+revision-guarded at commit. App-member directory reads are separate control-plane snapshots, not
+stored app tables, and are not included in that storage fence. A workflow with no staged writes
+performs no storage commit. DynamoDB
 must fit the compiled physical transaction limits. JSONL uses a durable internal `PREPARED` image,
 recovers an interrupted publication before serving records, and replaces the image with a compact
 terminal head. These storage artifacts are Keeper-owned and never belong in an app candidate.

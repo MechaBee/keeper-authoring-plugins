@@ -2,8 +2,16 @@
 
 All notable changes to Keeper App Author are documented here.
 
-## 1.3.0 - 2026-09-29
+## 1.3.0 - 2026-10-04
 
+- Retain 1.3.0 for the initial public release; this version has not been submitted or publicly
+  released. Production behavioral testing is scheduled separately.
+- Clarify boolean workflow guards and optional member lookups, static input defaults, dynamic
+  view presets, and authoritative server timestamps.
+- Document app-member workflow reads and snapshot boundaries, the restricted principal directory,
+  email privacy, and platform-owned references without app delete relations.
+- Clarify browser sign-in for behavioral verification and retain workflow failure coordinates
+  while distinguishing expected input rejections from unexpected execution failures.
 - Document commit notifications: the optional `notifications.yaml` app file, its event rules,
   recipients and inbox/push copy, and how authoring and apply carry it forward alongside the guide.
 - Add grouped tables to `record_table`: `group_by` break levels (optionally bucketed by day, week,

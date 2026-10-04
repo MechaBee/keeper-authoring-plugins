@@ -4,6 +4,11 @@ Use after deployment, or when the user asks whether an installed app satisfies a
 workflow checks observable behavior. It complements candidate and installed `app_validate`; it does
 not replace them.
 
+Browser-based agent testing remains the behavioral verification path after deployment; the
+authoring MCP tools do not execute workflows. MCP OAuth sign-in does not sign the browser in.
+Establish the browser's MechaBee session before exercising the launch URL. If sign-in is required,
+let the user complete the normal browser flow; never transfer MCP tokens or request credentials.
+
 ## Establish the test scope
 
 Resolve the exact installed target through [Inspect and open](inspect-and-open.md). Read `app_get`
@@ -49,6 +54,12 @@ When UI state disagrees with MCP state, capture the installed revision, view, ef
 record IDs, and exact failing action. Refresh after a bounded runtime-ready wait. Classify the issue
 as definition, authorization, runtime bootstrap, persistence, or policy behavior before changing
 the candidate.
+
+For a failed workflow action, retain the request ID, workflow ID, step ID, operation, target table,
+error code, and readable explanation when returned. Keep the exact tested inputs as authorized
+test evidence, but do not copy secrets or personal record contents into a diagnostic report.
+Expected field/business-rule rejections are distinct from unexpected execution failures. Do not
+remove a required server-side check just to make a smoke test pass.
 
 Report each acceptance item as observed, failed, or not testable, with the evidence that supports
 it. Distinguish validation success, deployment success, and behavioral success. Implement obvious

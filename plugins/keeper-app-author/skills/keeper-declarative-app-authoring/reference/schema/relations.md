@@ -1,7 +1,7 @@
 # Relation And Reference Reference
 
 `referenceTable` controls reference input/rendering. A table-level relation controls delete
-integrity. Use both for an ordinary foreign key:
+integrity. Use both for an ordinary app-owned foreign key:
 
 ```yaml
 fields:
@@ -28,3 +28,9 @@ one of several references.
 Keeper can write dangling reference ids. Ensure target rows exist, include a relation unless the
 lack of integrity is intentional, and load reference tables in views that edit or display labels.
 Do not invent foreign ids without creating the referenced records.
+
+Platform-owned `keeper_app_members` and `keeper_principals` are exceptions: use `referenceTable`
+without a table-level relation. App delete relations cannot target them, and membership removal
+must not cascade into application data. Never create replacement schemas for these names. For
+new member assignments, use a server-side workflow lookup as described in
+[membership](../security/membership.md) and [optional lookups](../automation/steps.md).
