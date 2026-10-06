@@ -1,9 +1,9 @@
 # Time Tracker — Flagship Example
 
 This example shows an app organized around everyday work: capture time quickly, correct it in
-context, review a week, and query reports. It is adapted from the repository's
-`documentation/examples/keeper/apps/time-tracker-v3` with empty JSONL files for initial setup. The manifest
-omits `storage`, so it uses the default JSONL engine. It is not a DynamoDB conversion.
+context, review a week, and query reports. Its JSONL files are intentionally empty for initial
+setup. The manifest omits `storage`, so it uses the default JSONL engine. It is not a DynamoDB
+conversion.
 
 ## UX patterns to study
 

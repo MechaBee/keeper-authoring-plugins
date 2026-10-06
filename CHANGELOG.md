@@ -3,6 +3,13 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.4.1 - 2026-10-06
+
+- Ship the complete exposed-task example, Proposal Tracker (`examples/external-proposal/`): an AI
+  task exposed to connected agents, with document context, an `on_approval` commit workflow, the
+  review card, and the workspace documents the task reads (in the example's `workspace/` folder).
+- The task reference links to the shipped example instead of a repository-only path.
+
 ## Keeper App Author 1.4.0 - 2026-10-06
 
 - Document AI tasks: apps can let people ask AI for work. New reference pages for the task

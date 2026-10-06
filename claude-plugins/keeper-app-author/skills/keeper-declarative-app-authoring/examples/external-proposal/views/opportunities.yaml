@@ -1,0 +1,22 @@
+view: {id: opportunities, title: Opportunities}
+state: {selectedOpportunityId: opportunity_1}
+data_sources:
+  opportunities: {kind: table, table: opportunities}
+components:
+  opportunities:
+    kind: record_table
+    table: opportunities
+    data_source: opportunities
+    columns: [title, customer_id, proposal_summary, proposal_path]
+    on_row_click:
+      - {type: set_state, key: selectedOpportunityId, value: {bind: record.id}}
+  runs:
+    kind: agent_task_runs
+    table: opportunities
+    record_id: {bind: state.selectedOpportunityId}
+    tasks: [draft_proposal]
+layout:
+  kind: stack
+  children:
+    - {component: opportunities}
+    - {component: runs}

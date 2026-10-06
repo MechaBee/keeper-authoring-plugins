@@ -164,6 +164,6 @@ concurrency guarantees. Uncertain effects are never automatically retried. Do no
 file-plus-record saves or automatic cleanup. Reference input options initially support unfiltered
 reference inputs only.
 
-The complete example is `documentation/examples/keeper/apps/external-proposal`; its ordinary
-workspace documents are under `documentation/examples/keeper/workspaces/proposal-tracker`.
+The complete example is [Proposal Tracker](../../examples/external-proposal/README.md); its
+ordinary workspace documents are in that example's `workspace/` folder.
 `on_approval` tasks need an `agent_task_runs` component bound to their target for existing UI review.

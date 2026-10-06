@@ -1,0 +1,22 @@
+id: draft_proposal
+title: Draft proposal
+kind: task
+exposure: {mcp: true}
+allowed_roles: [editor, admin]
+input:
+  - {id: opportunity_id, type: reference, label: Opportunity, referenceTable: opportunities, required: true}
+target: {table: opportunities, id: {bind: input.opportunity_id}}
+context:
+  opportunity: {kind: record, table: opportunities, id: {bind: input.opportunity_id}, required: true}
+  customer: {kind: record, table: customers, id: {bind: context.opportunity.customer_id}, required: true}
+  requirements: {kind: file, path: {bind: context.opportunity.requirements_path}, under: proposals/inputs, required: true}
+  template: {kind: file, path: proposals/templates/default.md, required: true}
+guide: ai/draft-proposal.md
+executor: {kind: agent}
+output:
+  records:
+    opportunity: {table: opportunities, op: update, id: {bind: input.opportunity_id}, fields: [proposal_summary]}
+  files:
+    proposal: {path: "proposals/drafts/{context.opportunity.id}/{run.id}.md", under: proposals/drafts, format: markdown, max_bytes: 262144}
+commit: {mode: on_approval, workflow: commit_proposal}
+limits: {timeout_s: 1800}

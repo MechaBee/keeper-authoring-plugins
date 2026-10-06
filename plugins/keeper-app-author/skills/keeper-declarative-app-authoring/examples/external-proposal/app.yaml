@@ -1,0 +1,6 @@
+id: external-proposal
+title: Proposal Tracker
+version: 1
+schemaVersion: 2
+defaultView: opportunities
+docs: {entry: docs/guide.md, title: Proposal Tracker guide}
