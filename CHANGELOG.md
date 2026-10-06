@@ -1,6 +1,27 @@
 # Changelog
 
-All notable changes to Keeper App Author are documented here.
+All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
+name in the heading are Keeper App Author releases.
+
+## Keeper App Author 1.4.0 - 2026-10-06
+
+- Document AI tasks: apps can let people ask AI for work. New reference pages for the task
+  descriptor (`agents/*.yaml` with `kind: task`, `ai/*.md` guides, and the `on_result`,
+  `on_approval`, and `by_agent` commit modes), commit workflows (`agent_commit`, with `result.*` and
+  `system.agentRun.*` bindings), the `agent` mutation channel, the `agent_task_action` resource, and
+  the `agent_task_runs` component.
+- Add an AI task pattern example and design guidance for choosing a commit mode. The
+  templated-prompt agent is marked legacy.
+- No MCP tool, scope, or authentication change.
+
+## Keeper Workspace Content 1.1.0 - 2026-10-06
+
+- Complete Keeper app tasks that an app author has exposed (`exposure: {mcp: true}`): discover a
+  task, read its guide and scoped record and document context, write run-specific Markdown outputs,
+  and submit results that Keeper validates and commits through the app's existing workflow, or
+  holds for review in the app's task run card.
+- Nine new `app_task_*` tools. The connected agent's own model does the work; Keeper launches no
+  managed worker. No change to the content tools, scopes, or authentication.
 
 ## 1.3.0 - 2026-10-04
 

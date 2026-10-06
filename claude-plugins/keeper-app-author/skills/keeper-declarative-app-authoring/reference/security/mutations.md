@@ -26,6 +26,10 @@ mutationPolicy:
   an optional per-channel `allowCurrentWhen: {field, values, operations?}` gate on the existing row.
   A workflow-only table lists just a `workflow` channel — and every workflow that writes the table,
   or a table it transitively creates, must appear in that `workflowIds` list.
+  The `agent` channel admits [AI task](../automation/task.md) commits: `agent: {operations,
+  taskIds}`, where `taskIds` is required and lists the tasks whose commit workflows may write the
+  table. Verification fails the upload when a commit workflow writes a channel-gated table that
+  does not admit its task.
 - `relationField` + `allowWhen` (provided together) — a relation lifecycle rule: a row may be
   mutated only while the record reached through the `relationField` relation has `field` in
   `values`. Example: a time entry is editable only while its accounting `period` `status` is

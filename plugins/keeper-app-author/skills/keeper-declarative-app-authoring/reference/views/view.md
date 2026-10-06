@@ -30,7 +30,9 @@ Optional top-level keys are `nav`, `share`, `route_state`, `state`, `actions`, `
 top level. Both `view.nav` and `view.show_in_nav` are ignored, not alternative syntax. Top-level
 `actions` contains `action_set` items, local `date_range_preset` actions, and manual `query`
 actions. An `action_set` may set `placement: inline|overflow`; overflow keeps rare or destructive
-actions in the view bar's **More actions** menu. A date preset declares
+actions in the view bar's **More actions** menu. An [AI task](../automation/task.md) action set
+without a `placement` joins the view bar's AI control: one task shows as a direct ✨ button, two or
+more share one **AI** menu. Set `placement` only to pull a task out of it. A date preset declares
 `preset: this_month|this_year`, `from_state_key`, and
 `to_state_key`; both keys must exist in top-level `state`. A query action declares a non-empty,
 dependent-closed `data_sources` list. Those sources are omitted from initial and automatic

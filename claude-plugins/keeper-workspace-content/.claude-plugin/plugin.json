@@ -1,8 +1,8 @@
 {
   "name": "keeper-workspace-content",
   "displayName": "Keeper Workspace Content",
-  "version": "1.0.0",
-  "description": "Read and safely revise Markdown and other workspace content from Claude Code, with version checks on every write.",
+  "version": "1.1.0",
+  "description": "Read and revise workspace content, and complete exposed Keeper app tasks with scoped context and validated results.",
   "author": {
     "name": "MechaBee",
     "email": "info@mechabee.com",

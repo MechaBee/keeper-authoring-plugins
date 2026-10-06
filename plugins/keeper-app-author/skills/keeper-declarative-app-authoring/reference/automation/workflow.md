@@ -25,6 +25,10 @@ run it), `actor_required` (require a resolved actor so `system.actor*` bindings 
 `input_sections`, `input_defaults`, `preview`, `result`, `on_success`, `on_error`,
 `success_message`, and `invalidate: "*"|[...]`.
 
+A workflow with `agent_commit: {task, point?}` is an [AI task](task.md) commit workflow: it may bind
+`result.*` and `system.agentRun.*`, has empty `input_fields` and no `allowed_roles`, and only Keeper
+runs it.
+
 Input sections group existing input field ids, may set `columns` (1–3), and may use `visible_when`. Preview/result names a
 step and optional dotted `path`. Follow-up actions use the [component action reference](../views/actions/index.md). Read
 [`steps.md`](steps.md) for the closed step vocabulary.

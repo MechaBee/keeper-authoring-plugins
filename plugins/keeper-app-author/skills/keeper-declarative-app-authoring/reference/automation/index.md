@@ -8,9 +8,11 @@ produces that behavior and respects the table's write policy.
 | Derived field while a person edits the current record | [Compute](../views/bindings/compute.md) |
 | One direct record operation, without lifecycle orchestration | [Provider action](../views/actions/provider-action.md) |
 | Deterministic lifecycle or multiple-record write | [Workflow](workflow.md) and selected [steps](steps.md) |
-| Model-generated summary, draft or classification | [Templated-prompt agent](agent.md) |
+| AI work that creates or updates records or files | [AI task](task.md) |
+| Legacy: one markdown field from a prompt | [Templated-prompt agent](agent.md) |
 
-An agent is for generated content, not deterministic calculation. A compute block does not persist
+AI is for generated content, not deterministic calculation. Use an [AI task](task.md) for new AI
+work; the templated-prompt agent is legacy. A compute block does not persist
 changes to other records. A workflow-only table must be written through a workflow admitted by its
 [mutation policy](../security/mutations.md). Keep one-record updates row-scoped rather than
 replacing the whole table.

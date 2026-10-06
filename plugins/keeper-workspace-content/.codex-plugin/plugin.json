@@ -1,7 +1,7 @@
 {
   "name": "keeper-workspace-content",
-  "version": "1.0.0",
-  "description": "Read and safely revise Markdown and other content in your MechaBee workspaces.",
+  "version": "1.1.0",
+  "description": "Read and revise workspace content, and complete exposed Keeper app tasks with scoped context and validated results.",
   "author": {
     "name": "MechaBee",
     "email": "info@mechabee.com",
@@ -18,14 +18,15 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Keeper Workspace Content",
-    "shortDescription": "Work with workspace content",
-    "longDescription": "Discover permitted workspace folders, read and revise text with version checks, and transfer assets using short-lived capabilities.",
+    "shortDescription": "Content and Keeper app tasks",
+    "longDescription": "Browse permitted workspace content, revise text with version checks, transfer assets, and complete exposed Keeper tasks through existing app workflows.",
     "developerName": "MechaBee",
     "category": "Productivity",
     "capabilities": [
       "Browse shared folders",
       "Read and revise Markdown",
-      "Transfer assets"
+      "Transfer assets",
+      "Complete Keeper app tasks"
     ],
     "websiteURL": "https://mechabee.com",
     "privacyPolicyURL": "https://mechabee.com/privacy",

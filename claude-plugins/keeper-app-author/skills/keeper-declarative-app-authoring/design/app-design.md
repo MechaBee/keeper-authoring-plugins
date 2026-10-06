@@ -69,6 +69,14 @@ only when the requested behavior needs one. Keep mutations scoped to their actua
 Use user-facing titles and descriptions; omit configuration narration and avoid displaying the same
 field twice in a detail header and section.
 
+When people should be able to ask AI for work, design it as an [AI task](../reference/automation/task.md).
+Prefer `inline` unless the AI must read or write workspace files. Choose the commit mode from the
+app's own review process: `on_result` when saved AI output already goes through review (a new
+version awaiting approval), `on_approval` when nothing else would check it, and `by_agent` only for
+independent units that should land as they finish. Keep context to what the job needs; the AI sees
+only what the requester can see. Write the guide as instructions to a capable colleague, and mark
+AI-made records with an app field reviewers can see.
+
 Read [user guides](user-guide.md) when the app needs explanations of statuses, approval steps, or
 role-specific tasks. Optional [examples](../examples/index.md) illustrate complete compositions;
 they do not dictate the number of screens, tables, or features. Check the resulting behavior using

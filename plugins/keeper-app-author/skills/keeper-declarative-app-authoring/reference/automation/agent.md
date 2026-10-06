@@ -1,4 +1,8 @@
-# Templated-prompt Agent Reference
+# Templated-prompt Agent Reference (Legacy)
+
+For new AI work use an [AI task](task.md): it is billed, checks the AI's output against a
+declared contract, marks AI-made records, and saves through a commit workflow. This page documents
+the older kind for existing apps.
 
 One file at `agents/{agentId}.yaml` defines the only supported Keeper agent kind:
 

@@ -10,7 +10,8 @@
 | Standalone create form | [Record form](record-form.md) |
 | Weekly time matrix | [Timesheet week grid](timesheet-week-grid.md) |
 | Record markdown | [Markdown panel](markdown-panel.md) |
-| Agent invocation | [Agent action panel](agent-action-panel.md) |
+| AI task runs, proposal review | [AI task runs](agent-task-runs.md) |
+| Legacy agent invocation | [Agent action panel](agent-action-panel.md) |
 | Local controls | [Toolbar](toolbar.md), [action bar](action-bar.md) |
 | Provider stats | [Stats grid](stats-grid.md) |
 | Provider timeline | [Timeline panel](timeline-panel.md) |

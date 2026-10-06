@@ -10,6 +10,7 @@ views/{viewId}.yaml
 workflows/{workflowId}.yaml      # optional
 agents/{agentId}.yaml            # optional
 docs/{document}.md               # optional end-user guide
+ai/{guide}.md                    # optional AI task guides (read by the AI, never shown to users)
 data/{table}.jsonl               # optional
 ```
 
