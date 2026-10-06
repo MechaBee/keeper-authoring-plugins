@@ -20,6 +20,7 @@ whole app. When adapting the complete app, inspect all descriptors and their dep
 | Review team time | [Team reports](views/admin_reports.yaml), [admin entry workflow](workflows/create_admin_time_entry.yaml) | Member filtering, contextual correction, entry on another member's behalf |
 | Maintain reference records | [Setup](views/administration.yaml) | Related maintenance surfaces grouped into tabs rather than separate create/read/update screens |
 | Manage project scope | [Access control](views/access_control.yaml) | Admin-only optional reporting profiles, groups, and project-grant surfaces; platform membership remains host-owned |
+| Tell a member about time logged for them | [notifications.yaml](notifications.yaml) | Inbox messages to the entry owner when an entry is created or updated, including entries an administrator adds on their behalf |
 
 Use the selected [component references](../../reference/views/components/index.md),
 [workflow syntax](../../reference/automation/workflow.md), and

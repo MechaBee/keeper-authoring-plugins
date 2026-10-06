@@ -1,6 +1,6 @@
 {
   "name": "keeper-app-author",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Build and safely evolve complete Keeper apps from Codex, with validated candidates, reviewed deployment, and live-record protection.",
   "author": {
     "name": "MechaBee",

@@ -4,14 +4,19 @@ Seven screens. Which ones you see depends on your role — a short menu is your 
 
 ## My entries
 
-Your working list. It shows your recent entries, newest first, with the columns in the order you
-read them: Work date, Project, Billable, Time (hrs), Task, Description.
+Your working list. Recent entries are grouped by month, then Monday-starting week, then day,
+newest first. Month and week headings show total hours; days with multiple entries have totals below.
+A week crossing a month boundary appears in both months, each with its own portion of the hours.
+The list shows up to 200 entries, and totals cover the entries shown.
 
 - **Add entry** opens a compact dialog: project, optional task, date, times or a duration,
   description, billable. Choosing a project narrows the task list to that project's tasks.
+- **Billable** starts on *Project default*: the entry takes the project's **Billable by default**
+  setting. Choose *Billable* or *Not billable* to override it for that entry. Add entry for member
+  works the same way.
 - Selecting a row opens **Entry detail** beside the list, where you can edit or delete it.
-- **Duplicate entry** copies a selected entry onto another date — the fastest way to record a
-  recurring block of work.
+- **Duplicate entry** copies a selected entry's project, task, duration and billable status onto
+  another date — the fastest way to record a recurring block of work.
 - The **Period** and **Week** selectors at the top narrow the list.
 
 ## My week
@@ -24,6 +29,7 @@ the seven days. Cells hold the hours you worked.
 - A cell holding several entries shows a count. Select it and the entries behind it appear below,
   where you can open and edit any of them.
 - Clearing a cell deletes the entry behind it.
+- Time typed into a cell keeps that row's billable status, whatever the project's default.
 - Weekly sheets appear by themselves the first time you log time in a week; **Create week** makes
   an empty one ahead of time, and the week selector moves between the ones you have.
 
@@ -47,6 +53,8 @@ filters entries to the signed-in user. Administrators also have Team reports for
 - Nothing is fetched until you press **Query**, so you can set several filters without waiting
   between them.
 - The table shows Work date, Client, Project, Billable, Time (hrs), Task, Description, Start, End.
+- Selecting a row opens the entry beside the table, where you can correct or delete it. Changing
+  the times recalculates the duration, and changing the project clears the task.
 - **Export CSV** downloads exactly what the filters selected, with client and project as separate
   columns.
 
@@ -56,12 +64,13 @@ The same idea across everyone whose time you can see.
 
 - Filters: dates, **Member**, **Client**, **Project**, each clearable, plus **This month**,
   **This year** and **Query**.
-- Columns run Client, Project, User, Billable, Work date, Duration, Description, Start, End.
+- Columns run Client, Project, Task, User, Billable, Work date, Duration, Description, Start, End.
+  Entries without a task show **No task**.
 - Selecting a row opens the entry beside the table, where an administrator can correct it —
   changing the times recalculates the duration. No row is selected when the report opens, so the
   panel stays out of the way until you ask for it.
 - **Add entry for member** records time on someone else's behalf.
-- **Export CSV** exports the filtered rows.
+- **Export CSV** exports the filtered rows, including the task name.
 
 ## Setup — administrators
 
@@ -82,8 +91,8 @@ profiles plus the groups and project grants that determine what active members c
   optional full name. **Reporting profile active** controls whether the profile appears in current
   member-filter choices. It does not grant or revoke app access, and historical time remains.
 - **Groups** — named sets of members, maintained with their memberships.
-- **Project access** — grant a project to a member directly, or to a group. Project grants make it appear in an ordinary member's project list and allow them to log
-  against it. Ordinary members see their own entries on granted projects; administrators can
+- **Project access** — grant a project to a member directly, or to a group. Project grants make it
+  appear in an ordinary member's project list and allow them to log against it. Ordinary members see their own entries on granted projects; administrators can
   review team records without assigning themselves each project.
 
 Next: [Setting up and getting started](getting-started.md).

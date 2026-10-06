@@ -1,8 +1,7 @@
 # Issue Tracker — Comprehensive Example
 
-A GitHub Issues–style tracker for teams, built only from the current Keeper runtime. This is
-copied from the repository's current `documentation/examples/keeper/apps/issue-tracker` example.
-It runs on JSONL storage; the manifest omits `storage`.
+A GitHub Issues–style tracker for teams, built only from the current Keeper runtime. It runs on
+JSONL storage; the manifest omits `storage`.
 
 ## What's in it
 

@@ -3,6 +3,14 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.4.2 - 2026-10-06
+
+- Time Tracker example: add `notifications.yaml`, which sends the entry owner an inbox message when
+  time is logged or updated for them, including entries an administrator adds on their behalf.
+- Refresh the Time Tracker "What's in the app" guide: day-grouped My entries, project-default
+  billable status, duplicate-entry details, and the task column in Team reports.
+- Issue Tracker README no longer points at a repository-only path.
+
 ## Keeper App Author 1.4.1 - 2026-10-06
 
 - Ship the complete exposed-task example, Proposal Tracker (`examples/external-proposal/`): an AI
