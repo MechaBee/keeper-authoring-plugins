@@ -17,8 +17,11 @@
 | Provider timeline | [Timeline panel](timeline-panel.md) |
 | Provider inbox | [Inbox thread panel](inbox-thread-panel.md) |
 | Provider hierarchy | [Tree panel](tree-panel.md) |
-| Record properties and markdown body | [Document page](doc-page.md) |
-| Record-backed discussion | [Comment thread](comment-thread.md) |
+| Document collections: list, one collection, one document | [Collection list](collection-list.md), [collection view](collection-view.md), [document page](document-page.md) |
+| A record's own and linked documents | [Linked documents](linked-documents.md) |
+| Comments on any record (comment-role table) | [Comments](comments.md) |
+| Record properties and markdown body, without collections | [Doc page](doc-page.md) |
+| Activity timeline of comments and events in one ordinary table | [Comment thread](comment-thread.md) |
 | One workspace text file | [Workspace file detail](workspace-file-detail.md) |
 | Workspace files | [Workspace file collection](workspace-file-collection.md) |
 | Grouped file lists | [Workspace file navigator](workspace-file-collection-navigator.md) |

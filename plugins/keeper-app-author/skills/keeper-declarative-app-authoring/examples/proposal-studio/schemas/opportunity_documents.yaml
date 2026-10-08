@@ -1,0 +1,36 @@
+table: opportunity_documents
+version: 1
+primaryKey: id
+idPrefix: odoc
+displayField: note
+# Library collections and documents linked to an opportunity, each with why it
+# matters. Agents read the note next to the document.
+role: document_link
+role_options: {record_field: opportunity_id}
+rowAccess: {mode: all}
+mutationPolicy:
+  allowedRoles: [editor, admin]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: opportunity_id, type: reference, label: Opportunity, referenceTable: opportunities, required: true}
+  - {id: collection_id, type: reference, label: Collection, referenceTable: collections}
+  - {id: document_id, type: reference, label: Document, referenceTable: documents}
+  - id: link_role
+    type: select
+    label: Use
+    required: true
+    options:
+      - {value: reference, label: From the library}
+      - {value: template, label: Use this structure}
+  - {id: note, type: textarea, label: Why it matters}
+  - {id: position, type: number, label: Order}
+relations:
+  - field: opportunity_id
+    references: {table: opportunities, field: id}
+    onDelete: cascade
+  - field: document_id
+    references: {table: documents, field: id}
+    onDelete: cascade
+  - field: collection_id
+    references: {table: collections, field: id}
+    onDelete: cascade

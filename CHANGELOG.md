@@ -3,6 +3,30 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.5.0 - 2026-10-08
+
+- Document collections: new reference pages for table roles (`collection`, `document`,
+  `document_link` and `comment`, with managed fields, the `json` type and the `comments:` block),
+  the `collection_list`, `collection_view`, `document_page`, `linked_documents` and `comments`
+  components with their workspace resources, and the AI task `documents` context and document
+  outputs (`op: create` and `op: revise`). Keeper writes the documents; a revision is accepted only
+  on the text the AI read.
+- App design guidance: when to use collections rather than `doc_page`, and `comment_thread` as the
+  pattern for an activity timeline that includes comments (Issue Tracker, board example).
+- Proposal Studio replaces Proposal Tracker (`examples/external-proposal/` is removed): a sales app
+  on document collections where each opportunity owns a collection, library documents are linked
+  with a role and a note, discussion and review use comment tables, and connected agents draft and
+  revise documents that Keeper saves.
+- No MCP tool, scope, or authentication change.
+
+## Keeper Workspace Content 1.2.0 - 2026-10-08
+
+- Exposed app tasks can create and revise documents in an app's document collections. The agent
+  returns each document's Markdown in the submitted result instead of writing a run file; Keeper
+  names and writes it on save, and refuses a revision when the document changed after the agent
+  read it. The skill's task steps and the `app_task_submit` description explain both output forms.
+- No new tool, scope, or authentication change.
+
 ## Keeper App Author 1.4.2 - 2026-10-06
 
 - Time Tracker example: add `notifications.yaml`, which sends the entry owner an inbox message when

@@ -17,6 +17,18 @@ for a new engine choice, and [app security](../reference/security/index.md) for 
 visibility, and writes. Add write, validation, or query policy only when it enforces a required
 behavior; avoid speculative indexes and unnecessary workflows.
 
+When people and agents work on **documents** (a library, a deal's files, specifications), use
+[document collections](../reference/schema/roles.md): a collection is a workspace folder, its files
+are the content however they got there, and Keeper keeps a row per file for links, comments and
+fields. Give a record its own collection through a reference field, and link library documents to
+it with a `document_link` table. For one body per record without folders, `doc_page` is enough.
+
+For **comments** on any record, add one `comment`-role table per commented table and a `comments:`
+block on the commented table; Keeper supplies posting, replies, resolving and locking. When comments
+and events (status changes, assignments) should read as one timeline, or comments need attachments,
+a count or notifications, keep both in one ordinary activity table posted by a workflow and show it
+with `comment_thread` (Issue Tracker, board example).
+
 ## Primary interaction of each screen
 
 | User interaction | Useful composition |

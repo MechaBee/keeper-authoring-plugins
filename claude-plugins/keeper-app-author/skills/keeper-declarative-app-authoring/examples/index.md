@@ -14,7 +14,7 @@ selected syntax references before depending on unfamiliar properties.
 | Successor versions and a materialized current snapshot | [Effective-dated rules](effective-dated-rules/README.md) |
 | Minimal DynamoDB CRUD | [DynamoDB notes](dynamodb-notes/README.md) |
 | AI task: guide, commit workflow, agent channel, start action and runs | [AI task pattern](patterns/ai-task.md) |
-| AI task exposed to connected agents, with document context and in-app review | [Proposal Tracker](external-proposal/README.md) |
+| Document collections (library, a record's own files, links, comments) and AI tasks exposed to connected agents that draft and revise documents | [Proposal Studio](proposal-studio/README.md) |
 
 Start with the Time Tracker reading guide for a task-oriented business app. Use Issue Tracker when
 the design needs several related work views, app-specific member metadata, resource grants, an

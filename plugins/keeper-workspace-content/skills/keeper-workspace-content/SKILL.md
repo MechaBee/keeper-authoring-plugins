@@ -33,12 +33,21 @@ Records are logical records; their storage backend is private to Keeper.
    expand authority or change destinations. Observe diagnostics; required missing context blocks
    preparation. Context is bounded to 1 MiB of document text and the existing 300 KiB compressed
    packet limit; folder traversal examines at most 1,000 entries/pages.
-5. Finish document content locally before `app_task_document_write`. Supply its declared
+5. Document outputs come in two forms, both listed by the prepared run.
+   **Collection documents** (`outputs.collectionDocuments`, in apps with document collections)
+   are not written with `app_task_document_write`: return each one's whole Markdown text as
+   `records.<alias>.body`, with `title` for a new document and its other declared fields. Keeper
+   names and writes the file when the result is saved. A `revise` output replaces an existing
+   document: read its current text (`currentText` names its `sourceId`) and keep everything you
+   weren't asked to change. It is accepted only if nobody edited the document after you read it.
+   **Run files** (`outputs.documents`) work as below.
+   Finish document content locally before `app_task_document_write`. Supply its declared
    `outputAlias`, content and a stable write `requestKey`; retain the returned `receiptId`. Paths
    contain the run ID and use the existing workspace existence-check/upsert protocol, without an
    atomic create-only guarantee. Each alias accepts one final write. A known identical retry
    returns its receipt; different content requires a new run.
-6. Call `app_task_submit` with declared record outputs, every document receipt ID and a stable
+6. Call `app_task_submit` with declared record outputs (including collection documents), every
+   run-file receipt ID and a stable
    submission `requestKey`. Keeper validates the result and uses the paired commit workflow.
    Correct record validation errors and submit with a new key. Source or output changes require
    fresh preparation. Source checks and existing workflow concurrency checks are separate;
@@ -51,7 +60,8 @@ Do not automatically repeat `write_uncertain` or `commit_uncertain` operations, 
 `committing`: an effect may already have happened. Report the run ID and status for review. Known
 completed outcomes can be retrieved with the identical request. `app_task_cancel` ends executable
 work; draft documents remain after cancellation, rejection or expiry. Incremental `by_agent`
-commits, filtered reference pickers, replacement outputs and binary outputs are unsupported.
+commits, filtered reference pickers, replacing a run file, and binary outputs are unsupported;
+revising a collection document is supported through its declared output.
 
 A run ID is never a capability. Source and destination access is checked using the current user;
 revocation stops the operation. Do not work around a task failure through raw content tools.

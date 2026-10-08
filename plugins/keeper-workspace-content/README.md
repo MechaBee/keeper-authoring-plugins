@@ -43,11 +43,13 @@ Email [info@mechabee.com](mailto:info@mechabee.com).
 ## App task limits
 
 App authors opt in with `exposure: {mcp: true}` on an existing task descriptor. Tasks support record
-outputs and new Markdown documents with `on_result` or `on_approval`. The connected agent performs
-the reasoning; Keeper does not launch a managed worker or require its inference billing account.
+outputs, new Markdown run files, and documents created or revised in an app's document collections,
+with `on_result` or `on_approval`. The connected agent performs the reasoning; Keeper does not
+launch a managed worker or require its inference billing account.
 
-Document paths include the run ID and use standard workspace upserts, without atomic create-only
-writes. Keeper issues receipts for verified document versions. Source checks use observed content
+Collection documents are returned in the submitted result and written by Keeper on save; a revision
+is accepted only if the document is unchanged since the agent read it. Run-file paths include the
+run ID and use standard workspace upserts, without atomic create-only writes. Keeper issues receipts for verified document versions. Source checks use observed content
 and existing workflow concurrency protocols; files and records are separate operations.
 Uncommitted drafts remain after cancellation, rejection or expiry. Unknown write or commit outcomes
 are never automatically retried. Approval happens in the app's existing task run card.

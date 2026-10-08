@@ -36,10 +36,10 @@ limits: {timeout_s: 120}
 | --- | --- |
 | `input` | Same grammar as workflow `input_fields`. Values the person enters when starting the task. |
 | `target` | Optional `{table, id}` binding `input.*` or `context.<record>.id`. The [runs component](../views/components/agent-task-runs.md) lists runs by target. |
-| `context` | What the AI may read, resolved with the **requester's** row access. `record`: `{table, id}`; an empty id is an absent record (the AI sees `null`), a missing one fails the run. `table`: `{table, filter?, sort?, limit}`, where `limit` (1–500) is required. Agent executor only: `file` `{path, under?}`, `files` `{from, field, limit, under?}` (paths from a table context's rows), `folder` `{path, under, pattern?, exclude?, limit}` (every text file below a folder, `limit` 1–20). Bindings: `input.*`, `system.nowIso`, `context.<earlier record>.<field>`; no cycles. |
+| `context` | What the AI may read, resolved with the **requester's** row access. `record`: `{table, id}`; an empty id is an absent record (the AI sees `null`), a missing one fails the run. `table`: `{table, filter?, sort?, limit}`, where `limit` (1–500) is required. Agent executor only: `file` `{path, under?}`, `files` `{from, field, limit, under?}` (paths from a table context's rows), `folder` `{path, under, pattern?, exclude?, limit}` (every text file below a folder, `limit` 1–20), `documents` (a [document collection's](#documents) documents with their text). Bindings: `input.*`, `system.nowIso`, `context.<earlier record>.<field>`; no cycles. |
 | `guide` | Required `ai/<name>.md` in the app folder: how to do the job well. |
 | `executor` | `inline`: one structured generation, no tools; use for most tasks. `agent`: a focused agent that may read context files and write output files. No model key: models are chosen by the service. |
-| `output` | Declared records (`table`, `op: create/update`, `id` for updates, `many` + `max`, `fields`, `constraints.<field>.in: context.<tableAlias>`) and files (`path` template, `under?`, `format: markdown`, `max_bytes`; `many` + `keys_from` + `{key}`). Fields must be writable: no primary key, readonly or computed fields. |
+| `output` | Declared records (`table`, `op: create/update`, `id` for updates, `many` + `max`, `fields`, `constraints.<field>.in: context.<tableAlias>`), files (`path` template, `under?`, `format: markdown`, `max_bytes`; `many` + `keys_from` + `{key}`) and [documents](#documents) (`op: create/revise`). Fields must be writable: no primary key, readonly or computed fields. |
 | `commit` | Who triggers the save (below). |
 | `limits` | `timeout_s`: inline ≤ 300, agent ≤ 3600. Optional `max_output_tokens`. |
 
@@ -76,6 +76,60 @@ that already exists.
   folder (`drafts/**`) so it does not read its earlier drafts as customer material.
 - A guide can tell the agent when to refuse; an agent task then ends with the agent's one-line
   reason ("The folder has no customer documents.") instead of a result.
+
+## Documents
+
+In an app with [document collections](../schema/roles.md), a task reads and writes documents through
+the collections instead of paths.
+
+```yaml
+context:
+  opportunity: {kind: record, table: opportunities, id: {bind: input.opportunity_id}}
+  documents:
+    kind: documents
+    record:                                  # or document: <id binding>, or collection: <id binding>
+      table: opportunities
+      id: {bind: input.opportunity_id}
+      collection_field: collection_id        # the record's own collection
+      link_table: opportunity_documents      # and what is linked to it
+    link_roles: [template, reference]        # optional, with record: only these links
+    limit: 20                                # 1–20
+output:
+  documents:
+    draft:
+      op: create
+      collection: {bind: context.opportunity.collection_id}
+      subfolder: working                     # optional
+      fields: [summary]                      # document fields the AI fills; create always has title
+      max_bytes: 262144
+  records:
+    handover: {table: opportunity_comments, fields: [body]}
+commit: {mode: on_result, workflow: commit_drafted_document}
+```
+
+- **Reading.** Give exactly one of `document`, `collection` or `record`. Each collection is synced
+  first, so files people or other tools put in the folder are included; only active documents count.
+  The AI gets the rows in `records.<alias>`, their text as files, and for each how it came in:
+  `document`, `collection`, `own` (the record's own collection) or `link`, with the link's role and
+  note. Agent executor only.
+- **Writing.** The AI returns each document in its result: `records.<alias>.body` (the whole
+  Markdown text) with `title` (create) and the declared `fields`. It does not write files. When the
+  result is saved, Keeper writes the documents first, then runs the commit workflow, where
+  `result.<alias>` is the written document: `id`, `title`, `path`, `revision`, `collection_id` and
+  the declared fields.
+  - `create` names the file after the title in the collection (or its `subfolder`), never over
+    another file.
+  - `revise` replaces the document's text. It is accepted only if the document still has the text
+    the AI read; otherwise the run ends `conflict` (`document_changed`) with the lines someone
+    changed. For `on_approval`, the review shows the AI's changes line by line and says when
+    acceptance would be refused.
+  - If the commit workflow then fails, created documents are removed and revisions put back.
+- **Permission.** The requester must be able to edit the collection's documents, and the collection
+  must have the `agent_tasks` feature on when the collections table offers it. Otherwise the start
+  is refused (`document_output_denied`), already in the start dialog.
+- Not available with `by_agent` commits. Verification checks the selectors
+  (`TASK_DOCUMENTS_SELECTOR_INVALID`), that the app has collection and document tables
+  (`TASK_DOCUMENTS_ROLE_MISSING`) and that output fields are writable.
 
 ## Commit modes
 
@@ -123,7 +177,8 @@ result: {step: version}
 ```
 
 Only commit workflows may bind `result.<alias>` (single outputs with `values_from` or
-`result.<alias>.<field>`; many outputs with `records_from`), `result.files.<alias>.path`, and
+`result.<alias>.<field>`; many outputs with `records_from`; a document output's `id`, `title`,
+`path`, `revision`, `collection_id` and declared fields), `result.files.<alias>.path`, and
 `system.agentRun.{id, taskId, requesterId, requesterEmail, input.<field>}`. A commit workflow has no
 inputs or `allowed_roles`, and no view, action set or `run_workflow` may start it. Keeper does. Set
 `result` to the step that creates the main record so the run can link to it. Every table it writes
@@ -164,6 +219,6 @@ concurrency guarantees. Uncertain effects are never automatically retried. Do no
 file-plus-record saves or automatic cleanup. Reference input options initially support unfiltered
 reference inputs only.
 
-The complete example is [Proposal Tracker](../../examples/external-proposal/README.md); its
+The complete example is [Proposal Studio](../../examples/proposal-studio/README.md); its
 ordinary workspace documents are in that example's `workspace/` folder.
 `on_approval` tasks need an `agent_task_runs` component bound to their target for existing UI review.

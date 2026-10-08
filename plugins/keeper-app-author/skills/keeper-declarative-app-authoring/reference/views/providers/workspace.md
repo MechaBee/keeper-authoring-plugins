@@ -14,6 +14,14 @@ uniform provider result or generated action set is required:
 | `file` | `workspace_file`; requires `path` (an empty bound path resolves to an empty file; PDFs, images and binaries resolve without content and preview from their bytes) |
 | `file_collection` | File list; exactly one of `pattern` (a glob) or `folder` (a folder path, usually record-bound), optional `recursive` |
 | `file_collection_groups` | Grouped file lists from a table of patterns |
+| `collection_documents` | One [collection](../../schema/roles.md) and its documents, synced with its folder; `collection_id`. For [`collection_view`](../components/collection-view.md) |
+| `document` | One document with its body; `document_id`. For [`document_page`](../components/document-page.md) |
+| `linked_documents` | A record's own collection and links; `table`, `record_id`, `link_table`, optional `collection_field`. For [`linked_documents`](../components/linked-documents.md) |
+| `comments` | One record's comments; `table` (a comment-role table), `target_id`. For [`comments`](../components/comments.md) |
+
+The document collection components run their own actions (create, upload, save, move, attach,
+delete, link, comment, resolve); views declare no action sets for them. A body save refreshes
+nothing so the editor keeps its draft; every other change refreshes the view.
 
 The `params` map is flat. Use `field__{field}` for fixed/bound defaults and a comma-separated
 writable `fields` value; never put `defaults:` under `record_create_action.params`:

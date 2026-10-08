@@ -1,0 +1,28 @@
+table: opportunity_comments
+version: 1
+primaryKey: id
+idPrefix: ocmt
+displayField: body
+# The discussion on an opportunity.
+# Keeper adds, replies, resolves and stamps authors; who may comment is set
+# by the commented table's `comments:` block.
+role: comment
+role_options: {target_field: opportunity_id}
+rowAccess: {mode: all}
+mutationPolicy:
+  allowedRoles: [editor, admin]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: opportunity_id, type: reference, label: On, referenceTable: opportunities, required: true}
+  - {id: thread_id, type: text, label: Thread}
+  - {id: reply_to_comment_id, type: reference, label: In reply to, referenceTable: opportunity_comments}
+  - {id: body, type: textarea, label: Comment, required: true, contentFormat: markdown}
+  - {id: is_resolved, type: boolean, label: Resolved}
+  - {id: author_user_id, type: text, label: Author}
+  - {id: author_kind, type: select, label: Written by, options: [person, ai]}
+  - {id: agent_run_id, type: text, label: AI run}
+  - {id: created_at, type: datetime, label: Posted, readonly: true, computed: {kind: now, on: create, format: datetime}}
+relations:
+  - field: opportunity_id
+    references: {table: opportunities, field: id}
+    onDelete: cascade

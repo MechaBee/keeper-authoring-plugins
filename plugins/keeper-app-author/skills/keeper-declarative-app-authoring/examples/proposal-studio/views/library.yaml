@@ -1,0 +1,43 @@
+view:
+  id: library
+  title: Library
+  description: Company, product and sales documents, plus templates. Link them to an opportunity so agents read them.
+nav:
+  order: 20
+  icon: folder
+state:
+  collection_id: null
+route_state:
+  collection_id: {route: collectionId, mode: sync}
+data_sources:
+  # Opportunities' own collections live on their pages, not here.
+  collections:
+    kind: table
+    table: collections
+    filter: {in_library: true}
+    sort: {field: name, direction: asc}
+  documents:
+    kind: provider_resource
+    provider: workspace
+    resource: collection_documents
+    params:
+      collection_id: {bind: state.collection_id}
+    refresh_on: [state.collection_id]
+components:
+  shelves:
+    kind: collection_list
+    title: Collections
+    data_source: collections
+    selection: {state_key: collection_id}
+  collection:
+    kind: collection_view
+    data_source: documents
+    open: {view: document, query_param: documentId}
+    empty_message: Choose a collection to see its documents.
+layout:
+  kind: split
+  direction: horizontal
+  sizes: [1, 4]
+  children:
+    - component: shelves
+    - component: collection

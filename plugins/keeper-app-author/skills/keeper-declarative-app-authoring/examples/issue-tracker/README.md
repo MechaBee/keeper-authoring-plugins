@@ -67,6 +67,9 @@ requirements for other apps.
   are separate workflows shown by `visible_when` on the issue's state, and lock/unlock reuse one
   workflow with a hidden `mode` preset. Every issue-page dialog hides the preset issue id
   (`action_dialog.hidden_inputs`), so dialogs ask only for what the reader decides.
+  Comments stay in `issue_activity` rather than a [comment-role table](../../reference/schema/roles.md#comments)
+  on purpose: the conversation interleaves with events, comment bodies take attachments, and
+  `add_comment` keeps `comment_count`, which the list, board and "New comment" notification use.
 - **Quiet list.** `issue_rows.status` is the resolution of a closed issue and empty while open, and
   a zero comment count is projected as empty. The default list shows Type and Created by; long
   creator names wrap, while Labels, Resolution and Comments remain optional columns. The label

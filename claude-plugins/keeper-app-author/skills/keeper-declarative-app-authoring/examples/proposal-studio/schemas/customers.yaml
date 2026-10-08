@@ -1,0 +1,13 @@
+table: customers
+version: 1
+primaryKey: id
+idPrefix: cust
+displayField: name
+rowAccess: {mode: all}
+mutationPolicy:
+  allowedRoles: [editor, admin]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: name, type: text, label: Name, required: true}
+  - {id: industry, type: text, label: Industry}
+  - {id: background, type: textarea, label: Background, contentFormat: markdown, helpText: Who they are and how they work. Agents read this.}

@@ -1,0 +1,13 @@
+id: proposal-studio
+title: Proposal Studio
+description: Sales documents written with a connected agent, from a shared library and each opportunity's brief.
+icon: briefcase
+version: 1
+schemaVersion: 2
+defaultView: opportunities
+docs:
+  entry: docs/guide.md
+  title: How to use Proposal Studio
+  entry_title: Start here
+  summary: Brief an opportunity, gather its sources, and ask your agent to write.
+  show_on_first_open: true

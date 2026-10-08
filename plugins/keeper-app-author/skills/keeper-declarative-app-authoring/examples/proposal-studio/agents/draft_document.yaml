@@ -1,0 +1,52 @@
+id: draft_document
+title: Draft a document
+description: Writes a new working document for an opportunity from its brief, discussion, own files and linked library documents.
+kind: task
+exposure: {mcp: true}
+allowed_roles: [editor, admin]
+input:
+  - {id: opportunity_id, type: reference, label: Opportunity, referenceTable: opportunities, required: true}
+  - id: brief
+    type: textarea
+    label: What to write
+    required: true
+    helpText: The kind of document, who reads it, and anything to lead with.
+target: {table: opportunities, id: {bind: input.opportunity_id}}
+context:
+  opportunity:
+    {kind: record, table: opportunities, id: {bind: input.opportunity_id}, required: true, label: Opportunity brief}
+  customer:
+    {kind: record, table: customers, id: {bind: context.opportunity.customer_id}, label: Customer}
+  discussion:
+    kind: table
+    table: opportunity_comments
+    filter: {opportunity_id: {bind: input.opportunity_id}}
+    sort: {field: created_at, direction: asc}
+    limit: 200
+    label: Discussion
+  # The opportunity's own files and working documents, then the library
+  # collections and documents linked to it, each with why it matters.
+  documents:
+    kind: documents
+    record:
+      table: opportunities
+      id: {bind: input.opportunity_id}
+      collection_field: collection_id
+      link_table: opportunity_documents
+    limit: 20
+    label: Opportunity and library documents
+guide: ai/draft-document.md
+executor: {kind: agent}
+output:
+  documents:
+    # Keeper names the file after the title, in the opportunity's working/ folder.
+    draft:
+      op: create
+      collection: {bind: context.opportunity.collection_id}
+      subfolder: working
+      fields: [summary]
+      max_bytes: 262144
+  records:
+    handover: {table: opportunity_comments, op: create, fields: [body]}
+commit: {mode: on_result, workflow: commit_drafted_document}
+limits: {timeout_s: 3600}

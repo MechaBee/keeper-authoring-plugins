@@ -5,9 +5,7 @@ description: Create, inspect, download, update, validate, deploy, delete, migrat
 
 # Keeper App Authoring
 
-Use the Keeper MCP tools to work on installed applications. Prefer the server's current tool
-schemas, runtime contract, and validation diagnostics over bundled syntax examples. If they
-disagree, report the discrepancy and resolve it before depending on the disputed behavior.
+Use the Keeper MCP tools to work on installed applications. Prefer the server's current tool schemas, runtime contract, and validation diagnostics over bundled syntax examples. If they disagree, report the discrepancy and resolve it before depending on the disputed behavior.
 
 ## Choose the task path
 

@@ -9,6 +9,7 @@
 | Unique values and validation checks | [Validation](validation.md) |
 | Atomic grouped-sum bounds | [Constraints](constraints.md) |
 | Compatibility and schema changes | [Evolution](evolution.md) |
+| Document collections, links and comments (`role`, `comments:`) | [Table roles](roles.md) |
 
 Use [row access](../security/row-access.md) for version-2 visibility and
 [mutation policy](../security/mutations.md) for restricted writes. Use

@@ -1,0 +1,30 @@
+table: document_comments
+version: 1
+primaryKey: id
+idPrefix: dcmt
+displayField: body
+# Review comments on a document; a new thread can quote a passage.
+# Keeper adds, replies, resolves and stamps authors; who may comment is set
+# by the commented table's `comments:` block.
+role: comment
+role_options: {target_field: document_id}
+rowAccess: {mode: all}
+mutationPolicy:
+  allowedRoles: [editor, admin]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: document_id, type: reference, label: On, referenceTable: documents, required: true}
+  - {id: thread_id, type: text, label: Thread}
+  - {id: reply_to_comment_id, type: reference, label: In reply to, referenceTable: document_comments}
+  - {id: body, type: textarea, label: Comment, required: true, contentFormat: markdown}
+  - {id: anchor_quote, type: textarea, label: Passage}
+  - {id: anchor_heading, type: text, label: Section}
+  - {id: is_resolved, type: boolean, label: Resolved}
+  - {id: author_user_id, type: text, label: Author}
+  - {id: author_kind, type: select, label: Written by, options: [person, ai]}
+  - {id: agent_run_id, type: text, label: AI run}
+  - {id: created_at, type: datetime, label: Posted, readonly: true, computed: {kind: now, on: create, format: datetime}}
+relations:
+  - field: document_id
+    references: {table: documents, field: id}
+    onDelete: cascade
