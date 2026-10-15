@@ -14,6 +14,9 @@ ai/{guide}.md                    # optional AI task guides (read by the AI, neve
 data/{table}.jsonl               # optional
 ```
 
+No other files are accepted; an upload containing one, such as `README.md`, is rejected. Keep
+notes outside the app folder.
+
 Keeper discovers an app from `app.yaml`. Required shape:
 
 ```yaml
@@ -24,7 +27,7 @@ defaultView: home
 schemaVersion: 2
 ```
 
-Optional keys: `description`, `icon`, `status` (`active` or `archived`), `storage`, and `docs`. `id`
+Optional keys: `description`, `icon`, `status` (`active` or `archived`), `storage`, `docs`, and `home`. `id`
 must match the app folder and `defaultView` must name an existing view. `access` is not a valid manifest
 key. Keeper stores app membership as mutable control-plane state outside the portable definition,
 so adding or removing a user does not change the app revision or trigger deployment work.
@@ -43,4 +46,4 @@ event-specific inbox and push copy. It is live app content outside the deployed 
 revision. See [commit notifications](notifications.md) for its complete syntax and delivery
 behavior. `app.yaml` must not contain a `notifications` key.
 
-Storage intent is described in [storage](../storage/index.md). Optional end-user guide syntax is in [user-guide.md](user-guide.md). App roles and row policies are explained in [app security](../security/index.md).
+Storage intent is described in [storage](../storage/index.md). Optional end-user guide syntax is in [user-guide.md](user-guide.md); the phone home's quick add and Continue line are in [home.md](home.md). App roles and row policies are explained in [app security](../security/index.md).

@@ -14,3 +14,6 @@ docs:
   topics:
     - {id: working-on-issues, title: Working on an issue, path: docs/working-on-issues.md}
     - {id: setting-up, title: Setting up a project, path: docs/setting-up.md}
+home:
+  quick_add: {view: issues, label: New issue, action: new_issue}
+  fact: {view: issues, source: issue_rows, value: count, template: "{value} open", empty: No open issues}

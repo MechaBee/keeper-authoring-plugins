@@ -14,3 +14,13 @@ docs:
   topics:
     - {id: features, title: What's in the app, path: docs/features.md}
     - {id: getting-started, title: Setting up and getting started, path: docs/getting-started.md}
+home:
+  quick_add: {view: my_entries, label: Log time, action: add_entry}
+  fact:
+    view: my_entries
+    source: this_week_entries
+    value: sum
+    field: duration_minutes
+    format: duration_minutes
+    template: "{value} this week"
+    empty: Nothing logged this week

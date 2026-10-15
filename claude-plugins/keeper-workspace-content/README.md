@@ -1,13 +1,15 @@
 # Keeper Workspace Content
 
-Keeper Workspace Content connects your coding agent to the files in your MechaBee workspaces, and exposed Keeper app tasks. Find and revise documents, or let an agent prepare an app task,
+Keeper Workspace Content connects your coding agent to the files in your MechaBee workspaces and to Keeper apps. Find and revise documents, read what an app shows, or let an agent carry out an app procedure,
 read its scoped context and submit validated results without leaving the conversation.
 
 ## What you can do
 
 - Browse the workspaces and shared folders you have access to
 - Read Markdown and other UTF-8 text, and write it back with a version check
-- Perform app-defined tasks using logical records and associated documents
+- Read the views Keeper apps share with agents, such as a work queue or one record with its
+  discussion and documents
+- Carry out app procedures (work an app defines, with a guide, inputs and a checked result) using logical records and associated documents
 - Submit results through existing Keeper workflows, with app UI review when requested
 - Inspect a file's version history
 - Move large or binary assets in and out using short-lived, single-path transfer capabilities
@@ -40,9 +42,17 @@ For declarative Keeper app definitions and data administration, use the
 
 Email [info@mechabee.com](mailto:info@mechabee.com).
 
-## App task limits
+## App views
 
-App authors opt in with `exposure: {mcp: true}` on an existing task descriptor. Tasks support record
+App authors opt in with `exposure: {mcp: true}` on a view. Pick the app with `app_list`;
+`app_view_list` names that app's shared views and their parameters; `app_view_read` returns a view's data with your own app role and row access:
+records with reference labels, comments, and documents with their text. Reading needs only the read
+scope and changes nothing.
+
+## App procedure limits
+
+App authors opt in with `exposure: {mcp: true}` on an AI task; agents see it as a procedure
+(`app_procedure_list`, `app_procedure_prepare`, then `app_run_*`). Procedures support record
 outputs, new Markdown run files, and documents created or revised in an app's document collections,
 with `on_result` or `on_approval`. The connected agent performs the reasoning; Keeper does not
 launch a managed worker or require its inference billing account.
@@ -52,4 +62,4 @@ is accepted only if the document is unchanged since the agent read it. Run-file 
 run ID and use standard workspace upserts, without atomic create-only writes. Keeper issues receipts for verified document versions. Source checks use observed content
 and existing workflow concurrency protocols; files and records are separate operations.
 Uncommitted drafts remain after cancellation, rejection or expiry. Unknown write or commit outcomes
-are never automatically retried. Approval happens in the app's existing task run card.
+are never automatically retried. Approval happens in the app, where it shows the agent's work.

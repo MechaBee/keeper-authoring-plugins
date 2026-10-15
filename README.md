@@ -6,18 +6,20 @@ Git marketplace.
 | Plugin | What it does |
 | --- | --- |
 | **Keeper App Author** | Build and safely evolve declarative [MechaBee Keeper](https://mechabee.com/keeper) apps from a conversation. |
-| **Keeper Workspace Content** | Read and revise workspace content, and complete exposed Keeper app tasks with scoped context and validated results. |
+| **Keeper Workspace Content** | Read and revise workspace content, read the views Keeper apps share, and carry out app procedures with scoped context and validated results. |
 
 **Keeper App Author** creates complete operational apps: schemas, records, boards, tables,
 dashboards, forms, workflows, providers, and agent-assisted actions. It validates the complete
 candidate, previews a path-by-path diff, and requires review before applying a change. Existing
-live records are preserved by default.
+live records are preserved by default. App files move between a local folder and Keeper by
+reference, so building and deploying needs a coding agent with a shell and Node.js 18 or newer.
 
 **Keeper Workspace Content** works with the files in your workspaces: browse permitted folders,
 read and revise text with a version check on every edit, and move larger assets with short-lived,
-single-path transfer capabilities. It can also complete Keeper app tasks that an app author has
-exposed: the agent reads the task's scoped records and documents and submits validated results
-through the app's existing workflows, with in-app review when the task asks for approval.
+single-path transfer capabilities. It can also read the views Keeper apps share with agents and
+carry out the procedures an app author has exposed: the agent reads the procedure's scoped records
+and documents and submits validated results through the app's existing workflows, with in-app
+review when the procedure asks for approval.
 
 See the public [installation, permissions, update, and support guide](https://mechabee.com/keeper/app-author).
 

@@ -32,7 +32,7 @@ candidate to work around a stale OAuth session.
 | --- | --- |
 | Metadata, access, revisions, inventory | `app_get`; inspect `effectiveAccess` |
 | Definition inspection | `app_files_read` with `contentScope: "definitions"` |
-| Portable artifact | `app_download`; definition-only by default; media type `application/vnd.mechabee.keeper-app+json` |
+| Portable artifact | `app_download`; definition-only by default; media type `application/vnd.mechabee.keeper-app+json`; `delivery: "link"` to write a whole app into a local folder |
 | Installed health check | Installed-source `app_validate`; no candidate required |
 | URL or browser launch | `app_url_get`; no definition download required |
 

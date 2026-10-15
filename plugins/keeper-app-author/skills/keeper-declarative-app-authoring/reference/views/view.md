@@ -24,7 +24,18 @@ layout:
 ```
 
 Required top-level keys are `view`, non-empty `data_sources`, non-empty `components`, and `layout`.
-Optional top-level keys are `nav`, `share`, `route_state`, `state`, `actions`, `filters`, and `access`.
+Optional top-level keys are `nav`, `share`, `route_state`, `state`, `actions`, `filters`, `access`,
+and `exposure`.
+
+`exposure: {mcp: true}` lets connected agents read the view through the Workspace Content tools
+`app_view_list` and `app_view_read`, with the reader's own app role and row access. The view's
+routed state keys (`route_state`, except `mode: export`) are the parameters an agent passes, so a
+record page takes its id and a list takes its filters. The agent gets each data source as data:
+table and record sources with a `_labels` map naming their references, comments, linked and
+collection documents, a document's text, stats and markdown. Action sets and screen-only sources
+are left out, and nothing is changed. Expose the views an agent needs to look things up before or
+between [tasks](../automation/task.md): a queue, a list by filter, a record page. A view a role may
+not open stays closed to that role's agents.
 
 `view` accepts only `id`, `title`, and optional `description`. Put the entire navigation object at
 top level. Both `view.nav` and `view.show_in_nav` are ignored, not alternative syntax. Top-level

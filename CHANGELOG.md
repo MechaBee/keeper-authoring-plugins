@@ -3,6 +3,79 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.8.0 - 2026-10-15
+
+Deploying is now fast for whole apps: file content no longer travels through the conversation.
+
+- Upload by reference: `app_upload_begin` takes each file's path, sha256 and size, rejects every
+  disallowed path at once before any content is sent, reuses unchanged installed files, and returns
+  a short-lived upload capability for the rest. `app_upload_prepare` and `app_diff` accept the
+  returned `bundleId`; inline `files` remain for small edits.
+- `app_upload_prepare` validates, diffs and stages in one call; the skill no longer sends the same
+  candidate through `app_validate` and `app_diff` first.
+- Prepare, apply and `app_get` return a sha256 and size per file, so the result can be checked
+  against the local copy without reading it back.
+- Stages last about a day; new `app_upload_status` reports whether the app changed since prepare
+  and `app_upload_renew` extends a current stage.
+- `app_download` with `delivery: "link"` returns a download capability and per-file hashes instead
+  of the content, for editing an installed app in a local folder; `includeDocuments` adds the app's
+  document tree to full downloads.
+- Additive data import for JSONL apps: `app_upload_begin` with `purpose: "data_import"`, then
+  `app_data_import_prepare` (new, identical and conflicting rows per table, documents, unknown
+  people) and `app_data_import_apply`. Rows keep their ids and values; people are remapped with
+  `identityMap`; nothing installed is overwritten, and a repeated import is a no-op.
+- The contract's allowed-file list now includes `ai/<id>.md` task guides.
+- New helper `scripts/keeper-app-bundle.mjs` (Node.js 18+, no dependencies): `manifest`, `upload`,
+  `download` and `verify`. The skill documents the wire format, so equivalent tooling works too.
+- The skill states its requirements: authoring and deployment need an agent with a shell, a local
+  working folder and Node.js 18+; it tells the user up front when the agent lacks them.
+- Requires a Keeper server with these tools (MCP server 0.8.0). No scope or authentication change.
+
+## Keeper App Author 1.7.0 - 2026-10-09
+
+- Views can be shared with connected agents: `exposure: {mcp: true}` lets agents read a view's
+  data with `app_view_list` and `app_view_read` (Workspace Content), with the reader's own access.
+  The view's routed state keys are its parameters.
+- `ui.focus: true` on a Markdown `record_detail` field adds a full-screen Focus view for reading and
+  writing.
+- `fields: []` beside a `header` makes a header-only `record_detail` card.
+- The task reference notes that connected agents see an exposed task as a procedure.
+- No MCP tool, scope, or authentication change in this plugin.
+
+## Keeper Workspace Content 1.3.0 - 2026-10-09
+
+- Exposed app tasks are now procedures, so they no longer read like an app's own task records:
+  `app_procedure_list`, `app_procedure_get`, `app_procedure_input_options`,
+  `app_procedure_prepare` (`procedureId`, `procedureRevision`), then `app_run_get`,
+  `app_run_document_read`, `app_run_document_write`, `app_run_submit` and `app_run_cancel`. The
+  `app_task_*` tools are removed.
+- Pick the app first: new `app_list` lists the apps you can open without loading them, and
+  `app_procedure_list` requires `appId` and loads only that app. An app that can't be opened
+  returns `app_unavailable` with its reason instead of failing the whole listing.
+- New read-only tools `app_view_list` and `app_view_read`: list one app's views shared with agents
+  and read one's data (records with reference labels, comments, documents) with your own access.
+- The skill explains when to read a view instead of preparing a task.
+- Read scope only; no new scope or authentication change.
+
+## Keeper App Author 1.6.0 - 2026-10-08
+
+- AI tasks can propose changes to many existing records: a `many` update output takes its ids from
+  a table context (`id: {in: context.<tableAlias>}`); each row names its record and only the fields
+  it changes, and the review shows each row as old → new.
+- New workflow step `update_records` saves many updates, and changes several rows without
+  rewriting the table.
+- A task input's `reference_where` narrows what a connected agent can pick from
+  `app_task_input_options`, and preparing a run with another row is refused.
+- New workflow binding `system.nowLocal`: now as a `datetime` field value in the requester's time
+  zone.
+- No MCP tool, scope, or authentication change.
+
+## Keeper Workspace Content 1.2.1 - 2026-10-08
+
+- `app_task_input_options` lists only the rows the app allows for an input, such as the steps
+  ready for the agent; the skill says an empty list means there is nothing to do.
+- No new tool, scope, or authentication change.
+
 ## Keeper App Author 1.5.0 - 2026-10-08
 
 - Document collections: new reference pages for table roles (`collection`, `document`,

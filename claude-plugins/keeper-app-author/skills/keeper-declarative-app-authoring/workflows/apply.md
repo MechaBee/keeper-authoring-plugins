@@ -4,21 +4,51 @@ Use after [Author and update](author-and-update.md), or for an explicitly reques
 existing candidate. This is the shared procedure for JSONL and DynamoDB definition deployment.
 Storage conversion and deployment repair use [Migrate and repair](migrate-and-repair.md).
 
-## Diff and prepare
+## Upload and prepare
 
-1. Read the current `upload-workflow` and `concurrency` contract topics. Verify the candidate has
-   passed `app_validate` and the selected target and authority are established.
-2. Call `app_diff` with the intended `mode` and `dataMode`. For existing definition work, use
-   `dataMode: "preserve"` and omit JSONL. Use `replace` for a complete definition set, or `merge`
-   for an explicitly partial overlay. Live-data replacement requires explicit user intent,
-   app-admin replacement capability, `dataMode: "replace"`, and `mode: "replace"`.
-3. Review `added`, `modified`, `deleted`, `unchanged`, and `unknownInstalledPaths`. Definition-only
-   changes must not modify or delete JSONL. If a `replace` candidate unintentionally drops an
-   installed guide or `notifications.yaml`, carry it forward and rebuild the candidate.
-4. Call `app_upload_prepare` when the user requested a workspace change. Preparation validates and
-   stages the candidate without changing the installed app. Retain `uploadId`, `baseRevision`,
-   `candidateRevision`, `expiresAt`, and the exact modified/deleted path lists. Keep a recoverable
-   local candidate or exact source-file inventory until deployment and verification complete.
+1. Read the current `upload-workflow` and `concurrency` contract topics. Confirm the target and
+   authority are established and the candidate folder is complete.
+2. Build the manifest from the folder. It lists every accepted file with its sha256 (lowercase hex
+   over the file's UTF-8 bytes) and size, and reports any excluded file:
+
+   ```bash
+   node <skill-dir>/scripts/keeper-app-bundle.mjs manifest <app-folder> > manifest.json
+   ```
+
+   Add `--definitions-only` for definition work on an existing app, so local JSONL stays out of
+   the upload. A file reported as excluded is either a misplaced app file (fix its path) or a
+   local note.
+3. Call `app_upload_begin` with the `manifest` array from that output. Fix every reported
+   `rejectedPaths` entry or `problems` item in one pass and call it again. The result names the files the server still
+   needs; unchanged installed files are reused automatically.
+4. When `missing` is not empty, upload exactly those files with the returned capability as one
+   JSON body `{"files":[{"path","content"}]}`. Pass the result to the script on standard input
+   or as a file; it never prints the upload address. Treat the upload URL
+   and headers as secrets: do not repeat, log, or store them beyond this command.
+
+   ```bash
+   node <skill-dir>/scripts/keeper-app-bundle.mjs upload <app-folder> - <<'JSON'
+   <the app_upload_begin result>
+   JSON
+   ```
+
+   An expired capability or bundle needs a new `app_upload_begin`, which uploads only what is
+   still missing.
+5. Call `app_upload_prepare` with the `bundleId`, the intended `mode`, and `dataMode`. For existing
+   definition work, use `dataMode: "preserve"` with a `--definitions-only` manifest. Use `replace` for
+   a complete definition set, or `merge` for an explicitly partial overlay. Live-data replacement
+   requires explicit user intent, app-admin replacement capability, `dataMode: "replace"`, and
+   `mode: "replace"`. Prepare validates, diffs, and stages in one call; a successful prepare
+   consumes the bundle.
+6. Review `validation`, then `added`, `modified`, `deleted`, `unchanged`, and
+   `unknownInstalledPaths`. Definition-only changes must not modify or delete JSONL. If a `replace`
+   candidate unintentionally drops an installed guide or `notifications.yaml`, restore it in the
+   folder and upload again. Retain `uploadId`, `baseRevision`, `candidateRevision`, `expiresAt`,
+   and the exact modified/deleted path lists. Keep the folder unchanged until deployment and
+   verification complete.
+
+`files` (inline content) remains available on `app_upload_prepare` and `app_diff` for a change of
+one or two small files; it is not a way to deploy a whole app.
 
 ## Review and apply
 
@@ -39,15 +69,19 @@ Acknowledge every modified or deleted path and no others. Added files do not req
 acknowledgement. Stages are signed and bound to the exact OAuth authorization; never edit one,
 transfer it between workspaces, or reuse it under another authorization.
 
-If a stage expires or the revision is stale, reread the app, rebuild the candidate, and prepare a
-fresh stage. Present the new material diff and resolve any newly uncovered authorization gap.
+A stage lasts about a day. While waiting for approval, `app_upload_status` reports whether the app
+changed since prepare, and `app_upload_renew` extends a stage that is still current. Both work only
+under the authorization that prepared the stage. If a stage expires or the revision is stale,
+reread the app, rebuild the candidate, and prepare a fresh stage. Present the new material diff and resolve any newly uncovered authorization gap.
 Never substitute a current revision into an old stage. Definition-only stages tolerate concurrent
 record activity because they pin the definition revision; data-replacement stages pin the full
 revision. Call `app_upload_abort` for an unused stage.
 
 After apply, compare the returned revision with the staged `candidateRevision` (`definitionRevision`
-for a definition-only stage, `revision` for a data-replacement stage), then confirm it with
-`app_get`. A DynamoDB apply may return `state: "applied"` immediately when the compiled serving
+for a definition-only stage, `revision` for a data-replacement stage), then confirm the exact
+content: pass the apply result, or a later `app_get` result, to
+`node <skill-dir>/scripts/keeper-app-bundle.mjs verify <app-folder> -`. It compares every returned
+sha256 with the local files and needs no read-back of the installed app. A DynamoDB apply may return `state: "applied"` immediately when the compiled serving
 plan is unchanged, including notification-only edits; otherwise it returns a deployment job.
 Compare a job result once it completes. If
 apply rejects, rolls back, or reports a revision mismatch despite an
@@ -74,4 +108,4 @@ verification.
 
 Report job diagnostics on failure; do not assume partial work has published. The job-control
 workflow owns `app_job_retry` and `app_job_cancel` handling. A changed candidate needs a new
-validation, diff, and stage. Avoid starting a second job just because the first has not completed.
+upload and stage. Avoid starting a second job just because the first has not completed.

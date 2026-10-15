@@ -22,7 +22,7 @@ Required: non-empty `items`. Item kinds are:
 
 - `action_set`: safe `id`, provider action-set `data_source`.
 - `state_select`: `id`, `label`, `state_key`, `options_source`, `value_field`, `label_field`,
-  optional `placeholder`, `clearable`, `clear_label`, and `on_change` actions.
+  optional `placeholder`, `clearable`, `clear_label`, `variant`, and `on_change` actions.
 - `link`: `id`, `label`, existing `viewId`, optional bound `query`, and
   `appearance: default|secondary`.
 
@@ -33,6 +33,11 @@ table being filtered. Ensure the option catalog covers every schema select value
 with no current entity rows. Set `clearable: true` to prepend a synthetic option that writes `null`
 to `state_key`; use `clear_label` for text such as `All projects`. Clearing also runs `on_change`
 with no selected record, so use constant follow-up values rather than `record.*` bindings there.
+
+Past 15 options a `state_select` becomes a searchable picker (typing narrows the list by label),
+the same rule select and reference fields follow. Set `variant: search` to get the search box on a
+shorter list, or `variant: default` to keep the plain dropdown on a long one. No other value is
+accepted.
 
 Optional toolbar keys: `title`, `description`, `empty_message`, and `presentation` with
 `variant: default|compact` and `mobile: wrap|menu`. Use top-level view `actions`/`filters` for

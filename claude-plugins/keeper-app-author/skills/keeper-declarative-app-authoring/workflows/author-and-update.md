@@ -14,8 +14,8 @@ distinction, JSONL-only legacy query validation, transaction guarantees, and con
 A label-only edit does not need that additional reading. Reuse a current contract already read
 in this task rather than requesting it repeatedly.
 
-For an existing app, call `app_get`, inspect `effectiveAccess`, and read definitions with
-`app_files_read(contentScope: "definitions")`. Preserve the returned revision, source files,
+For an existing app, call `app_get`, inspect `effectiveAccess`, and bring its definitions into the
+candidate folder as described in [Construct the candidate](#construct-the-candidate). Preserve the returned revision, source files,
 installed guide documents, and `notifications.yaml`. Read the affected files and every definition
 that refers to a changed table, field, view, workflow, or agent. Inspect actual app definitions,
 rather than unrelated sibling apps as templates.
@@ -44,11 +44,24 @@ domain fields and screen count to the brief while preserving runtime binding and
 
 ## Construct the candidate
 
-Pass complete UTF-8 `{path, content}` entries, not patches. Paths are app-relative; see the
-[application reference](../reference/application/app.md) for supported file types. Include guide
-documents and `notifications.yaml` in the candidate when present. Do not submit absolute paths,
-traversal, duplicates, or binary content. Use MCP candidate tools rather than directly writing an
-installed app's filesystem.
+The candidate is a local folder laid out like the installed app, with `app.yaml` at its root. Edit
+complete UTF-8 files there; the folder, not the conversation, holds the content. For an existing
+app, start from its current source: use an existing local copy when it matches the installed
+revision, otherwise call `app_download` with `delivery: "link"` and write the files with:
+
+```bash
+node <skill-dir>/scripts/keeper-app-bundle.mjs download <app-folder> - <<'JSON'
+<the app_download result>
+JSON
+```
+
+The script checks every file against the returned sha256 before writing and never prints the
+download address; treat that address as a secret. It refuses to replace existing local app files
+unless given `--overwrite`. Use `app_files_read` only for reading a few files, not to copy an app.
+Paths are app-relative; see the [application reference](../reference/application/app.md) for the
+only accepted files. Include guide documents and `notifications.yaml` when present. Do not use
+absolute paths, traversal, duplicates, or binary content. Change installed apps only through the
+Keeper MCP upload tools, never by writing the installed app's storage directly.
 Every candidate includes `app.yaml`, even when only `notifications.yaml` is changing.
 
 For a new app, include `app.yaml`, required schemas, all requested views, and the actions/navigation
@@ -88,12 +101,13 @@ Check the changed behavior and its dependencies, extending to the whole app for 
 - Retain installed notification rules unless their removal is requested. Validate recipient fields,
   workflow selectors, message placeholders, and overlap priorities against the effective candidate.
 
-Call candidate-source `app_validate` with the complete effective candidate required by the current
-tool schema; set `includeData: true` when intentionally validating submitted JSONL. A partial upload
-overlay may need the retained installed definitions included for standalone candidate validation.
-Fix errors and revalidate. Review warnings for real risks rather than assuming a valid candidate
-satisfies the brief. Report any unresolved limitation.
+Server validation runs on the uploaded folder: `app_upload_prepare` validates, diffs, and stages in
+one call without changing the installed app (see [Apply](apply.md)). Do not send the same candidate
+through `app_validate` or `app_diff` first. Fix errors in the folder, upload again, and review
+warnings for real risks rather than assuming a valid candidate satisfies the brief. Report any
+unresolved limitation.
 
-When a workspace change is requested, continue to [Apply](apply.md), which owns diff, staging,
-revision checks, deployment progress, and launch. For a review-only request, report the validated
-candidate and findings without preparing an upload.
+When a workspace change is requested, continue to [Apply](apply.md), which owns upload, staging,
+revision checks, deployment progress, and launch. For a review-only request, upload the folder as
+described there and call `app_diff` with the `bundleId` instead of preparing; report the validation
+and diff without staging.

@@ -2,9 +2,13 @@
 
 Every step requires a unique safe `id`, one documented `kind`, and optional `when` boolean or
 workflow boolean binding. Workflow bindings use `input.*`, `step.*`, and the workflow `system.*`
-bindings (`system.nowIso`, `system.actorUserId`, `system.actorEmail`, `system.appRole`,
+bindings (`system.nowIso`, `system.nowLocal`, `system.actorUserId`, `system.actorEmail`, `system.appRole`,
 `system.workspaceAccessMode`, `system.workflowId`; the `system.actor*` bindings require
 `actor_required: true`).
+
+`system.nowLocal` is the current time as a `datetime` field value (`YYYY-MM-DDTHH:MM`) in the
+requester's time zone (UTC when unknown); write it into `datetime` fields such as `completed_at`.
+`system.nowIso` is the exact instant, for comparisons and text.
 
 | Kind | Required shape |
 | --- | --- |
@@ -16,11 +20,15 @@ bindings (`system.nowIso`, `system.actorUserId`, `system.actorEmail`, `system.ap
 | `update_record` | `table`, `record_id`, and `values`, `values_from`, or both |
 | `delete_record` | `table`, `record_id`; optional `mode: block|cascade` |
 | `create_records` | `table`, bound `records_from` array |
+| `update_records` | `table`, bound `records_from` array of objects that each carry the primary key |
 | `replace_records` | `table`, bound `records_from` array |
 
 Scripts receive only declared input and helpers; no ambient network or process APIs. Prefer
-declarative record steps. Bulk replace rewrites a table and requires explicit user authorization
-when existing data may be lost.
+declarative record steps. `update_records` updates each listed record with the entry's other keys,
+under the same checks as `update_record`; keys an entry leaves out keep their values, and an empty
+list changes nothing. Use it to change several existing rows, such as closing a task's open steps.
+Bulk replace rewrites a table and requires explicit user authorization when existing data may be
+lost; never use it to update a few rows.
 
 For expected user-correctable failures, call `helpers.inputError(fieldId, message)` to return a
 field-level validation error, or `helpers.actionError(message)` for an action-level business

@@ -11,14 +11,17 @@ Standard sites allow `state.*`, `route.*`, `source.*`, and `context.*`. Row/card
 `record_form.on_success` also allow `record.*`. Provider follow-ups also allow
 `action.result.*`. App-agent descriptors use only `input.*`, `result.*`, and `system.nowIso`.
 Workflow descriptors use only `input.*`, `step.*`, and the workflow `system.*` bindings
-`system.nowIso`, `system.actorUserId`, `system.actorEmail`, `system.appRole`,
+`system.nowIso`, `system.nowLocal`, `system.actorUserId`, `system.actorEmail`, `system.appRole`,
 `system.workspaceAccessMode`, and `system.workflowId`; the `system.actor*` bindings resolve only
 when the workflow runs with an actor (`actor_required: true`).
 Binding roots are reserved runtime vocabulary; they are not domain-owned identifiers.
 
 Bindings resolve to primitives. Object/array results become fallback or null except where action
 input normalization explicitly permits string arrays. Available context keys are `workspaceId`,
-`userId`, `userEmail`, `agentId`, `domain`, `appId`, `viewId`, `browserTimeZone`, and `nowIso`.
+`userId`, `userEmail`, `agentId`, `domain`, `appId`, `viewId`, `browserTimeZone`, `nowIso`,
+`todayLocal`, `weekStartLocal`, and `monthStartLocal`. The last three are `YYYY-MM-DD` dates in the
+reader's time zone (weeks start on Monday), for sources such as "this week":
+`{field: work_date, op: gte, value: {bind: context.weekStartLocal}}`.
 `userId` and `userEmail` describe the authenticated actor and are null for anonymous grant
 viewers; they are not the backing workspace storage identity.
 

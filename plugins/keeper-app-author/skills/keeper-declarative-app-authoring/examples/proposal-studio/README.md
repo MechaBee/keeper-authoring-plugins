@@ -74,10 +74,10 @@ library's don't, so revising a library document is refused when the run is prepa
    the library collections and documents, links and a few discussion and review threads.
 2. Upload `workspace/docs/proposal-studio/` to the same workspace root as ordinary workspace
    content. The seed's document rows point at these files; they are not part of the app package.
-3. In an agent with the Workspace Content plugin, ask: "In Proposal Studio, draft a proposal for the
-   Northwind cold-chain opportunity. Lead with the monitoring service." The agent lists tasks,
-   picks the opportunity from `app_task_input_options`, prepares a run, reads its documents and
-   submits `draft` and `handover`.
+3. In an agent with the Workspace Content plugin, ask: "In Proposal Studio, draft a proposal for
+   the Northwind cold-chain opportunity. Lead with the monitoring service." The agent lists the
+   app's procedures, picks the opportunity from `app_procedure_input_options`, prepares a run,
+   reads its documents and submits `draft` and `handover`.
 4. Open the opportunity: the draft is under Documents and the handover is in Discussion. Comment
    on a passage, ask the agent to revise the document, and accept the revision on the document
    page.

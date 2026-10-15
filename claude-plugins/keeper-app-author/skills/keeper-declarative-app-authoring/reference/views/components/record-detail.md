@@ -50,9 +50,13 @@ Use either `fields` or `sections`. A field is a field id or object with `field` 
   `referenceTable`, `reference_filters`, `helpText`, `contentFormat`, `min`, `max`, and `step`.
 - primitive/bound `value` for a derived display value.
 - `when.visible`, `when.editable`, and `when.required` dialog conditions.
-- `ui`: `label`, `show_label`, `help_text`, `placeholder`, `empty_text`, `copyable`,
+- `ui`: `label`, `show_label`, `help_text`, `placeholder`, `empty_text`, `copyable`, `focus`,
   `width: full|half|third`, `chrome: default|subtle|plain`,
   `edit_flow: always|click_to_edit`, a supported `variant`, and `input`.
+- `ui.focus: true` on a Markdown field adds a **Focus** button: the text opens full screen,
+  rendered for reading, with **Edit** for the Markdown editor when the field is editable. Edits go
+  to the card's draft; an explicit-save card offers **Save** in the focus view. Esc leaves. Use it
+  for long briefs and instructions.
 - `ui.input`: `{variant: default|flexible_text|search|workspace_folder, placeholder, date_field, root}`.
   `workspace_folder` (text fields; `root` sets where the picker opens) is described under
   [fields](../../schema/fields.md) — prefer declaring it on the schema field so every surface shows
@@ -91,6 +95,10 @@ A `reference_chip` pointing to `keeper_principals` or `keeper_app_members` shows
 email is a tooltip only when the current viewer may receive it. A multi-value reference
 (`multiple: true`) displays as colored chips and edits as toggle chips over the referenced rows; it
 needs no special variant.
+
+`fields: []` with a `header` makes a header-only card: the record's title and meta fields, for
+example above a set of tabs that hold the rest. Leaving `fields` and `sections` out shows every
+field.
 
 Sections require safe `id` and non-empty fields; optional `title`, `description`, positive
 `columns`, and `visible_when`. Header accepts `title_field` and `meta_fields`. Do not duplicate the

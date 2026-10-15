@@ -59,6 +59,18 @@ data_sources:
     sort: {field: work_date, direction: desc}
     limit: 200
     performance: {intent: indexed}
+  # Feeds the phone home's "this week" line (app.yaml home.fact); nothing on this view shows it.
+  this_week_entries:
+    kind: table
+    table: time_entries
+    filter:
+      owner_user_id: {bind: context.userId}
+    where:
+      all:
+        - {field: work_date, op: gte, value: {bind: context.weekStartLocal}}
+        - {field: work_date, op: lte, value: {bind: context.todayLocal}}
+    limit: 200
+    performance: {intent: indexed}
   selected_entry:
     kind: record
     table: time_entries

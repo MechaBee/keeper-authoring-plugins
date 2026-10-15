@@ -16,10 +16,19 @@ Install and support documentation: <https://mechabee.com/keeper/app-author>
 
 ## A safer deployment workflow
 
-Keeper App Author discovers the exact agent and workspace before it acts. It validates complete
-candidates, previews a diff, and stages the change for review before applying it. Existing app
-edits preserve live JSONL records by default. Data replacement requires both the necessary app
-authority and explicit user intent.
+Keeper App Author discovers the exact agent and workspace before it acts. It keeps the app as files
+in a local folder and moves them to and from Keeper by reference, sending only the files that
+changed. Keeper validates the complete candidate, previews a diff, and stages the change for review
+before applying it; the result is checked file by file against the local copy. Existing app edits
+preserve live JSONL records by default. Data replacement requires both the necessary app authority
+and explicit user intent. Existing records and documents can be moved into an app with an additive
+import that never overwrites what is already there.
+
+## Requirements
+
+Building and deploying apps needs Claude Code with a shell, a local working folder, Node.js 18 or newer,
+and outbound HTTPS to MechaBee. Inspecting, opening, and managing installed apps needs only the
+plugin's tools.
 
 ## Authentication and data handling
 

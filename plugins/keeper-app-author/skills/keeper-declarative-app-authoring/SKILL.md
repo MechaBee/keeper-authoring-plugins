@@ -19,8 +19,23 @@ Read the workflow matching the user's request. Read additional material only whe
 | Apply a prepared definition change | [Apply](workflows/apply.md) |
 | Test deployed behavior or verify a brief | [Verify and test](workflows/verify-and-test.md) |
 | Migrate data, convert storage, or repair deployment | [Migrate and repair](workflows/migrate-and-repair.md) |
+| Move existing records and documents into an installed app | [Import data](workflows/import-data.md) |
 | Permanently delete an app or resume its deletion | [Delete an app](workflows/delete.md) |
 | Inspect, advance, retry, or cancel an existing job | [Job control](workflows/jobs.md) |
+
+## Requirements
+
+Creating, changing, or deploying an app needs an agent with a shell, a local working folder that
+holds the app source, Node.js 18 or newer for this skill's `scripts/keeper-app-bundle.mjs`, and
+outbound HTTPS to the upload address the Keeper server returns. App files move between that folder
+and Keeper by reference, never by retyping their content into tool arguments. In commands,
+`<skill-dir>` means the directory containing this `SKILL.md`. The script only implements a plain
+wire format described in [Apply](workflows/apply.md); equivalent tooling may be used instead.
+
+If any of these is missing, tell the user before starting that authoring and deployment need a
+coding agent with a shell and a working folder, and stop. A change of one or two small files
+may still go inline through `files`. Inspecting, opening, job control, and deletion need only the
+Keeper MCP tools.
 
 For a new app or substantial redesign, use [app design](design/app-design.md). A focused edit needs
 only the affected design decisions and their syntax. The [reference index](reference/index.md)

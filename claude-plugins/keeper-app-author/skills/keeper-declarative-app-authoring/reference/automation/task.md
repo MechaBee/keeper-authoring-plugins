@@ -39,7 +39,7 @@ limits: {timeout_s: 120}
 | `context` | What the AI may read, resolved with the **requester's** row access. `record`: `{table, id}`; an empty id is an absent record (the AI sees `null`), a missing one fails the run. `table`: `{table, filter?, sort?, limit}`, where `limit` (1–500) is required. Agent executor only: `file` `{path, under?}`, `files` `{from, field, limit, under?}` (paths from a table context's rows), `folder` `{path, under, pattern?, exclude?, limit}` (every text file below a folder, `limit` 1–20), `documents` (a [document collection's](#documents) documents with their text). Bindings: `input.*`, `system.nowIso`, `context.<earlier record>.<field>`; no cycles. |
 | `guide` | Required `ai/<name>.md` in the app folder: how to do the job well. |
 | `executor` | `inline`: one structured generation, no tools; use for most tasks. `agent`: a focused agent that may read context files and write output files. No model key: models are chosen by the service. |
-| `output` | Declared records (`table`, `op: create/update`, `id` for updates, `many` + `max`, `fields`, `constraints.<field>.in: context.<tableAlias>`), files (`path` template, `under?`, `format: markdown`, `max_bytes`; `many` + `keys_from` + `{key}`) and [documents](#documents) (`op: create/revise`). Fields must be writable: no primary key, readonly or computed fields. |
+| `output` | Declared records (`table`, `op: create/update`, `id` for updates, `many` + `max`, `fields`, `constraints.<field>.in: context.<tableAlias>`; [many updates](#many-updates) use `id: {in: context.<tableAlias>}`), files (`path` template, `under?`, `format: markdown`, `max_bytes`; `many` + `keys_from` + `{key}`) and [documents](#documents) (`op: create/revise`). Fields must be writable: no primary key, readonly or computed fields. |
 | `commit` | Who triggers the save (below). |
 | `limits` | `timeout_s`: inline ≤ 300, agent ≤ 3600. Optional `max_output_tokens`. |
 
@@ -131,6 +131,37 @@ commit: {mode: on_result, workflow: commit_drafted_document}
   (`TASK_DOCUMENTS_SELECTOR_INVALID`), that the app has collection and document tables
   (`TASK_DOCUMENTS_ROLE_MISSING`) and that output fields are writable.
 
+## Many updates
+
+A task may propose changes to several existing records, for example fresher figures for tasks
+already on a roadmap. Declare a `many` update whose ids come from a table context of the same
+table:
+
+```yaml
+context:
+  existing: {kind: table, table: content_tasks, filter: {domain_id: {bind: input.domain_id}}, limit: 500}
+output:
+  records:
+    task_updates:
+      table: content_tasks
+      op: update
+      many: true
+      max: 50
+      id: {in: context.existing}              # each row names one of these records
+      fields: [search_volume, volume_source, opportunity]
+```
+
+Each row the AI returns carries the record's primary key and only the fields it changes; fields it
+leaves out keep their values. A row naming a record outside the context, or the same record twice,
+is refused with the errors. Save the rows with `update_records`:
+
+```yaml
+- {id: update, kind: update_records, table: content_tasks, records_from: {bind: result.task_updates}}
+```
+
+With `on_approval`, the reviewer sees each row as the record's name and its changed fields, old
+and new, and ticks the rows to keep like any list.
+
 ## Commit modes
 
 | `commit.mode` | Save happens | Use when |
@@ -177,7 +208,8 @@ result: {step: version}
 ```
 
 Only commit workflows may bind `result.<alias>` (single outputs with `values_from` or
-`result.<alias>.<field>`; many outputs with `records_from`; a document output's `id`, `title`,
+`result.<alias>.<field>`; many outputs with `records_from`, through `update_records` for many
+updates; a document output's `id`, `title`,
 `path`, `revision`, `collection_id` and declared fields), `result.files.<alias>.path`, and
 `system.agentRun.{id, taskId, requesterId, requesterEmail, input.<field>}`. A commit workflow has no
 inputs or `allowed_roles`, and no view, action set or `run_workflow` may start it. Keeper does. Set
@@ -205,8 +237,10 @@ them into one AI control (a direct button for one task, an **AI** menu with each
 
 ## Expose a task to connected agents
 
-Add `exposure: {mcp: true}` to opt an existing task into Workspace Content MCP discovery. Omission
-keeps it private to managed execution. This selects a delivery channel; existing `executor`, app
+Add `exposure: {mcp: true}` to opt an existing task into Workspace Content MCP discovery. Connected
+agents see an exposed task as a **procedure** (`app_procedure_list`, `app_procedure_get`,
+`app_procedure_prepare`, then `app_run_*`), because "task" is often the name of an app's own records.
+Its `id` is the procedure id. Omission keeps it private to managed execution. This selects a delivery channel; existing `executor`, app
 access and `allowed_roles` still apply. Exposed tasks support `on_result` and `on_approval`;
 `by_agent` is rejected. The external agent performs its own reasoning without managed job billing.
 
@@ -216,8 +250,25 @@ writes use standard workspace existence checks and upserts, without atomic creat
 Keeper records verified version/hash receipts. Drafts are retained after cancellation, rejection
 or expiry. Source comparisons are best effort, and workflow commits retain their existing
 concurrency guarantees. Uncertain effects are never automatically retried. Do not promise atomic
-file-plus-record saves or automatic cleanup. Reference input options initially support unfiltered
-reference inputs only.
+file-plus-record saves or automatic cleanup.
+
+A connected agent picks a reference input from `app_procedure_input_options`. Narrow the list with the
+input's `reference_where`, an equality filter on the referenced table; preparing a run with a value
+outside it is refused. Use it so the agent sees only the rows it should work on:
+
+```yaml
+input:
+  - id: assignment_id
+    type: reference
+    referenceTable: assignments
+    required: true
+    reference_where: {assignee_kind: agent, status: ready, kind: research}
+```
+
+Give the referenced table a `referenceLabelTemplate` that names the row the way people talk about
+it (`"${task_code} · ${title}"`), since the label is all the agent sees. To let the agent read
+records before it picks, [expose a view](../views/view.md) such as the queue or the record page. `reference_filters`, which
+depend on a view's state, are not offered to agents.
 
 The complete example is [Proposal Studio](../../examples/proposal-studio/README.md); its
 ordinary workspace documents are in that example's `workspace/` folder.

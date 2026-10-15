@@ -111,6 +111,14 @@ Collection settings people change in the app:
 still change files with other tools; that is intended. Every path Keeper writes is checked to stay
 inside the collection's folder.
 
+**App members.** Sharing an app grants its members workspace access to `keeper/apps/<app id>`
+only, not to `docs/<app id>`. Members reach collection files through the app instead: Keeper
+checks the collection and document rows (and, for changes, `editor_roles` and the document
+table's write rules) and then reads or writes the file as the app's owner, never outside
+`docs/<app id>`. A member therefore cannot read or change collection files with other workspace
+tools, and removing someone from the app removes their document access at once. Do not ask app
+admins to share the `docs` folder separately.
+
 ## Links
 
 ```yaml
