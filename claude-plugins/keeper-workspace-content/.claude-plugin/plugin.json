@@ -1,8 +1,8 @@
 {
   "name": "keeper-workspace-content",
   "displayName": "Keeper Workspace Content",
-  "version": "1.4.0",
-  "description": "Read and revise workspace content, read the views Keeper apps share, and carry out app procedures with scoped context and validated results.",
+  "version": "1.4.1",
+  "description": "Save, report and look up work in MechaBee: carry out Keeper app procedures, read the views apps share, and read and revise workspace content.",
   "author": {
     "name": "MechaBee",
     "email": "info@mechabee.com",

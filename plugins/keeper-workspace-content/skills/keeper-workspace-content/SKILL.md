@@ -1,6 +1,6 @@
 ---
 name: keeper-workspace-content
-description: Browse and author MechaBee workspace content, transfer assets, and read the views Keeper apps share, and carry out their procedures with scoped context and validated results. Use the app-authoring plugin for app definitions and data administration.
+description: Use when the person asks to save, report or log work into MechaBee or their Keeper apps (such as this session's progress or a status update), to look up or review what is recorded there (such as which project to work on next), or to browse and edit workspace content. Reads the views Keeper apps share and carries out their procedures with scoped context and validated results. Use the app-authoring plugin for app definitions and data administration.
 ---
 
 Use the Workspace Content MCP for the user's selected MechaBee content task.

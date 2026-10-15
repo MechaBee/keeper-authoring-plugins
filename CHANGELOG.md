@@ -3,6 +3,13 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper Workspace Content 1.4.1 - 2026-10-15
+
+- The skill and plugin descriptions now say when to use them: saving, reporting or logging work
+  into MechaBee or Keeper apps (for example a session's progress or a status update), and looking
+  up or reviewing what is recorded there. A new session can find the right app procedure from a
+  plain request such as "push this session's progress to my projects", without naming the plugin.
+
 ## Keeper App Author 1.9.0 - 2026-10-15
 
 - New `record_gantt` view component: a timeline of records from start to end date, with milestones
