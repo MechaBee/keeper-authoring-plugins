@@ -5,6 +5,7 @@
 | Dense browse | [Record table](record-table.md) |
 | Compact list or cards | [Record list](record-list.md) |
 | Group records by a select field | [Record board](record-board.md) |
+| Records on a date axis, with dependency arrows | [Record gantt](record-gantt.md) |
 | Small self-contained create/list/edit | [Record collection](record-collection.md) |
 | Read or edit one record | [Record detail](record-detail.md) |
 | Standalone create form | [Record form](record-form.md) |

@@ -36,7 +36,9 @@ records; their storage backend is private to Keeper. A shared view of the app is
 way to find the record a procedure needs.
 
 1. Reuse the selected agent and workspace and pick the app: call `app_list` and choose the one the
-   user means; ask when it is unclear. Then call `app_procedure_list` for that app only,
+   user means; ask when it is unclear. When the user asks to record, report or look up work without
+   naming an app, match their request against each app's `description`, then each procedure's
+   `description`, which says when to use it. Then call `app_procedure_list` for that app only,
    following `nextCursor`. Select the procedure matching the user's request and read
    `app_procedure_get` for its guide, inputs and outputs. An app that can't be opened says why (`app_unavailable` with the reason);
    report it rather than retrying.

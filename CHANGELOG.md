@@ -3,6 +3,23 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.9.0 - 2026-10-15
+
+- New `record_gantt` view component: a timeline of records from start to end date, with milestones
+  for end-only rows, open bars for start-only rows, dependency arrows from a links data source
+  (`reverse_kinds` lets one table mix "blocks" and "needs"), a day/week/month scale and a today
+  line. It is read-only and becomes a week-by-week list on phones. Reference page
+  `reference/views/components/record-gantt.md`; app verification checks the date fields and the
+  dependency references.
+- Exposed procedures are found by their descriptions: `app_list` returns each app's
+  `description`. The skill says to write an app description as what the app is for, and a
+  procedure description as when to use it, in the person's words, never as a plugin command.
+
+## Keeper Workspace Content 1.4.0 - 2026-10-15
+
+- When the person asks to record, report or look up work without naming an app, the skill matches
+  the request against each app's `description` and then each procedure's `description`.
+
 ## Keeper App Author 1.8.0 - 2026-10-15
 
 Deploying is now fast for whole apps: file content no longer travels through the conversation.

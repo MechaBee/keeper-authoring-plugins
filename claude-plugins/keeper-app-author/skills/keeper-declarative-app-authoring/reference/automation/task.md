@@ -244,6 +244,12 @@ Its `id` is the procedure id. Omission keeps it private to managed execution. Th
 access and `allowed_roles` still apply. Exposed tasks support `on_result` and `on_approval`;
 `by_agent` is rejected. The external agent performs its own reasoning without managed job billing.
 
+Connected agents find the work by reading descriptions: `app_list` shows each app's `description`,
+`app_procedure_list` each exposed task's `description`. Write the app description as what the app
+is for, and an exposed task's description as when to use it, in the person's words ("Use when the
+person asks to save this session's progress…"), plus what the agent gathers before preparing. Keep
+the procedure's know-how in the guide and the task definition, never in a plugin command or skill.
+
 Use the same context, guide, record output and commit workflow grammar. Records stay logical for
 both JSONL and DynamoDB. Document outputs must include `{run.id}` in every path template. External
 writes use standard workspace existence checks and upserts, without atomic create-only semantics;

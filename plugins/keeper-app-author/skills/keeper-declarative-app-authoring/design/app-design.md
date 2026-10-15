@@ -37,6 +37,7 @@ with `comment_thread` (Issue Tracker, board example).
 | Dense record browsing | `record_table`, with a route-bound detail when needed |
 | Compact or card-style browsing | `record_list` |
 | Work grouped by a select field | `record_board`; writable source and group field for moves |
+| Plans and schedules over time, with what depends on what | `record_gantt` over start/end dates; edit dates elsewhere |
 | One record with editing/actions and related context | Route-bound `record_detail` |
 | Separate create screen | `record_form` |
 | Weekly rows-by-days time entry | `timesheet_week_grid` |
