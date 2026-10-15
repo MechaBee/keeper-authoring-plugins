@@ -3,6 +3,14 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.9.1 - 2026-10-15
+
+- `record_gantt` gains an optional `hover` card: resting on a bar or its label, or focusing the
+  label, shows the group, label, dates and length, an optional due chip (`due`, with
+  `soon_days` and `done_field` as on a table's due column), up to 8 listed fields formatted by
+  type, and the rows linked before and after. Verification checks the listed fields. Without
+  `hover`, rows keep a one-line tooltip.
+
 ## Keeper Workspace Content 1.4.1 - 2026-10-15
 
 - The skill and plugin descriptions now say when to use them: saving, reporting or logging work

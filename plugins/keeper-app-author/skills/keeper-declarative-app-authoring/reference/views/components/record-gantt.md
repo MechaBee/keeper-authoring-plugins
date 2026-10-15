@@ -29,6 +29,11 @@ components:
       to_field: to_project_id        # reference to the timeline's table
       kind_field: kind               # optional
       reverse_kinds: [needs]         # kinds drawn from `to` to `from`
+    hover:                           # optional card on hover, in place of the plain tooltip
+      fields:                        # up to 8, in order; empty values are left out
+        - status
+        - {field: next_step, label: Next}
+      due: {soon_days: 3}            # optional due chip on the end date; also takes done_field
     on_bar_click:
       - type: navigate
         viewId: project
@@ -43,6 +48,13 @@ components:
   phrased as "A blocks B", no `reverse_kinds` are needed. For a table that also says "B needs A",
   list `needs` in `reverse_kinds`. A link whose other end is filtered out, or has no dates, shows
   as a small link count next to the row's label instead of an arrow.
+- **Hover card.** With `hover`, resting the pointer on a bar or its label, or focusing the
+  label with the keyboard, opens a card: the group, the label, the dates and their length, the
+  listed fields formatted by type (a select as a badge, a reference with its colour, markdown
+  rendered and clamped to a few lines), and the rows linked before and after. `due` adds the same
+  chip a table's due column shows ("in 2 days", "3 days overdue"); rows whose `done_field` is set
+  get none. List what someone needs at a glance, not the whole record; the row click opens the
+  rest. Without `hover`, rows keep a one-line tooltip. Phones show no card.
 - **Filtering** belongs to the data sources. Filter both the main source and the dependency
   source as the view requires; row access applies to both.
 - **Scale** switches between days, weeks and months in the component header. The range covers
@@ -52,6 +64,7 @@ components:
 - A source that returns only its first page says so under the timeline. Bound the main source
   with filters rather than relying on that.
 
-Verification checks that the fields exist, that `start_field` and `end_field` are date or
-datetime fields (`VIEW_GANTT_FIELD_NOT_DATE`), and that `from_field` and `to_field` reference the
-timeline's table (`VIEW_GANTT_DEPENDENCY_NOT_REFERENCE`).
+Verification checks that the fields exist (including `hover.fields` and `hover.due.done_field`),
+that `start_field` and `end_field` are date or datetime fields (`VIEW_GANTT_FIELD_NOT_DATE`), and
+that `from_field` and `to_field` reference the timeline's table
+(`VIEW_GANTT_DEPENDENCY_NOT_REFERENCE`).
