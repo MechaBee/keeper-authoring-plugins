@@ -26,7 +26,7 @@ Rules:
 - The folder and `app.docs` are optional. Missing declared documents are errors; empty or
   undeclared documents are warnings. Status checks verify presence from inventory without loading
   prose; explicit `app_validate` checks contents too. Its `scope` states whether JSONL records
-  were also checked. Definition-only reads and downloads include guides and `notifications.yaml`.
+  were also checked. Definition-only reads and downloads include guides, text templates and `notifications.yaml`.
 - Documents may link to each other by file name (`[Setting up](getting-started.md)`) and within
   themselves by heading anchor (`[the rules](#the-rules)`); the reader resolves both in place. A
   relative link naming no declared document does nothing — write `http(s)` links for anything

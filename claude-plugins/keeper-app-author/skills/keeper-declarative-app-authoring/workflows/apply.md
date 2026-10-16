@@ -87,7 +87,7 @@ Compare a job result once it completes. If
 apply rejects, rolls back, or reports a revision mismatch despite an
 unchanged stage, preserve the candidate and classify every path before retrying: `app.yaml` and
 descriptor YAML under `schemas/`, `views/`, `workflows/`, and `agents/` are definitions;
-`notifications.yaml` and `docs/` are installed content, and `data/*.jsonl` is live data. Do not
+`notifications.yaml`, `docs/` and `text_templates/` are installed content, and `data/*.jsonl` is live data. Do not
 drop guides, change storage, or replace live data merely to make the revisions agree. Treat a
 server-side revision that cannot be explained by the documented scope as a runtime inconsistency
 and report the exact revisions and path inventory.

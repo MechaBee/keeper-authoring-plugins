@@ -12,6 +12,7 @@ envelope and only the supporting syntax used by the requested interaction.
 | Table, record, projection, aggregation and provider queries | [Data sources](data-sources/index.md) |
 | State, routes, values, refresh and compute | [Bindings](bindings/index.md) |
 | State changes, navigation, provider actions, refresh | [Actions](actions/index.md) |
+| Buttons that show and copy filled-in text (prompts, commands, snippets) | [Copy buttons](copy-text.md) |
 | Workspace tables, files, workflows and agents | [Workspace provider](providers/workspace.md) |
 | Live orchestrator resources | [Orchestrator provider](providers/orchestrator.md) |
 | Role-specific screen access | [View access](../security/view-access.md) |

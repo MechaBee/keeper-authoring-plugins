@@ -39,8 +39,8 @@ not open stays closed to that role's agents.
 
 `view` accepts only `id`, `title`, and optional `description`. Put the entire navigation object at
 top level. Both `view.nav` and `view.show_in_nav` are ignored, not alternative syntax. Top-level
-`actions` contains `action_set` items, local `date_range_preset` actions, and manual `query`
-actions. An `action_set` may set `placement: inline|overflow`; overflow keeps rare or destructive
+`actions` contains `action_set` items, local `date_range_preset` actions, manual `query`
+actions, and [`copy_text` buttons](copy-text.md) that show and copy a filled-in text template. An `action_set` may set `placement: inline|overflow`; overflow keeps rare or destructive
 actions in the view bar's **More actions** menu. An [AI task](../automation/task.md) action set
 without a `placement` joins the view bar's AI control: one task shows as a direct ✨ button, two or
 more share one **AI** menu. Set `placement` only to pull a task out of it. A date preset declares

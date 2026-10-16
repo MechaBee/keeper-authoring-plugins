@@ -27,6 +27,7 @@ const ALLOWED_APP_FILE_PATTERNS = [
   /^(?:schemas|views|workflows|agents)\/[A-Za-z0-9_-]+\.ya?ml$/,
   /^ai\/[A-Za-z0-9_-]+\.md$/,
   /^docs\/[A-Za-z0-9_-]+\.md$/,
+  /^text_templates\/[A-Za-z0-9_-]+\.txt$/,
   /^data\/[A-Za-z0-9_-]+\.jsonl$/,
 ];
 

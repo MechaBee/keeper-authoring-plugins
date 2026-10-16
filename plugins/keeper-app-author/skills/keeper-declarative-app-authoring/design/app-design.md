@@ -90,6 +90,10 @@ independent units that should land as they finish. Keep context to what the job 
 only what the requester can see. Write the guide as instructions to a capable colleague, and mark
 AI-made records with an app field reviewers can see.
 
+When people carry text from the app into another tool, such as a prompt for a coding-agent
+session or a command, give them a [copy button](copy-text.md) filled in from the record instead of a
+template to edit by hand.
+
 Read [user guides](user-guide.md) when the app needs explanations of statuses, approval steps, or
 role-specific tasks. Optional [examples](../examples/index.md) illustrate complete compositions;
 they do not dictate the number of screens, tables, or features. Check the resulting behavior using

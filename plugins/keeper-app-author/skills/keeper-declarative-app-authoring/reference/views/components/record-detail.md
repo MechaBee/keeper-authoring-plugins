@@ -121,6 +121,8 @@ default a date to today, or keep a duration in sync with a start/end range). See
 
 `actions_source` names provider sources that resolve to action sets. Inline `actions[]` requires
 `id`, `label`, a documented provider action, and optional `confirm` and
-`appearance: default|secondary|destructive`. `detail_view` generates a conventional deep link;
+`appearance: default|secondary|destructive`. An entry may carry
+[`copy_text`](../copy-text.md) instead of `action`, with optional `visible_when`; it shows and
+copies a text template bound to the shown record, and stays visible when the detail is read-only. `detail_view` generates a conventional deep link;
 prefer explicit navigation when route naming must be controlled. A projected table cannot directly
 back `record_detail`.

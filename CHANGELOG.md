@@ -3,6 +3,19 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.10.0 - 2026-10-16
+
+- Copy buttons: a View Bar action `kind: copy_text`, or `copy_text` on a `record_detail` action,
+  shows an app text template filled in from bound values (`${name}` placeholders) and copies it,
+  for agent prompts, commands or snippets people paste elsewhere. Buttons can be hidden with
+  `visible_when` and stay visible in read-only views.
+- Text templates are a new app file class, `text_templates/<id>.txt`: content outside the
+  definition revision, like guides, so editing one needs no redeploy. Verification reports missing
+  templates and placeholder/value mismatches (`TEXT_TEMPLATE_*`).
+- The bundle script includes `text_templates/` files in uploads (it silently left them out before).
+- A new design note covers when a copy button helps and how to write an agent prompt that points at
+  discovery and the procedure guide instead of restating it.
+
 ## Keeper App Author 1.9.1 - 2026-10-15
 
 - `record_gantt` gains an optional `hover` card: resting on a bar or its label, or focusing the
