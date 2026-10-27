@@ -148,6 +148,7 @@ components:
           data_source: selected_activity
           body_field: summary
           author_field: actor_user_id
+          agent_field: agent_run_id
           occurred_at_field: created_at
           type_field: kind
           empty_message: Nothing has happened yet.

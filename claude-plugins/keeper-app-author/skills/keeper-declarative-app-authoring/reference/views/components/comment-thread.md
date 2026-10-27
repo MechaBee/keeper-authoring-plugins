@@ -32,8 +32,8 @@ empty_message: No comments on this page yet.
 
 Required: `table`, a table-shaped `data_source` already filtered to one subject, `thread_field`
 and `body_field`. Optional: `title`, `description`, `author_field`, `created_field`,
-`resolved_field`, `summary_field`, `anchor`, `create`, `reply`, `reply_to_field`, `resolve`, and
-`empty_message`. The open/resolved count
+`resolved_field`, `summary_field`, `agent_field`, `anchor`, `create`, `reply`, `reply_to_field`,
+`resolve`, and `empty_message`. The open/resolved count
 appears only when `resolved_field` is set.
 
 Rows sharing a `thread_field` value form one thread, ordered by `created_field`. The first comment
@@ -134,3 +134,19 @@ behaviour.
 
 Omit `anchor` entirely for page-level discussion; every thread then reports `none` and no
 `document_source` is needed.
+
+## Rows an agent wrote
+
+A connected agent's comments are saved by its task's commit workflow under the person who ran it
+(`system.agentRun.requesterId`). Store the run id on the row (`system.agentRun.id`) and name that
+field in `agent_field`:
+
+```yaml
+kind: comment_thread
+author_field: actor_user_id
+agent_field: agent_run_id
+```
+
+A row with a value is shown as **Agent (on behalf of <author>)** with an agent avatar, in comment
+headers, event lines and "In reply to" excerpts, so readers never take the agent's words for the
+person's own. Don't repeat "Agent" in the comment body or summary; the byline says it.

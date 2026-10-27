@@ -158,7 +158,9 @@ Content and workflow options:
   `data_source`. `detail_view` remains available as an explicit deep link.
 - `related_sections[]` reads table sources filtered by the selection state. `create.data_source`
   should preset the relation field from that same state key. Checklist sections can toggle
-  `completed_field`; activity sections combine comments and movement events; links sections open
+  `completed_field`; activity sections combine comments and movement events, and an optional
+  `agent_field` (the agent run that wrote a row) names such rows "Agent (on behalf of <author>)",
+  as [`comment_thread`](comment-thread.md#rows-an-agent-wrote) does; links sections open
   `url_field` externally.
 - `checklist_progress` connects a numeric parent field to a checklist section. Its `data_source`
   must be an unfiltered source for the checklist table so every card can show completed/total

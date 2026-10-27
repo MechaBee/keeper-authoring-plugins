@@ -13,7 +13,7 @@ rowAccess:
       groupGrants: {table: project_group_access, resourceField: project_id, groupField: group_id}
       groupMemberships: {table: group_memberships, groupField: group_id, principalField: user_id}
 # Direct edits cover only the fields that are not workflowOnly: title, body,
-# type, priority, parent and the board fields. Every other change goes through a
+# type, priority, parent, the board fields and the document folder. Every other change goes through a
 # workflow, which records its timeline event in the same transaction.
 # Admins bypass the channels, which is how they delete issues.
 mutationPolicy:
@@ -36,6 +36,11 @@ mutationPolicy:
         - move_issue_on_board
         - lock_conversation
         - transfer_issue
+        - hand_back_to_agent
+    # A connected agent's design or questions move the issue along the Agent's queue.
+    agent:
+      operations: [update]
+      taskIds: [write_solution_design, write_implementation_plan, revise_solution_design, ask_questions]
 validationPolicy:
   unique:
     - fields: [project_id, number]
@@ -73,6 +78,14 @@ validationPolicy:
         const issue = input.candidate;
         if (!issue.milestone_id) return true;
         return Boolean(input.milestone && input.milestone.project_id === issue.project_id);
+    - id: agent_works_for_someone
+      operations: [create, update]
+      message: The Agent works for a person. Choose who it is working for.
+      input:
+        candidate: {kind: candidate}
+      code: |
+        const issue = input.candidate;
+        return issue.assignee_kind !== "agent" || Boolean(issue.assignee_member_id);
     - id: state_reason_matches_state
       operations: [create, update]
       message: Closed issues need a close reason, and open issues can't have one.
@@ -89,6 +102,9 @@ queryPaths:
     orderFields: [updated_at]
   - id: by_assignee_state_updated
     equalityFields: [assignee_user_id, state]
+    orderFields: [updated_at]
+  - id: by_assignee_kind_state_updated
+    equalityFields: [assignee_kind, state]
     orderFields: [updated_at]
   - id: by_author_updated
     equalityFields: [author_user_id]
@@ -139,6 +155,26 @@ fields:
   - {id: author_user_id, type: reference, label: Opened by, referenceTable: keeper_principals, required: true, workflowOnly: true}
   - {id: assignee_member_id, type: reference, label: Assignee, referenceTable: members, workflowOnly: true}
   - {id: assignee_user_id, type: reference, label: Assignee account, referenceTable: keeper_principals, workflowOnly: true}
+  # "agent" means a connected agent works the issue for the assignee, who stays
+  # accountable and gets the notifications. Empty on issues from before this field.
+  - id: assignee_kind
+    type: select
+    label: Worked by
+    workflowOnly: true
+    options:
+      - {value: person, label: The assignee}
+      - {value: agent, label: Agent}
+  # Where the Agent's work stands. Only "ready" issues are in the Agent queue.
+  - id: agent_status
+    type: select
+    label: Agent
+    workflowOnly: true
+    options:
+      - {value: ready, label: Ready for the Agent}
+      - {value: waiting_on_answers, label: Waiting on answers}
+      - {value: design_in_review, label: In review}
+  # The issue's own document folder: the solution design and anything added next to it.
+  - {id: collection_id, type: reference, label: Documents, referenceTable: collections}
   - id: labels
     type: reference
     label: Labels
@@ -195,4 +231,7 @@ relations:
     onDelete: block
   - field: milestone_id
     references: {table: milestones, field: id}
+    onDelete: block
+  - field: collection_id
+    references: {table: collections, field: id}
     onDelete: block

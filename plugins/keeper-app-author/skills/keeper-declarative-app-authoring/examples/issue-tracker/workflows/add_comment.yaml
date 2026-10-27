@@ -44,7 +44,13 @@ steps:
       };
       return {
         comment_values: {issue_id: issue.id, kind: "comment", summary: excerpt(body), body, actor_user_id: input.actor},
-        issue_values: {comment_count: (Number(issue.comment_count) || 0) + 1},
+        issue_values: {
+          comment_count: (Number(issue.comment_count) || 0) + 1,
+          // A reply to the Agent's questions puts the issue back in the Agent queue.
+          ...(issue.assignee_kind === "agent" && issue.agent_status === "waiting_on_answers" && issue.state === "open"
+            ? {agent_status: "ready"}
+            : {}),
+        },
       };
   - id: post_comment
     kind: create_record

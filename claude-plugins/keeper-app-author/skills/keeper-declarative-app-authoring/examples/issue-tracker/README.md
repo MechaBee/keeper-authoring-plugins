@@ -11,14 +11,21 @@ JSONL storage; the manifest omits `storage`.
 | [Issue](views/issue.yaml) (hidden, `?issueId=`) | Everyone | Editable `record_detail`; comment and event timeline; two-column details with Change type and Move on board dialogs; sub-issue and link lists; state-aware Close/Reopen |
 | [Board](views/board.yaml) | Everyone | `record_board` per project: saved rank, WIP limit, facets, side-pane detail, and movement activity |
 | [My work](views/my_work.yaml) | Everyone | Tabs: assigned to me, opened by me, open issues nobody owns |
+| [Agent queue](views/agent_queue.yaml) | Everyone and connected agents | Tabs: issues ready for the Agent, and those waiting on people; exposed to MCP |
+| [Document](views/document.yaml) (hidden, `?documentId=`) | Everyone | `document_page` with passage comments, for the issue's documents |
 | [Milestones](views/milestones.yaml) | Everyone | Progress from two `aggregate_table` counts joined by a projection |
 | [Setup access](views/setup_access.yaml) and the other `setup_*` views | Admins | Projects; labels, types and priorities; issue templates; optional assignment profiles, groups and project grants |
 
 Fifteen workflows own every change that should leave a trace: `open_issue`, `close_issue`,
 `reopen_issue`, `add_comment`, `assign_issue`, `set_labels`, `set_milestone`, `set_issue_type`,
 `move_issue_on_board`, `record_board_move`, `link_issues`, `unlink_issues`, `transfer_issue`,
-`lock_conversation` (admins) and `delete_issue` (admins).
-End-user help is in `docs/`.
+`lock_conversation` (admins) and `delete_issue` (admins), plus `hand_back_to_agent`.
+Four [AI tasks](../../reference/automation/task.md), exposed to connected agents as procedures,
+let a coding agent work an issue: `ask_questions`, `write_implementation_plan`,
+`write_solution_design` and `revise_solution_design` (for either document), each saved by its
+commit workflow. The issue page's **Copy agent prompt** button ([`copy_text`](../../reference/views/copy-text.md),
+`text_templates/agent-prompt.txt`) hands a connected agent the issue and the rule for choosing
+between them. End-user help is in `docs/`.
 
 Read the selected [component references](../../reference/views/components/index.md),
 [data-source syntax](../../reference/views/data-sources/index.md), and
@@ -74,6 +81,30 @@ requirements for other apps.
   a zero comment count is projected as empty. The default list shows Type and Created by; long
   creator names wrap, while Labels, Resolution and Comments remain optional columns. The label
   filter is a real `includes` predicate on the issues source rather than a projection script.
+- **The Agent works for a person.** `assign_issue` takes **Worked by**: the assignee, or Agent (on
+  behalf of the assignee). The person stays in `assignee_member_id`/`assignee_user_id`, so My work,
+  notifications and accountability don't change; `assignee_kind: agent` and `agent_status` (ready,
+  waiting on answers, in review) drive the Agent queue. A connected agent always runs as
+  whoever connects it, so there is no separate agent principal.
+- **The queue is the picker.** Each procedure's issue input has
+  `reference_where: {assignee_kind: agent, agent_status: ready, state: open}`, so
+  `app_procedure_input_options` lists exactly the Ready tab, and preparing a run for any other
+  issue is refused. Each commit workflow checks the issue is still Ready, so an issue taken back
+  while the agent works can't be saved.
+- **Plans and designs are documents in the issue's own folder.** `issues.collection_id` is a
+  [document collection](../../reference/schema/roles.md); `assign_issue` creates it the first time
+  an issue goes to the Agent, and the issue page's Documents panel can start one by hand. The
+  design is an ordinary Markdown file people can edit and comment on passage by passage;
+  `revise_solution_design` revises it in place. `issue_documents` links other documents with a
+  role. Collection documents follow the collection, not the project grant: any app member who can
+  open the issue's folder can read them.
+- **Agent comments are conversation rows, named as the Agent.** Questions and handovers are
+  `issue_activity` comments stored under the person who ran the agent, with its `agent_run_id`.
+  The conversation and the board's activity set `agent_field: agent_run_id`, so those rows read
+  **Agent (on behalf of <person>)** with an agent avatar, never as the person's own words. Two
+  notification rules (`issue_agent_questions`, `issue_agent_design`) tell the author and the
+  assignee, because the comment rule only follows `add_comment`. A person's comment on a waiting issue returns it to the queue; **Hand back to the
+  Agent** does the same after a design, with an optional note.
 - **`invalidate: "*"` everywhere.** Workflows run from several views whose source keys differ,
   and `invalidate` names view source keys, not tables.
 
@@ -111,5 +142,5 @@ There are no seeded issues or people, because both need real Keeper principals.
 
 ## Validation expectation
 
-The complete 52-file app candidate (the author-facing README is excluded) verifies with zero
+The complete 76-file app candidate (the author-facing README is excluded) verifies with zero
 errors and zero warnings with data included. Re-run validation after any adaptation.

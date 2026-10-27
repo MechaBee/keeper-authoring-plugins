@@ -13,6 +13,34 @@ the conversation. Select **Priority** or **Parent** to edit them in place. Movin
 
 An issue has one assignee. **My work → Needs an owner** lists open issues nobody has picked up yet.
 
+## Give an issue to the Agent
+
+A connected coding agent (Claude Code or Codex with the MechaBee Workspace Content plugin) can work
+an issue for you: it writes a solution design or asks its questions on the issue.
+
+1. Select **Assign**, pick the person the Agent works for, and set **Worked by** to **Agent (on
+   behalf of the assignee)**. That person stays the assignee and is notified as usual.
+2. The issue appears in **Agent queue → Ready**, and gets its own **Documents** folder.
+3. On the issue, select **Copy agent prompt** and paste it into your agent session. The agent
+   reads the issue and decides what it needs. You can also ask it to "work the Issues agent
+   queue".
+
+Everything the Agent writes appears as **Agent (on behalf of <name>)**, naming the person who ran
+it, with a robot avatar. What the Agent can do, and what you see:
+
+- **Ask questions.** Its questions arrive as one comment headed **Questions**, and **Details**
+  shows **Waiting on answers**. Reply with a comment and the issue goes back to the queue. The
+  issue's author and assignee are notified.
+- **Write an implementation plan**, when the fix is clear, or **a solution design**, when the
+  approach still has choices to make. The document appears under **Documents**, a comment headed
+  **Wrote:** says what to look at first, and **Details** shows **In review**. Open the document
+  to read it, and select a passage to comment on it.
+- **Revise the plan or design.** When it needs changes, select **Hand back to the Agent** and say
+  what should change. The Agent rewrites the same document and reads your comments on its
+  passages.
+
+When the plan or design is good, assign the issue to a person to build it, or close it.
+
 ## Labels
 
 Select **Labels**, then choose what to **Add** and what to **Remove**. Labels you don't

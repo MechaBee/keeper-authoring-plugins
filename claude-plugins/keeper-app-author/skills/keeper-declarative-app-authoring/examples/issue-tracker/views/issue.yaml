@@ -1,6 +1,8 @@
 view:
   id: issue
   title: Issue
+# Connected agents read an issue here: its conversation, sub-issues, links and documents.
+exposure: {mcp: true}
 nav:
   visible: false
 state:
@@ -11,6 +13,25 @@ route_state:
 actions:
   - {id: close, kind: action_set, data_source: close_action}
   - {id: reopen, kind: action_set, data_source: reopen_action}
+  - {id: hand_back, kind: action_set, data_source: hand_back_action}
+  # A prompt to paste into a connected agent session while the issue waits for the Agent.
+  - id: agent_prompt
+    kind: copy_text
+    label: Copy agent prompt
+    template: agent-prompt
+    description: Paste into a Claude Code or Codex session connected to MechaBee. The agent reads the issue and either asks its questions, writes an implementation plan or writes a solution design.
+    values:
+      issue_id: {bind: state.issue_id}
+      issue_ref: {bind: source.issue.record.ref}
+      issue_title: {bind: source.issue.record.title}
+      agent: {bind: context.agentId}
+      workspace: {bind: context.workspaceId}
+      app: {bind: context.appId}
+    visible_when:
+      - {bind: source.issue.record.state, operator: equals, value: open}
+      - {bind: source.issue.record.assignee_kind, operator: equals, value: agent}
+      - {bind: source.issue.record.agent_status, operator: equals, value: ready}
+    appearance: secondary
   - {id: add_subissue, kind: action_set, data_source: subissue_action, placement: overflow}
   - {id: link, kind: action_set, data_source: link_action, placement: overflow}
   - {id: unlink, kind: action_set, data_source: unlink_action, placement: overflow}
@@ -59,6 +80,17 @@ data_sources:
       source_issue_id: {bind: state.issue_id}
     sort: {field: created_at, direction: asc}
     refresh_on: [state.issue_id]
+  # The issue's own folder (the solution design lives here) and documents linked to it.
+  documents:
+    kind: provider_resource
+    provider: workspace
+    resource: linked_documents
+    params:
+      table: issues
+      record_id: {bind: state.issue_id}
+      link_table: issue_documents
+      collection_field: collection_id
+    refresh_on: [state.issue_id]
 
   close_action:
     kind: provider_resource
@@ -87,6 +119,22 @@ data_sources:
     action_dialog: {preview: false, hidden_inputs: [issue_id]}
     depends_on: [issue]
     refresh_on: [state.issue_id]
+  # After the Agent asked or delivered: send it back to work, with an optional note.
+  hand_back_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: hand_back_to_agent
+      label: Hand back to the Agent
+      input__issue_id: {bind: state.issue_id}
+    visible_when:
+      - {bind: source.issue.record.state, operator: equals, value: open}
+      - {bind: source.issue.record.assignee_kind, operator: equals, value: agent}
+      - {bind: source.issue.record.agent_status, operator: not_equals, value: ready}
+    action_dialog: {preview: false, hidden_inputs: [issue_id]}
+    depends_on: [issue]
+    refresh_on: [state.issue_id]
   comment_action:
     kind: provider_resource
     provider: workspace
@@ -106,6 +154,7 @@ data_sources:
       label: Assign
       input__issue_id: {bind: state.issue_id}
       input__member_id: {bind: source.issue.record.assignee_member_id, fallback: null}
+      input__worked_by: {bind: source.issue.record.assignee_kind, fallback: person}
     action_dialog: {preview: false, hidden_inputs: [issue_id]}
     depends_on: [issue]
     refresh_on: [state.issue_id]
@@ -277,6 +326,8 @@ components:
     body_field: body
     summary_field: summary
     author_field: actor_user_id
+    # Comments a connected agent wrote read "Agent (on behalf of <person>)".
+    agent_field: agent_run_id
     created_field: created_at
     create:
       data_source: comment_action
@@ -300,6 +351,12 @@ components:
         columns: 2
         fields:
           - {field: assignee_member_id, mode: display, ui: {variant: reference_chip, empty_text: No one}}
+          # Shown only while the Agent works the issue on the assignee's behalf.
+          - field: agent_status
+            mode: display
+            ui: {variant: badge}
+            when:
+              visible: [{field: assignee_kind, operator: equals, value: agent}]
           - {field: labels, mode: display, ui: {empty_text: None}}
           - {field: issue_type, mode: display, ui: {variant: reference_chip}}
           - {field: priority, mode: edit, ui: {edit_flow: click_to_edit, empty_text: None}}
@@ -322,6 +379,13 @@ components:
             ui: {help_text: Only admins can comment., width: full}
             when:
               visible: [{field: locked, operator: equals, value: true}]
+
+  files:
+    kind: linked_documents
+    title: Documents
+    data_source: documents
+    open: {view: document, query_param: documentId}
+    empty_message: No documents. The Agent's solution design appears here.
 
   children:
     kind: record_list
@@ -365,5 +429,6 @@ layout:
       gap: md
       children:
         - component: issue_properties
+        - component: files
         - component: children
         - component: relationships

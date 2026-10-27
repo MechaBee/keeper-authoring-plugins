@@ -29,6 +29,29 @@ rules:
     message:
       inbox: "New comment on {ref}."
       push: "There is a new comment on an issue."
+  # A connected agent's questions and designs, saved by its commit workflows.
+  - id: issue_agent_questions
+    table: issues
+    operation: update
+    workflowIds: [commit_questions]
+    changedFields: [agent_status]
+    recipientFields: [author_user_id, assignee_user_id]
+    delivery: inbox_and_push
+    priority: 75
+    message:
+      inbox: "The Agent has questions on {ref}."
+      push: "The Agent has questions on an issue."
+  - id: issue_agent_design
+    table: issues
+    operation: update
+    workflowIds: [commit_solution_design, commit_implementation_plan, commit_design_revision]
+    changedFields: [agent_status]
+    recipientFields: [author_user_id, assignee_user_id]
+    delivery: inbox_and_push
+    priority: 75
+    message:
+      inbox: "The Agent's design or plan for {ref} is ready for review."
+      push: "An Agent document is ready for review."
   - id: issue_closed
     table: issues
     operation: update

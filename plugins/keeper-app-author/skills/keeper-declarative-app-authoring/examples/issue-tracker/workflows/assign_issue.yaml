@@ -14,6 +14,16 @@ input_fields:
     reference_where: {active: true}
     helpText: Leave empty to unassign.
     input: {placeholder: Nobody}
+  # The Agent always works for a person: the assignee stays accountable and is notified.
+  - id: worked_by
+    type: select
+    label: Worked by
+    required: true
+    default: person
+    options:
+      - {value: person, label: The assignee}
+      - {value: agent, label: "Agent (on behalf of the assignee)"}
+    helpText: A connected agent picks up issues given to the Agent from the Agent queue.
 steps:
   - id: issue
     kind: get_record
@@ -47,6 +57,7 @@ steps:
       issue: {bind: step.issue, fallback: null}
       member: {bind: step.member, fallback: null}
       current: {bind: step.current, fallback: null}
+      worked_by: {bind: input.worked_by, fallback: person}
       actor: {bind: system.actorUserId}
     code: |
       const issue = input.issue;
@@ -54,30 +65,56 @@ steps:
       const next = input.member;
       const current = input.current;
       if (next && next.active === false) helpers.inputError("member_id", "This member can no longer be assigned.");
-      if ((next?.id ?? null) === (issue.assignee_member_id ?? null)) {
+      const toAgent = input.worked_by === "agent";
+      if (toAgent && !next) helpers.inputError("member_id", "Choose who the Agent works for.");
+      if (toAgent && issue.state !== "open") helpers.actionError("Reopen the issue before giving it to the Agent.");
+      const wasAgent = issue.assignee_kind === "agent";
+      const samePerson = (next?.id ?? null) === (issue.assignee_member_id ?? null);
+      if (samePerson && toAgent === wasAgent) {
         helpers.inputError("member_id", next ? `${next.display_name} is already assigned.` : "Nobody is assigned yet.");
       }
 
       const currentName = current ? current.display_name : "a former member";
+      const who = (name, agent) => agent ? `Agent (on behalf of ${name})` : name;
       const summary = !next
-        ? `unassigned ${currentName}`
-        : issue.assignee_member_id
-          ? `reassigned this from ${currentName} to ${next.display_name}`
-          : `assigned ${next.display_name}`;
+        ? `unassigned ${who(currentName, wasAgent)}`
+        : samePerson
+          ? toAgent ? `handed this to Agent (on behalf of ${next.display_name})` : `took this back from Agent (on behalf of ${next.display_name})`
+          : issue.assignee_member_id
+            ? `reassigned this from ${who(currentName, wasAgent)} to ${who(next.display_name, toAgent)}`
+            : `assigned ${who(next.display_name, toAgent)}`;
       return {
+        // The Agent writes into the issue's own folder; an issue gets it when first given to the Agent.
+        needs_collection: toAgent && !issue.collection_id,
+        collection: {name: `${issue.ref} documents`, features: ["comments", "review_status"]},
         issue_values: {
           assignee_member_id: next ? next.id : null,
           assignee_user_id: next ? next.user_id : null,
+          assignee_kind: next ? (toAgent ? "agent" : "person") : null,
+          // Keep the Agent's progress when only the person it works for changes.
+          agent_status: toAgent ? (wasAgent && issue.agent_status ? issue.agent_status : "ready") : null,
         },
         event_values: {issue_id: issue.id, kind: "assigned", summary, actor_user_id: input.actor},
         preview: {
           title: `${issue.ref} ${issue.title}`,
           items: [
-            {label: "Now", value: issue.assignee_member_id ? currentName : "Unassigned"},
-            {label: "After", value: next ? next.display_name : "Unassigned"},
+            {label: "Now", value: issue.assignee_member_id ? who(currentName, wasAgent) : "Unassigned"},
+            {label: "After", value: next ? who(next.display_name, toAgent) : "Unassigned"},
           ],
         },
       };
+  - id: collection
+    kind: create_record
+    table: collections
+    values_from: {bind: step.prepare.collection}
+    when: {bind: step.prepare.needs_collection}
+  - id: set_collection
+    kind: update_record
+    table: issues
+    record_id: {bind: input.issue_id}
+    values:
+      collection_id: {bind: step.collection.id}
+    when: {bind: step.prepare.needs_collection}
   - id: update_issue
     kind: update_record
     table: issues

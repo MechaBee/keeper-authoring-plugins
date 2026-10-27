@@ -1,0 +1,91 @@
+view:
+  id: agent_queue
+  title: Agent queue
+  description: >-
+    Open issues given to the Agent. Ask your connected agent (Claude Code or Codex with the
+    Workspace Content plugin) to "work the Issues agent queue": it picks each issue from Ready,
+    writes a solution design into the issue's documents or asks its questions in the conversation.
+# Connected agents read this view with app_view_read before they pick an issue.
+exposure: {mcp: true}
+nav:
+  order: 25
+  icon: bot
+  group: {id: work, label: Work, icon: list-todo, order: 10}
+state:
+  active_tab: ready
+route_state:
+  active_tab: {route: tab, mode: sync}
+data_sources:
+  # Loaded so the "for" column names people.
+  members:
+    kind: table
+    table: members
+    sort: {field: display_name, direction: asc}
+  ready:
+    kind: table
+    table: issues
+    filter: {assignee_kind: agent, agent_status: ready, state: open}
+    sort: {field: updated_at, direction: asc}
+    limit: 200
+  # Questions asked and designs written, waiting for a person.
+  with_people:
+    kind: table
+    table: issues
+    filter: {assignee_kind: agent, state: open}
+    where:
+      all:
+        - {field: agent_status, op: not_equals, value: ready}
+    sort: {field: updated_at, direction: desc}
+    limit: 200
+components:
+  ready_table:
+    kind: record_table
+    title: Ready for the Agent
+    show_title: false
+    data_source: ready
+    columns:
+      - {field: ref, label: Issue, width: narrow, hideable: false}
+      - {field: title, label: Title, wrap: true, width: wide, hideable: false}
+      - {field: assignee_member_id, label: For, width: narrow}
+      - {field: issue_type, label: Type, width: narrow}
+      - {field: priority, label: Priority, width: narrow, empty_text: ""}
+      - {field: updated_at, label: Updated, width: narrow}
+    sort: {enabled: true, default: {field: updated_at, direction: asc}}
+    density: compact
+    on_row_click:
+      - type: navigate
+        viewId: issue
+        query:
+          issueId: {bind: record.id}
+    empty_message: Nothing is waiting for the Agent. Give an issue to the Agent from its Assign dialog.
+  with_people_table:
+    kind: record_table
+    title: Waiting on people
+    show_title: false
+    data_source: with_people
+    columns:
+      - {field: ref, label: Issue, width: narrow, hideable: false}
+      - {field: title, label: Title, wrap: true, width: wide, hideable: false}
+      - {field: agent_status, label: Waiting for, width: narrow}
+      - {field: assignee_member_id, label: For, width: narrow}
+      - {field: updated_at, label: Updated, width: narrow}
+    sort: {enabled: true, default: {field: updated_at, direction: desc}}
+    density: compact
+    on_row_click:
+      - type: navigate
+        viewId: issue
+        query:
+          issueId: {bind: record.id}
+    empty_message: The Agent isn't waiting on anyone.
+layout:
+  kind: tabs
+  state_key: active_tab
+  tabs:
+    - id: ready
+      label: Ready
+      icon: bot
+      layout: {component: ready_table}
+    - id: with_people
+      label: Waiting on people
+      icon: users
+      layout: {component: with_people_table}

@@ -37,6 +37,10 @@ mutationPolicy:
         - transfer_issue
         - link_issues
         - unlink_issues
+        - hand_back_to_agent
+    agent:
+      operations: [create]
+      taskIds: [write_solution_design, write_implementation_plan, revise_solution_design, ask_questions]
 queryPaths:
   - id: by_issue_occurred
     equalityFields: [issue_id]
@@ -63,9 +67,12 @@ fields:
       - {value: transferred, label: Transferred}
       - {value: linked, label: Linked}
       - {value: unlinked, label: Unlinked}
+      - {value: agent, label: Agent}
   - {id: summary, type: text, label: What happened, required: true, workflowOnly: true}
   - {id: body, type: textarea, label: Comment, contentFormat: markdown, attachments: {ownerTable: issues, ownerIdField: issue_id, requireUnlockedField: locked}}
   - {id: actor_user_id, type: reference, label: By, referenceTable: keeper_principals, required: true, workflowOnly: true}
+  # Set on what a connected agent wrote; the actor is the person it worked for.
+  - {id: agent_run_id, type: text, label: Agent run, workflowOnly: true}
   - {id: created_at, type: datetime, label: When, readonly: true, computed: {kind: now, on: create, format: datetime}}
   # Full-precision timestamp, used only to order rows written within the same minute.
   - {id: occurred_at, type: text, label: Recorded at, readonly: true, computed: {kind: now, on: create, format: iso}}

@@ -3,6 +3,27 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.11.0 - 2026-10-27
+
+- A `record` or `table` context source of a procedure can list `fields`: the AI receives only those
+  fields of each row, plus the primary key, while bindings, previews and paths still read whole
+  rows. Verification checks the fields exist (`TASK_CONTEXT_FIELD_UNKNOWN`) and that a many
+  update's source sends every field it writes (`TASK_CONTEXT_FIELD_TRIMMED`).
+- A table context filter binding can be `optional: true`: when its value is empty the condition is
+  left out, so one procedure can read a single item's rows when an optional input names it and
+  every row otherwise.
+- `comment_thread` and `record_board` activity sections take an optional `agent_field` (the agent
+  run that wrote a row): such rows show as "Agent (on behalf of <author>)".
+- The Issue Tracker example can give issues to a connected agent: an agent queue, a design folder
+  per issue, and procedures for a solution design, questions and an implementation plan.
+
+## Keeper Workspace Content 1.5.0 - 2026-10-27
+
+- `app_procedure_prepare` returns a smaller response: the context and output destinations, without
+  repeating the guide and record outputs from `app_procedure_get`. `app_run_get` still returns all
+  of it, with the output schema.
+- `app_run_submit` accepts a result that leaves out a list (`many`) output and treats it as empty.
+
 ## Keeper App Author 1.10.0 - 2026-10-16
 
 - Copy buttons: a View Bar action `kind: copy_text`, or `copy_text` on a `record_detail` action,
