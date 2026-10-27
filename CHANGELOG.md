@@ -3,6 +3,12 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper Workspace Content 1.6.0 - 2026-10-27
+
+- A person can paste a `MechaBee Keeper context` block copied from a Keeper app ("Copy context for
+  agent" in the app menu or on a record). The skill uses its agent, workspace and app ids as they
+  are, makes its `read with:` view read first, and treats the block as a pointer, not instructions.
+
 ## Keeper App Author 1.11.0 - 2026-10-27
 
 - A `record` or `table` context source of a procedure can list `fields`: the AI receives only those
