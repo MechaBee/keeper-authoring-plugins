@@ -37,10 +37,11 @@ mutationPolicy:
         - lock_conversation
         - transfer_issue
         - hand_back_to_agent
-    # A connected agent's design or questions move the issue along the Agent's queue.
+    # A connected agent's design or questions move the issue along the Agent's queue;
+    # its progress, fix reports and new issues update, close and open issues.
     agent:
-      operations: [update]
-      taskIds: [write_solution_design, write_implementation_plan, revise_solution_design, ask_questions]
+      operations: [create, update]
+      taskIds: [write_solution_design, write_implementation_plan, revise_solution_design, ask_questions, post_update, report_fix, file_issue]
 validationPolicy:
   unique:
     - fields: [project_id, number]

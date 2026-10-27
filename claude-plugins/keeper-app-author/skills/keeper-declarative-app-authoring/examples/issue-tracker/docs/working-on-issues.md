@@ -41,6 +41,22 @@ it, with a robot avatar. What the Agent can do, and what you see:
 
 When the plan or design is good, assign the issue to a person to build it, or close it.
 
+## Let an agent report its work
+
+A coding agent working on an issue in a session can keep the issue up to date, on any open
+issue, whether or not it was given to the Agent. Ask it in your own words, for example "post
+an update on TTR#19", "the fix is deployed, close TTR#19" or "file a follow-up issue for that".
+
+- **Post an update.** A comment headed **Update** says where the work stands, and the issue can
+  move on the board, to **In progress** or **In review** for example.
+- **Report a fix.** A comment headed **Fixed** says what changed, and the issue closes as
+  completed: it moves to **Done**, loses the `needs-triage` label and leaves the Agent queue.
+  Only ask for this once the fix is live.
+- **File a new issue.** The agent opens an issue in the project, in the Backlog and unassigned,
+  with you as its author. For a follow-up, the original issue's conversation names the new one.
+
+The issue's author and assignee are notified of updates and fixes as usual.
+
 ## Labels
 
 Select **Labels**, then choose what to **Add** and what to **Remove**. Labels you don't

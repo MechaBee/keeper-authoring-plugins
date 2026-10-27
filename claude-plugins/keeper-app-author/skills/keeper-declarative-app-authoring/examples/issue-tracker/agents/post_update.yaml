@@ -1,0 +1,41 @@
+id: post_update
+title: Post a progress update on an issue
+description: "Use when you are working on an open issue and people should know where it stands (you started it, a fix is in review, it is blocked, you found the cause): posts the update as a comment and can move the issue on the board, to In progress or In review for example. It doesn't close the issue; use report_fix once the work is done and shipped."
+kind: task
+exposure: {mcp: true}
+allowed_roles: [editor, developer, admin]
+input:
+  - id: issue_id
+    type: reference
+    label: Issue
+    referenceTable: issues
+    required: true
+    reference_where: {state: open}
+  - id: board_status
+    type: select
+    label: Move on the board to
+    helpText: Optional. Leave empty to keep the issue's column.
+    options:
+      - {value: backlog, label: Backlog}
+      - {value: ready, label: Ready}
+      - {value: in_progress, label: In progress}
+      - {value: in_review, label: In review}
+target: {table: issues, id: {bind: input.issue_id}}
+context:
+  issue:
+    {kind: record, table: issues, id: {bind: input.issue_id}, required: true, label: The issue}
+  conversation:
+    kind: table
+    table: issue_activity
+    filter: {issue_id: {bind: input.issue_id}}
+    sort: {field: occurred_at, direction: asc}
+    limit: 300
+    fields: [kind, summary, body, actor_user_id, agent_run_id, created_at]
+    label: Conversation and events
+guide: ai/post-update.md
+executor: {kind: agent}
+output:
+  records:
+    update: {table: issue_activity, op: create, fields: [body]}
+commit: {mode: on_result, workflow: commit_progress_update}
+limits: {timeout_s: 1800}

@@ -52,10 +52,21 @@ rules:
     message:
       inbox: "The Agent's design or plan for {ref} is ready for review."
       push: "An Agent document is ready for review."
+  - id: issue_agent_update
+    table: issues
+    operation: update
+    workflowIds: [commit_progress_update]
+    changedFields: [comment_count]
+    recipientFields: [author_user_id, assignee_user_id]
+    delivery: inbox_and_push
+    priority: 70
+    message:
+      inbox: "The Agent posted an update on {ref}."
+      push: "The Agent posted an update on an issue."
   - id: issue_closed
     table: issues
     operation: update
-    workflowIds: [close_issue]
+    workflowIds: [close_issue, commit_fix_report]
     changedFields: [state]
     recipientFields: [author_user_id, assignee_user_id]
     delivery: inbox_and_push

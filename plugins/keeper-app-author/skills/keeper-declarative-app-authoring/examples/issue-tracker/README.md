@@ -20,9 +20,12 @@ Fifteen workflows own every change that should leave a trace: `open_issue`, `clo
 `reopen_issue`, `add_comment`, `assign_issue`, `set_labels`, `set_milestone`, `set_issue_type`,
 `move_issue_on_board`, `record_board_move`, `link_issues`, `unlink_issues`, `transfer_issue`,
 `lock_conversation` (admins) and `delete_issue` (admins), plus `hand_back_to_agent`.
-Four [AI tasks](../../reference/automation/task.md), exposed to connected agents as procedures,
-let a coding agent work an issue: `ask_questions`, `write_implementation_plan`,
-`write_solution_design` and `revise_solution_design` (for either document), each saved by its
+Seven [AI tasks](../../reference/automation/task.md), exposed to connected agents as procedures,
+let a coding agent work an issue. Four work the Agent queue: `ask_questions`,
+`write_implementation_plan`, `write_solution_design` and `revise_solution_design` (for either
+document). Three report work done in a session on any open issue or project: `post_update`
+(comment, optional board move), `report_fix` (comment, close as completed, Done, drop
+`needs-triage`, leave the Agent) and `file_issue` (a new or follow-up issue). Each is saved by its
 commit workflow. The issue page's **Copy agent prompt** button ([`copy_text`](../../reference/views/copy-text.md),
 `text_templates/agent-prompt.txt`) hands a connected agent the issue and the rule for choosing
 between them. End-user help is in `docs/`.
@@ -86,11 +89,17 @@ requirements for other apps.
   notifications and accountability don't change; `assignee_kind: agent` and `agent_status` (ready,
   waiting on answers, in review) drive the Agent queue. A connected agent always runs as
   whoever connects it, so there is no separate agent principal.
-- **The queue is the picker.** Each procedure's issue input has
+- **The queue is the picker.** Each queue procedure's issue input has
   `reference_where: {assignee_kind: agent, agent_status: ready, state: open}`, so
   `app_procedure_input_options` lists exactly the Ready tab, and preparing a run for any other
   issue is refused. Each commit workflow checks the issue is still Ready, so an issue taken back
-  while the agent works can't be saved.
+  while the agent works can't be saved. The reporting procedures (`post_update`, `report_fix`)
+  take any open issue (`reference_where: {state: open}`) and refuse a closed or locked one at
+  commit.
+- **A filed issue is traced on its origin.** Under `related_resource_grant`, activity and link
+  rows can't be written for an issue created in the same transaction, so `file_issue` writes no
+  event or link on the new issue: the issue it follows up gets an Agent event naming it, and the
+  new issue's description names the original.
 - **Plans and designs are documents in the issue's own folder.** `issues.collection_id` is a
   [document collection](../../reference/schema/roles.md); `assign_issue` creates it the first time
   an issue goes to the Agent, and the issue page's Documents panel can start one by hand. The
@@ -101,9 +110,11 @@ requirements for other apps.
 - **Agent comments are conversation rows, named as the Agent.** Questions and handovers are
   `issue_activity` comments stored under the person who ran the agent, with its `agent_run_id`.
   The conversation and the board's activity set `agent_field: agent_run_id`, so those rows read
-  **Agent (on behalf of <person>)** with an agent avatar, never as the person's own words. Two
-  notification rules (`issue_agent_questions`, `issue_agent_design`) tell the author and the
-  assignee, because the comment rule only follows `add_comment`. A person's comment on a waiting issue returns it to the queue; **Hand back to the
+  **Agent (on behalf of <person>)** with an agent avatar, never as the person's own words; so do
+  the close, board and label events of `report_fix`. Three notification rules
+  (`issue_agent_questions`, `issue_agent_design`, `issue_agent_update`) tell the author and the
+  assignee, because the comment rule only follows `add_comment`; `issue_closed` also follows
+  `commit_fix_report`. A person's comment on a waiting issue returns it to the queue; **Hand back to the
   Agent** does the same after a design, with an optional note.
 - **`invalidate: "*"` everywhere.** Workflows run from several views whose source keys differ,
   and `invalidate` names view source keys, not tables.

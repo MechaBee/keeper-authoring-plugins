@@ -1,6 +1,6 @@
 id: issue-tracker
 title: Issues
-description: Team issue tracking with projects, labels, milestones, sub-issues and a board. Issues given to the Agent are worked by connected coding agents, who write solution designs and ask questions on the issue.
+description: Team issue tracking with projects, labels, milestones, sub-issues and a board. Issues given to the Agent are worked by connected coding agents, who write solution designs and ask questions on the issue; agents also post progress updates, report fixes to close issues, and file follow-up issues.
 icon: list-todo
 version: 1
 schemaVersion: 2

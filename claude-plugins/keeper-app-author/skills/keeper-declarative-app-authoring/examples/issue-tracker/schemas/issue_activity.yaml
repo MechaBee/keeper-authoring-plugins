@@ -40,7 +40,7 @@ mutationPolicy:
         - hand_back_to_agent
     agent:
       operations: [create]
-      taskIds: [write_solution_design, write_implementation_plan, revise_solution_design, ask_questions]
+      taskIds: [write_solution_design, write_implementation_plan, revise_solution_design, ask_questions, post_update, report_fix, file_issue]
 queryPaths:
   - id: by_issue_occurred
     equalityFields: [issue_id]

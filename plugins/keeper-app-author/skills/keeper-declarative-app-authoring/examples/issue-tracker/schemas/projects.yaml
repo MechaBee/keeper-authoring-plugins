@@ -23,6 +23,10 @@ mutationPolicy:
     workflow:
       operations: [update]
       workflowIds: [open_issue, transfer_issue]
+    # A connected agent filing an issue takes the project's next number.
+    agent:
+      operations: [update]
+      taskIds: [file_issue]
 validationPolicy:
   unique:
     - fields: [key]

@@ -1,0 +1,34 @@
+id: report_fix
+title: Report a fix and close the issue
+description: "Use when the work an open issue asks for is done and shipped (for example you fixed it in this session and the person says it is deployed): posts what changed as a comment and closes the issue as completed. It also moves the issue to Done, drops needs-triage and takes it out of the Agent queue. Use post_update instead while the work is still in progress or waiting on review."
+kind: task
+exposure: {mcp: true}
+allowed_roles: [editor, developer, admin]
+input:
+  - id: issue_id
+    type: reference
+    label: Issue
+    referenceTable: issues
+    required: true
+    reference_where: {state: open}
+target: {table: issues, id: {bind: input.issue_id}}
+context:
+  issue:
+    {kind: record, table: issues, id: {bind: input.issue_id}, required: true, label: The issue}
+  project:
+    {kind: record, table: projects, id: {bind: context.issue.project_id}, label: Project}
+  conversation:
+    kind: table
+    table: issue_activity
+    filter: {issue_id: {bind: input.issue_id}}
+    sort: {field: occurred_at, direction: asc}
+    limit: 300
+    fields: [kind, summary, body, actor_user_id, agent_run_id, created_at]
+    label: Conversation and events
+guide: ai/report-fix.md
+executor: {kind: agent}
+output:
+  records:
+    resolution: {table: issue_activity, op: create, fields: [body]}
+commit: {mode: on_result, workflow: commit_fix_report}
+limits: {timeout_s: 1800}

@@ -3,6 +3,14 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.12.0 - 2026-10-27
+
+- The Issue Tracker example lets a connected agent report the work it did in a session, on any open
+  issue: `post_update` posts a progress comment and can move the issue on the board, `report_fix`
+  posts what changed and closes the issue as completed (Done, without `needs-triage`, out of the
+  Agent queue), and `file_issue` opens a new or follow-up issue, recorded on the issue it came
+  from. Everything they write shows as "Agent (on behalf of <person>)".
+
 ## Keeper Workspace Content 1.6.0 - 2026-10-27
 
 - A person can paste a `MechaBee Keeper context` block copied from a Keeper app ("Copy context for
