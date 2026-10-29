@@ -3,6 +3,12 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.12.1 - 2026-10-29
+
+- The Issue Tracker example has a "Copy prompt to work on it" button on open issues that a person
+  works: it copies ready-to-paste instructions for the person's coding agent to read the issue,
+  post updates as it moves through In progress and In review, and report the fix when done.
+
 ## Keeper App Author 1.12.0 - 2026-10-27
 
 - The Issue Tracker example lets a connected agent report the work it did in a session, on any open

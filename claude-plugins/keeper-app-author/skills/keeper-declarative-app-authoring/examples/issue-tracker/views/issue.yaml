@@ -32,6 +32,23 @@ actions:
       - {bind: source.issue.record.assignee_kind, operator: equals, value: agent}
       - {bind: source.issue.record.agent_status, operator: equals, value: ready}
     appearance: secondary
+  # A prompt to paste into your own agent session when you work the issue yourself.
+  - id: work_prompt
+    kind: copy_text
+    label: Copy prompt to work on it
+    template: work-prompt
+    description: Paste into a Claude Code or Codex session connected to MechaBee. The agent reads the issue, posts progress updates while it works, and reports the fix when it is deployed.
+    values:
+      issue_id: {bind: state.issue_id}
+      issue_ref: {bind: source.issue.record.ref}
+      issue_title: {bind: source.issue.record.title}
+      agent: {bind: context.agentId}
+      workspace: {bind: context.workspaceId}
+      app: {bind: context.appId}
+    visible_when:
+      - {bind: source.issue.record.state, operator: equals, value: open}
+      - {bind: source.issue.record.assignee_kind, operator: not_equals, value: agent}
+    appearance: secondary
   - {id: add_subissue, kind: action_set, data_source: subissue_action, placement: overflow}
   - {id: link, kind: action_set, data_source: link_action, placement: overflow}
   - {id: unlink, kind: action_set, data_source: unlink_action, placement: overflow}

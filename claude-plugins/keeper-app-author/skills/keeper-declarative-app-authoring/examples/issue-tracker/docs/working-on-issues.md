@@ -47,6 +47,11 @@ A coding agent working on an issue in a session can keep the issue up to date, o
 issue, whether or not it was given to the Agent. Ask it in your own words, for example "post
 an update on TTR#19", "the fix is deployed, close TTR#19" or "file a follow-up issue for that".
 
+To hand an issue you work yourself to your agent, select **Copy prompt to work on it** on the
+issue and paste it into your agent session. The agent reads the issue, posts an update before it
+changes anything and another when the work is ready for review, and reports the fix once you tell
+it the change is deployed.
+
 - **Post an update.** A comment headed **Update** says where the work stands, and the issue can
   move on the board, to **In progress** or **In review** for example.
 - **Report a fix.** A comment headed **Fixed** says what changed, and the issue closes as

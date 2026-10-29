@@ -26,9 +26,12 @@ let a coding agent work an issue. Four work the Agent queue: `ask_questions`,
 document). Three report work done in a session on any open issue or project: `post_update`
 (comment, optional board move), `report_fix` (comment, close as completed, Done, drop
 `needs-triage`, leave the Agent) and `file_issue` (a new or follow-up issue). Each is saved by its
-commit workflow. The issue page's **Copy agent prompt** button ([`copy_text`](../../reference/views/copy-text.md),
-`text_templates/agent-prompt.txt`) hands a connected agent the issue and the rule for choosing
-between them. End-user help is in `docs/`.
+commit workflow. The issue page has two [`copy_text`](../../reference/views/copy-text.md) buttons
+that hand a connected agent the issue: **Copy agent prompt** (`text_templates/agent-prompt.txt`,
+only while the issue waits in the Agent queue) carries the rule for choosing between the four
+queue tasks, and **Copy prompt to work on it** (`text_templates/work-prompt.txt`, on open issues a
+person works) has the agent post updates while it works and report the fix once it is deployed.
+End-user help is in `docs/`.
 
 Read the selected [component references](../../reference/views/components/index.md),
 [data-source syntax](../../reference/views/data-sources/index.md), and
