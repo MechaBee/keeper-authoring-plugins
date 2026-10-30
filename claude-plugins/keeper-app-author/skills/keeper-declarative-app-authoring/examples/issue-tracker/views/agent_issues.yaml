@@ -5,7 +5,7 @@ view:
     The issues you can see, most recently updated first (at most 50). Open issues by default. Filter
     with status (board column: backlog, ready, in_progress, in_review or done), state (open or
     closed; null for both) and project (a project id from the projects list here). Read one issue in
-    full with the issue view, and update it with the post_update and report_fix procedures.
+    full with the issue view, and change it with the move_on_board, post_update and report_fix procedures.
 # A lean list for connected agents: no member directory, no screen-only sources.
 exposure: {mcp: true}
 nav:

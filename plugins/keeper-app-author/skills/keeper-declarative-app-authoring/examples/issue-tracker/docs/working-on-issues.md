@@ -47,6 +47,10 @@ A coding agent working on an issue in a session can keep the issue up to date, o
 issue, whether or not it was given to the Agent. Ask it in your own words, for example "post
 an update on TTR#19", "the fix is deployed, close TTR#19" or "file a follow-up issue for that".
 
+To get your agent started, select **Copy prompt for your agent** on **Issues** and paste it into
+your agent session, then add what you need. The prompt tells the agent how to find and read issues
+here and which procedures change them.
+
 To hand an issue you work yourself to your agent, select **Copy prompt to work on it** on the
 issue and paste it into your agent session. The agent reads the issue, posts an update before it
 changes anything and another when the work is ready for review, and reports the fix once you tell
@@ -56,8 +60,9 @@ it the change is deployed.
   narrow them by board column, open or closed, and project. Ask "what's in review in TTR?" or
   "which open issues changed lately?".
 - **Post an update.** A comment headed **Update** says where the work stands, and the issue can
-  move on the board, to **In progress** or **In review** for example. The agent can also just move
-  the issue without a comment; a move alone notifies nobody.
+  move on the board, to **In progress** or **In review** for example.
+- **Move an issue.** The agent moves the issue to another column without a comment, for example
+  to **In progress** when it starts. A move alone notifies nobody.
 - **Report a fix.** A comment headed **Fixed** says what changed, and the issue closes as
   completed: it moves to **Done**, loses the `needs-triage` label and leaves the Agent queue.
   Only ask for this once the fix is live.

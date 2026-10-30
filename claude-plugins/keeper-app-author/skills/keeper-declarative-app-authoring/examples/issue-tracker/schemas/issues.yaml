@@ -41,7 +41,7 @@ mutationPolicy:
     # its progress, fix reports and new issues update, close and open issues.
     agent:
       operations: [create, update]
-      taskIds: [write_solution_design, write_implementation_plan, revise_solution_design, ask_questions, post_update, report_fix, file_issue]
+      taskIds: [write_solution_design, write_implementation_plan, revise_solution_design, ask_questions, post_update, move_on_board, report_fix, file_issue]
 validationPolicy:
   unique:
     - fields: [project_id, number]

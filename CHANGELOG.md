@@ -3,6 +3,13 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.14.0 - 2026-10-30
+
+- The Issue Tracker example has a `move_on_board` procedure that moves an issue to another board
+  column without a comment, so `post_update` always posts a comment again. A new **Copy prompt for
+  your agent** button on Issues hands a person's coding agent ready-to-paste instructions for
+  finding, reading and updating issues.
+
 ## Keeper App Author 1.13.0 - 2026-10-30
 
 - The Issue Tracker example is easier for a connected agent to work with: a new `agent_issues`

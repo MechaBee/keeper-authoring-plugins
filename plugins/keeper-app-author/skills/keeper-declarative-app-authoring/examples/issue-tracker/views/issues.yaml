@@ -25,6 +25,16 @@ actions:
   - id: new_issue
     kind: action_set
     data_source: new_issue_action
+  # A prompt that teaches a connected agent how to find, read and update issues here.
+  - id: agent_prompt
+    kind: copy_text
+    label: Copy prompt for your agent
+    template: issues-prompt
+    description: Paste into a Claude Code or Codex session connected to MechaBee, then add what you need, for example "what is in review?" or "pick the oldest bug in Ready and start on it".
+    values:
+      agent: {bind: context.agentId}
+      workspace: {bind: context.workspaceId}
+      app: {bind: context.appId}
 filters:
   - id: search
     kind: state_input
