@@ -12,6 +12,7 @@ JSONL storage; the manifest omits `storage`.
 | [Board](views/board.yaml) | Everyone | `record_board` per project: saved rank, WIP limit, facets, side-pane detail, and movement activity |
 | [My work](views/my_work.yaml) | Everyone | Tabs: assigned to me, opened by me, open issues nobody owns |
 | [Agent queue](views/agent_queue.yaml) | Everyone and connected agents | Tabs: issues ready for the Agent, and those waiting on people; exposed to MCP |
+| [Issues for agents](views/agent_issues.yaml) (hidden) | Connected agents | Lean MCP list: issues by recent update, filtered by board column (`status`), `state` and `project`; no member directory |
 | [Document](views/document.yaml) (hidden, `?documentId=`) | Everyone | `document_page` with passage comments, for the issue's documents |
 | [Milestones](views/milestones.yaml) | Everyone | Progress from two `aggregate_table` counts joined by a projection |
 | [Setup access](views/setup_access.yaml) and the other `setup_*` views | Admins | Projects; labels, types and priorities; issue templates; optional assignment profiles, groups and project grants |
@@ -24,7 +25,7 @@ Seven [AI tasks](../../reference/automation/task.md), exposed to connected agent
 let a coding agent work an issue. Four work the Agent queue: `ask_questions`,
 `write_implementation_plan`, `write_solution_design` and `revise_solution_design` (for either
 document). Three report work done in a session on any open issue or project: `post_update`
-(comment, optional board move), `report_fix` (comment, close as completed, Done, drop
+(comment and/or board move), `report_fix` (comment, close as completed, Done, drop
 `needs-triage`, leave the Agent) and `file_issue` (a new or follow-up issue). Each is saved by its
 commit workflow. The issue page has two [`copy_text`](../../reference/views/copy-text.md) buttons
 that hand a connected agent the issue: **Copy agent prompt** (`text_templates/agent-prompt.txt`,
@@ -98,7 +99,10 @@ requirements for other apps.
   issue is refused. Each commit workflow checks the issue is still Ready, so an issue taken back
   while the agent works can't be saved. The reporting procedures (`post_update`, `report_fix`)
   take any open issue (`reference_where: {state: open}`) and refuse a closed or locked one at
-  commit.
+  commit (`post_update` allows a move alone on a locked issue, since it adds no comment).
+- **Agents read lean views.** `app_view_read` returns every data source of a view, so the agent
+  views load only what an agent uses: `agent_issues` and `agent_queue` carry no member directory
+  (reference labels resolve without it), and the issue view adds its project for context.
 - **A filed issue is traced on its origin.** Under `related_resource_grant`, activity and link
   rows can't be written for an issue created in the same transaction, so `file_issue` writes no
   event or link on the new issue: the issue it follows up gets an Agent event naming it, and the

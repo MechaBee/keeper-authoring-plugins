@@ -1,0 +1,62 @@
+view:
+  id: agent_issues
+  title: Issues for agents
+  description: >-
+    The issues you can see, most recently updated first (at most 50). Open issues by default. Filter
+    with status (board column: backlog, ready, in_progress, in_review or done), state (open or
+    closed; null for both) and project (a project id from the projects list here). Read one issue in
+    full with the issue view, and update it with the post_update and report_fix procedures.
+# A lean list for connected agents: no member directory, no screen-only sources.
+exposure: {mcp: true}
+nav:
+  visible: false
+state:
+  state: open
+  board_status: null
+  project_id: null
+route_state:
+  state: {route: state, mode: sync}
+  board_status: {route: status, mode: sync}
+  project_id: {route: project, mode: sync}
+data_sources:
+  # Lets an agent turn a project key such as TTR into the id the project filter takes.
+  projects:
+    kind: table
+    table: projects
+    filter: {archived: false}
+    sort: {field: key, direction: asc}
+  issues:
+    kind: table
+    table: issues
+    where:
+      all:
+        - {field: state, op: equals, value: {bind: state.state}, when_empty: ignore}
+        - {field: board_status, op: equals, value: {bind: state.board_status}, when_empty: ignore}
+        - {field: project_id, op: equals, value: {bind: state.project_id}, when_empty: ignore}
+    sort: {field: updated_at, direction: desc}
+    limit: 50
+    performance: {intent: bounded_scan}
+    refresh_on: [state.state, state.board_status, state.project_id]
+components:
+  issue_table:
+    kind: record_table
+    title: Issues
+    show_title: false
+    data_source: issues
+    columns:
+      - {field: ref, label: Issue, width: narrow, hideable: false}
+      - {field: title, label: Title, wrap: true, width: wide, hideable: false}
+      - {field: board_status, label: Column, width: narrow}
+      - {field: priority, label: Priority, width: narrow, empty_text: ""}
+      - {field: assignee_member_id, label: Assignee, width: narrow, empty_text: ""}
+      - {field: updated_at, label: Updated, width: narrow}
+    sort: {enabled: true, default: {field: updated_at, direction: desc}}
+    density: compact
+    on_row_click:
+      - type: navigate
+        viewId: issue
+        query:
+          issueId: {bind: record.id}
+    empty_message: No issues match.
+layout:
+  component: issue_table

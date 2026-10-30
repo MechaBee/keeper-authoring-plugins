@@ -3,6 +3,13 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.13.0 - 2026-10-30
+
+- The Issue Tracker example is easier for a connected agent to work with: a new `agent_issues`
+  view lists the issues you can see, most recently updated first, filtered by board column, open
+  or closed, and project; the issue view adds its project; the Agent queue no longer sends the
+  member directory; and `post_update` can move an issue on the board without a comment.
+
 ## Keeper App Author 1.12.1 - 2026-10-29
 
 - The Issue Tracker example has a "Copy prompt to work on it" button on open issues that a person

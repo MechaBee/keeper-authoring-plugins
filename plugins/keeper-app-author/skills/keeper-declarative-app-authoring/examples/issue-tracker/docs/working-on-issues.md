@@ -52,8 +52,12 @@ issue and paste it into your agent session. The agent reads the issue, posts an 
 changes anything and another when the work is ready for review, and reports the fix once you tell
 it the change is deployed.
 
+- **Find issues.** The agent can list the issues you can see, most recently updated first, and
+  narrow them by board column, open or closed, and project. Ask "what's in review in TTR?" or
+  "which open issues changed lately?".
 - **Post an update.** A comment headed **Update** says where the work stands, and the issue can
-  move on the board, to **In progress** or **In review** for example.
+  move on the board, to **In progress** or **In review** for example. The agent can also just move
+  the issue without a comment; a move alone notifies nobody.
 - **Report a fix.** A comment headed **Fixed** says what changed, and the issue closes as
   completed: it moves to **Done**, loses the `needs-triage` label and leaves the Agent queue.
   Only ask for this once the fix is live.

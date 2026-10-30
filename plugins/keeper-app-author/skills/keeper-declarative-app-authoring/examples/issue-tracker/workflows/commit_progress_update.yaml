@@ -20,14 +20,15 @@ steps:
       const issue = input.issue;
       if (!issue) helpers.actionError("This issue is no longer available.");
       if (issue.state !== "open") helpers.actionError("This issue was closed while the Agent worked.");
-      if (issue.locked === true) helpers.actionError("The conversation is locked. Only admins can comment.");
       const text = String(input.body ?? "").trim();
-      if (!text) helpers.actionError("The update is empty.");
-
       const names = {backlog: "Backlog", ready: "Ready", in_progress: "In progress", in_review: "In review", done: "Done"};
       const next = input.next_status || null;
       const moves = Boolean(next) && next !== issue.board_status;
-      const issueValues = {comment_count: (Number(issue.comment_count) || 0) + 1};
+      // A move alone is a valid update; an empty update that moves nothing is not.
+      if (!text && !moves) helpers.actionError("The update is empty and the issue is already in that column.");
+      if (text && issue.locked === true) helpers.actionError("The conversation is locked. Only admins can comment.");
+      const issueValues = {};
+      if (text) issueValues.comment_count = (Number(issue.comment_count) || 0) + 1;
       if (moves) issueValues.board_status = next;
 
       // Stored under the person who ran the agent; the run id makes the
@@ -40,14 +41,16 @@ steps:
         ? [row("board_moved", "moved this on the board from " + (names[issue.board_status] || issue.board_status) + " to " + names[next])]
         : [];
       return {
+        has_comment: Boolean(text),
         issue_values: issueValues,
-        comment_values: row("comment", "posted an update", "**Update**\n\n" + text),
+        comment_values: text ? row("comment", "posted an update", "**Update**\n\n" + text) : null,
         events,
       };
   - id: comment
     kind: create_record
     table: issue_activity
     values_from: {bind: step.prepare.comment_values}
+    when: {bind: step.prepare.has_comment}
   - id: update_issue
     kind: update_record
     table: issues
@@ -57,4 +60,4 @@ steps:
     kind: create_records
     table: issue_activity
     records_from: {bind: step.prepare.events}
-result: {step: comment}
+result: {step: update_issue}

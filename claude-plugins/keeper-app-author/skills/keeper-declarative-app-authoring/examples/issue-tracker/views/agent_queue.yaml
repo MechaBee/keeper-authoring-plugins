@@ -16,11 +16,6 @@ state:
 route_state:
   active_tab: {route: tab, mode: sync}
 data_sources:
-  # Loaded so the "for" column names people.
-  members:
-    kind: table
-    table: members
-    sort: {field: display_name, direction: asc}
   ready:
     kind: table
     table: issues

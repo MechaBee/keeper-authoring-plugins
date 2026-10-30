@@ -1,6 +1,6 @@
 id: post_update
-title: Post a progress update on an issue
-description: "Use when you are working on an open issue and people should know where it stands (you started it, a fix is in review, it is blocked, you found the cause): posts the update as a comment and can move the issue on the board, to In progress or In review for example. It doesn't close the issue; use report_fix once the work is done and shipped."
+title: Post a progress update or move an issue on the board
+description: "Use when you are working on an open issue and people should know where it stands (you started it, a fix is in review, it is blocked, you found the cause): posts the update as a comment and can move the issue on the board, to In progress or In review for example. To only move the issue, set board_status and submit an empty update body. It doesn't close the issue; use report_fix once the work is done and shipped."
 kind: task
 exposure: {mcp: true}
 allowed_roles: [editor, developer, admin]
@@ -14,7 +14,7 @@ input:
   - id: board_status
     type: select
     label: Move on the board to
-    helpText: Optional. Leave empty to keep the issue's column.
+    helpText: Optional. Leave empty to keep the issue's column. Required when the update body is empty.
     options:
       - {value: backlog, label: Backlog}
       - {value: ready, label: Ready}

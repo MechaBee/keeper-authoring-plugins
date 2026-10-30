@@ -3,7 +3,7 @@ Work on issue ${issue_ref} "${issue_title}" in my "${app}" app on MechaBee. It h
 Work it out from the MechaBee workspace tools (the keeper-workspace-content plugin's MCP server), not from memory:
 1. Call agent_list and use the agent "${agent}", then workspace_list and use the workspace "${workspace}".
 2. Call app_list and use the app "${app}".
-3. Read the issue with id ${issue_id} through the app's issue view (app_view_list, then app_view_read with issueId ${issue_id}): its description, the whole conversation, sub-issues, linked issues and documents. Read each of its documents in full with content_read.
+3. Read the issue with id ${issue_id} with app_view_read on the app's issue view (viewId issue, issueId ${issue_id}): its description, the whole conversation, sub-issues, linked issues and documents. Read each of its documents in full with content_read.
 4. If this session is working in the code the issue is about, read the relevant code too. Don't change any code.
 5. Decide which one the issue needs, and tell me in one or two lines which and why:
    - Questions, when something you need is missing or contradictory and a guess would change the outcome: the ask_questions procedure.

@@ -1,6 +1,10 @@
 view:
   id: issue
   title: Issue
+  description: >-
+    One issue with what you need to work on it: its fields, project, the whole conversation and
+    event history (oldest first), sub-issues, linked issues and its documents (read a document's
+    text with content_read on its path). Find issue ids with the agent_issues or agent_queue view.
 # Connected agents read an issue here: its conversation, sub-issues, links and documents.
 exposure: {mcp: true}
 nav:
@@ -66,6 +70,12 @@ data_sources:
     kind: record
     table: issues
     id: {bind: state.issue_id}
+    refresh_on: [state.issue_id]
+  # The project the issue belongs to: its key, name and description give a connected agent context.
+  project:
+    kind: record
+    table: projects
+    id: {bind: source.issue.record.project_id}
     refresh_on: [state.issue_id]
   # Loaded so assignee chips and principal names resolve for everyone.
   members:

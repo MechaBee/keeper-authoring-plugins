@@ -15,10 +15,14 @@ board at the same time. The issue stays open.
   started, `in_review` when a fix waits for review or deployment. Leave it empty
   when the column is still right. Done is set by `report_fix`, not here.
 - When the work is finished and shipped, use `report_fix` instead.
+- To move the issue without saying anything (for example you picked it up and
+  will post once there is news), pick `board_status` and leave `update.body`
+  empty. Nobody is notified of a move alone.
 
 ## The update (`update`)
 
-`update.body`: Markdown, short enough to read in a notification.
+`update.body`: Markdown, short enough to read in a notification. Empty only
+when the run just moves the issue.
 
 - First line: where it stands now ("Fix is in review: <link or name>").
 - Then at most a few points: what you found or changed, and what happens next.
