@@ -5,7 +5,7 @@ description: Use when the person asks to save, report or log work into MechaBee 
 
 Use the Workspace Content MCP for the user's selected MechaBee content task.
 
-1. Discover available agents with `agent_list`, then call `workspace_list` for the selected agent. Reuse the user's existing selection when it is still available. Domain and identity are supplied by the server.
+1. When the person gives exact `agentId`, `workspaceId` and `appId` (a pasted prompt or Keeper context block), use them directly in every call and skip `agent_list`, `workspace_list` and `app_list`; every tool takes them as arguments. Discover only when ids are missing or a call with them is refused: `agent_list`, then `workspace_list` for the selected agent. Reuse the user's existing selection when it is still available. Domain and identity are supplied by the server.
 2. Start at `/` for an owned workspace or a returned root grant. For a subtree share, start at its exact `pathPrefix`. Never infer root access from the workspace's overall mode. List each relevant minimal scope shallowly and follow `nextCursor`, including after an empty filtered page.
 3. Read text with `content_read` before editing. Preserve Markdown frontmatter, style, and unrelated content. Send its `currentVersionId` as `baseVersionId` to `content_write`. A conflict requires rereading and merging the intended change; do not blindly retry or discard another writer's edits.
 4. For a new artifact, choose an agreed descriptive path. Use a slug plus timestamp or run ID when collisions would be harmful: creation is upsert, not atomic create-only. A write grant can modify files in existing directories; missing-parent creation may require manage access.
@@ -29,8 +29,8 @@ your own; a forbidden or missing app means this connection can't reach it, so sa
 
 To look something up in a Keeper app (a roadmap, a queue of work, one record with its discussion
 and documents), read a view the app shares with agents instead of opening its data files.
-Pick the app with `app_list`, then `app_view_list` names that app's shared views and their
-parameters; `app_view_read` takes the view and its
+Pick the app with `app_list` (or use the `appId` you were given), then `app_view_list` names that app's shared views and their
+parameters, unless you were already told the view and its parameters; `app_view_read` takes the view and its
 parameters by name and returns its data: records with `_labels` for their references, comments
 with author names, documents with their paths, and a document's text. You read with your own
 access, and reading changes nothing. Read a document's text in full with `content_read` on its

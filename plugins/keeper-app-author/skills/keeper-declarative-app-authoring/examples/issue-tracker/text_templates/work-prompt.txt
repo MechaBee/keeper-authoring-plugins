@@ -1,10 +1,9 @@
 Work on issue ${issue_ref} "${issue_title}" in my "${app}" app on MechaBee, and keep the team up to date on it.
 
 Use the MechaBee workspace tools (the keeper-workspace-content plugin's MCP server), not memory:
-1. Call agent_list and use the agent "${agent}", then workspace_list and use the workspace "${workspace}".
-2. Call app_list and use the app "${app}".
-3. Read the issue with id ${issue_id} with app_view_read on the app's issue view (viewId issue, issueId ${issue_id}): its description, the whole conversation and its documents.
-4. Before you change any code, post a short update with the post_update procedure and move the issue to In progress.
-5. Make the change in this session's code. When it is ready for review, post another update and move the issue to In review.
-6. When I tell you the change is deployed, report it with the report_fix procedure, which closes the issue.
+1. Use these exact ids in every call and skip discovery: agentId ${agent}, workspaceId ${workspace}, appId ${app}. Only if a call with them is refused, look them up with agent_list, workspace_list and app_list.
+2. Read the issue with id ${issue_id} with app_view_read, viewId issue, params {"issueId": "${issue_id}"}: its description, the whole conversation and its documents.
+3. Before you change any code, post a short update with the post_update procedure and move the issue to In progress.
+4. Make the change in this session's code. When it is ready for review, post another update and move the issue to In review.
+5. When I tell you the change is deployed, report it with the report_fix procedure, which closes the issue.
 For each procedure: call app_procedure_list, then app_procedure_get, follow its guide, submit the run and check that it was saved.

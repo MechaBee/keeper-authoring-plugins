@@ -3,6 +3,20 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.15.0 - 2026-10-30
+
+- Copy-button agent prompts use exact ids instead of discovery: the Issue Tracker example's
+  prompts have the agent call tools with the agent, workspace and app ids directly and read the
+  issue with one `app_view_read`, falling back to `agent_list`, `workspace_list` and `app_list`
+  only when a call is refused. The copy button design note asks app authors to do the same.
+
+## Keeper Workspace Content 1.7.0 - 2026-10-30
+
+- Given exact `agentId`, `workspaceId` and `appId` (a pasted prompt or Keeper context block), the
+  skill uses them directly and skips `agent_list`, `workspace_list` and `app_list`, discovering
+  only when ids are missing or a call is refused. A view named with its parameters is read without
+  listing views first.
+
 ## Keeper App Author 1.14.0 - 2026-10-30
 
 - The Issue Tracker example has a `move_on_board` procedure that moves an issue to another board

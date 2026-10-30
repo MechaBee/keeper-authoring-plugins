@@ -20,10 +20,14 @@ not contain secrets.
 
 ## When the text is an agent prompt
 
-- Point the agent at discovery, not at memory: name the agent, workspace and app by their exact
-  ids, then let it list procedures or views (`app_procedure_list`, `app_view_list`) and read the
-  procedure guide. Never restate what that guide already says; the prompt goes stale when the guide
-  changes, the guide does not.
+- Give the agent exact ids, not discovery: name the agent, workspace and app by their ids and tell
+  it to use them in every call, skipping `agent_list`, `workspace_list` and `app_list` unless a call
+  with them is refused. Every tool takes the ids directly, so the listing calls only cost round
+  trips. When the prompt is about a record, name the shared view and its parameter
+  (`app_view_read`, viewId `issue`, params `{"issueId": "${issue_id}"}`) so the first call reads it.
+- Point the agent at the app's procedures, not at memory: let it list them (`app_procedure_list`)
+  and read the procedure guide. Never restate what that guide already says; the prompt goes stale
+  when the guide changes, the guide does not.
 - Name records by stable ids (the record id, a short slug), not by position or a copied snapshot.
   Ask the agent to read current state, because pasted facts are stale by the next visit.
 - Make the agent check in: show what it will record or do, and wait for the reader's OK before it
