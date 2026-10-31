@@ -26,13 +26,14 @@ actions:
     visible_when:
       - {bind: source.project.record.status, operator: not_equals, value: archived}
     display: code                     # code (default) | text
-    placement: inline                 # inline (default) | overflow
+    agent: true                       # the text is an agent prompt: it goes to the AI menu
     appearance: secondary             # default | secondary (default when omitted)
 ```
 
 Required: `id`, `kind: copy_text`, `label`, `template`. Optional: `description` (shown under the
-dialog title), `values`, `display`, `visible_when`, `placement`, `appearance`. `placement: overflow`
-moves the button into the view bar's **More actions** menu.
+dialog title), `values`, `display`, `agent`, `visible_when`, `placement`, `appearance`.
+`placement: overflow` moves the button into the view bar's **More actions** menu. For an `agent`
+prompt see [AI actions](#ai-actions-and-the-ai-menu) below.
 
 `values` keys are placeholder names (`[A-Za-z_][A-Za-z0-9_]*`, at most 20). Each value is a
 primitive or a binding on `state`, `route`, `source` or `context`; `source.*` must name a declared
@@ -64,12 +65,44 @@ detail:
         - {bind: record.status, operator: not_equals, value: retired}
 ```
 
-Exactly one of `action` and `copy_text`. `copy_text` takes `template`, `description`, `values` and
-`display`; `visible_when` belongs to the entry and is accepted only beside `copy_text`. `confirm` is
+Exactly one of `action` and `copy_text`. `copy_text` takes `template`, `description`, `values`,
+`display` and `agent`; `visible_when` belongs to the entry and is accepted only beside `copy_text`. `confirm` is
 not used: the dialog already shows the text first. The binding roots add `record`.
 
 Copying changes nothing, so copy buttons stay visible in read-only details, read-only views and
 share-link views. Values resolve when the button is clicked, from the record and state on screen.
+
+## AI actions and the AI menu
+
+Mark a template that is a prompt for an agent with `agent: true`. Agent prompts and
+[AI task](../automation/task.md) actions are **AI actions**: they carry the ✨ mark wherever they
+show, and they can be listed in the **AI menu**, one ✨ icon in the app bar's fixed right corner,
+beside the notifications bell, that gathers every AI action on the page. It is hidden when the page
+has none.
+
+- **View Bar:** an AI action goes to the AI menu, under *For this view*. `placement: inline` pins it
+  to the bar instead; `overflow` also sends it to the AI menu.
+- **Record detail:** an AI button stays on the record by default, because an action about one shown
+  object usually belongs next to it. Set the entry's `placement` to send it to the menu.
+
+```yaml
+actions:
+  - id: revise_prompt
+    label: Copy revise prompt
+    placement: both                   # inline (default) | ai_menu | both
+    copy_text:
+      template: revise-draft-prompt
+      agent: true
+      values:
+        task_id: {bind: record.id}
+```
+
+`ai_menu` lists the button in the menu only, under the record's title, while that record is shown.
+`both` keeps it on the record as well. A `placement` other than `inline` is accepted only on AI
+actions: a `copy_text` with `agent: true`, or a `workspace` `start_agent_task` action.
+
+Use `ai_menu` for record pages where the record is the page's subject, so its AI actions sit with
+the view's. Keep `inline` (or `both`) for an action about one embedded object among several.
 
 ## Template files
 

@@ -20,6 +20,13 @@ not contain secrets.
 
 ## When the text is an agent prompt
 
+Mark it `agent: true`. Agent prompts then join the page's **AI menu** with its AI tasks, so readers
+find every hand-off to an agent in one place and the View Bar keeps room for filters. Leave
+`placement` unset on View Bar prompts; pin one `inline` only when handing the work to an agent is
+the screen's main job. On a record detail, send the prompt to the menu (`placement: ai_menu`) when
+the record is the page's subject, and keep it on the record when it is about one object among
+several on the page ([syntax](../reference/views/copy-text.md#ai-actions-and-the-ai-menu)).
+
 - Give the agent exact ids, not discovery: name the agent, workspace and app by their ids and tell
   it to use them in every call, skipping `agent_list`, `workspace_list` and `app_list` unless a call
   with them is refused. Every tool takes the ids directly, so the listing calls only cost round

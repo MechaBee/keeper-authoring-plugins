@@ -30,6 +30,7 @@ actions:
     kind: copy_text
     label: Copy prompt for your agent
     template: issues-prompt
+    agent: true
     description: Paste into a Claude Code or Codex session connected to MechaBee, then add what you need, for example "what is in review?" or "pick the oldest bug in Ready and start on it".
     values:
       agent: {bind: context.agentId}

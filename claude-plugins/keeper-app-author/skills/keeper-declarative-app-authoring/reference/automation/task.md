@@ -230,10 +230,12 @@ Start a task with the [`agent_task_action`](../views/providers/workspace.md) res
 runs with [`agent_task_runs`](../views/components/agent-task-runs.md). The legacy
 [templated-prompt agent](agent.md) and its panel cannot run tasks.
 
-List task action sets in the view's top-level `actions` without a `placement`: the view bar gathers
-them into one AI control (a direct button for one task, an **AI** menu with each task's
-`description` for two or more) that spins while a run on the page is active. Pin a task with
-`placement: inline` only when it is the view's main job.
+List task action sets in the view's top-level `actions` without a `placement`: they go to the
+**AI menu**, the ✨ icon in the app bar's right corner that lists every AI action on the page with
+each task's `description`, and spins while a run on the page is active. Pin a task to the view bar
+with `placement: inline` only when it is the view's main job. A task button on a record detail
+stays on the record unless it sets `placement: ai_menu` or `both` (see
+[copy buttons](../views/copy-text.md#ai-actions-and-the-ai-menu)).
 
 ## Expose a task to connected agents
 

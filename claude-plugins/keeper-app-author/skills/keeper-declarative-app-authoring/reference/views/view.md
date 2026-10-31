@@ -41,9 +41,10 @@ not open stays closed to that role's agents.
 top level. Both `view.nav` and `view.show_in_nav` are ignored, not alternative syntax. Top-level
 `actions` contains `action_set` items, local `date_range_preset` actions, manual `query`
 actions, and [`copy_text` buttons](copy-text.md) that show and copy a filled-in text template. An `action_set` may set `placement: inline|overflow`; overflow keeps rare or destructive
-actions in the view bar's **More actions** menu. An [AI task](../automation/task.md) action set
-without a `placement` joins the view bar's AI control: one task shows as a direct ✨ button, two or
-more share one **AI** menu. Set `placement` only to pull a task out of it. A date preset declares
+actions in the view bar's **More actions** menu. [AI task](../automation/task.md) actions and
+`copy_text` agent prompts (`agent: true`) go to the **AI menu**: one ✨ icon in the app bar's fixed
+right corner, beside the notifications bell, that lists every AI action on the page. Set
+`placement: inline` only to pin one to the view bar; `overflow` sends AI actions to the AI menu too. A date preset declares
 `preset: this_month|this_year`, `from_state_key`, and
 `to_state_key`; both keys must exist in top-level `state`. A query action declares a non-empty,
 dependent-closed `data_sources` list. Those sources are omitted from initial and automatic
@@ -54,6 +55,13 @@ item has `id`, `label`, `state_key`, `input_type: text|number|date`, optional `p
 optional `on_change` actions; `state_select` items follow the
 [`state_select` option-source rules](components/toolbar.md). Read those before authoring either
 top-level filters or toolbar selectors.
+
+On desktop the View Bar keeps text search, the period control and two more filters in sight; when
+at least two more would follow, they fold behind one `Filters` button, and the ones that are set
+show as removable chips. Mark the filters people change most with `primary: true` (on a
+`state_select` or `state_input`) to keep those in the bar instead of the first two. Order filters
+by how often they change, and leave `primary` off when the first two are the right ones. Phones
+fold every filter but search behind `Filters` once there are more than two.
 
 Read the exact component, data-source, layout, navigation, action, and binding references used
 by the view. Every component in `layout` must exist, and every user-reachable component must appear

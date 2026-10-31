@@ -3,6 +3,17 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.16.0 - 2026-10-31
+
+- AI actions move to one AI menu: the view reference, the task reference and the copy button pages
+  describe the new ✨ AI menu in the app bar's right corner. AI tasks and copy prompts marked
+  `agent: true` go there unless pinned `inline`, and a record detail's AI buttons opt in with
+  `placement: ai_menu | both`. The copy button design note asks authors to mark agent prompts, and
+  the Issue Tracker example's prompts carry `agent: true`.
+- The view reference covers the one-row View Bar: past two filters beside search, the rest fold
+  behind a `Filters` button, and `primary: true` picks which filters stay. Needs the matching
+  Keeper runtime.
+
 ## Keeper App Author 1.15.0 - 2026-10-30
 
 - Copy-button agent prompts use exact ids instead of discovery: the Issue Tracker example's

@@ -23,6 +23,7 @@ actions:
     kind: copy_text
     label: Copy agent prompt
     template: agent-prompt
+    agent: true
     description: Paste into a Claude Code or Codex session connected to MechaBee. The agent reads the issue and either asks its questions, writes an implementation plan or writes a solution design.
     values:
       issue_id: {bind: state.issue_id}
@@ -41,6 +42,7 @@ actions:
     kind: copy_text
     label: Copy prompt to work on it
     template: work-prompt
+    agent: true
     description: Paste into a Claude Code or Codex session connected to MechaBee. The agent reads the issue, posts progress updates while it works, and reports the fix when it is deployed.
     values:
       issue_id: {bind: state.issue_id}
