@@ -9,7 +9,7 @@ policy. A role fixes the field ids and types Keeper relies on; add any other fie
 | `collection` | app | A workspace folder per row, named when the row is created. Its files are the collection's documents |
 | `document` | app | One row per file in a collection's folder, kept in step with the folder: new files, renames, edits, missing files |
 | `document_link` | linking record type | Links from a record to whole collections or single documents, with a role and a note |
-| `comment` | commented table | Threads, replies, editing your own comments, resolve and reopen, author stamping, locking, quoted passages |
+| `comment` | commented table | Threads, replies, editing and deleting your own comments, resolve and reopen, author stamping, locking, quoted passages |
 
 Use roles when people and agents work on **files**: a library, a deal's documents, specifications.
 Use [`doc_page`](../views/components/doc-page.md) when each record simply has one body. Keep activity
@@ -198,7 +198,9 @@ Keeper writes comments itself: it starts threads, keeps a reply in the thread of
 answers, stamps the author from the session, and sets resolved on a thread's first comment. Authors
 can edit their own comments while the thread is open and they may still comment; the thread, reply
 and quoted passage stay as they were, and `edited_at` (optional, plain `datetime`, not computed)
-records the time so readers see "edited". Comments an agent wrote are not editable. These
+records the time so readers see "edited". Under the same rules an author can delete a comment nobody
+has answered yet (a thread's first comment only while it is the whole thread), so no reply loses
+the comment it answers. Comments an agent wrote can't be edited or deleted. These
 rules apply instead of the comment table's own edit rights, so a reviewer who can't edit the record
 can still comment when their role is listed. Share-link visitors read only. Admins may always
 comment. Commit workflows of AI tasks may create comments like any table.

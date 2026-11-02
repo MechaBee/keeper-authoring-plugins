@@ -3,6 +3,12 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.18.0 - 2026-11-02
+
+- Comment authors can also delete their own comments: the table roles reference covers deleting,
+  under the same rules as editing and only while nobody has answered the comment (a thread's first
+  comment only while it is the whole thread). Needs the matching Keeper runtime.
+
 ## Keeper App Author 1.17.0 - 2026-11-02
 
 - Comment authors can edit their own comments: the table roles reference covers who may edit (the
