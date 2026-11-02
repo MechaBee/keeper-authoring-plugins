@@ -9,7 +9,7 @@ policy. A role fixes the field ids and types Keeper relies on; add any other fie
 | `collection` | app | A workspace folder per row, named when the row is created. Its files are the collection's documents |
 | `document` | app | One row per file in a collection's folder, kept in step with the folder: new files, renames, edits, missing files |
 | `document_link` | linking record type | Links from a record to whole collections or single documents, with a role and a note |
-| `comment` | commented table | Threads, replies, resolve and reopen, author stamping, locking, quoted passages |
+| `comment` | commented table | Threads, replies, editing your own comments, resolve and reopen, author stamping, locking, quoted passages |
 
 Use roles when people and agents work on **files**: a library, a deal's documents, specifications.
 Use [`doc_page`](../views/components/doc-page.md) when each record simply has one body. Keep activity
@@ -175,6 +175,7 @@ fields:
   - {id: author_kind, type: select, label: Written by, options: [person, ai]}
   - {id: agent_run_id, type: text, label: AI run}
   - {id: created_at, type: datetime, label: Posted, readonly: true, computed: {kind: now, on: create, format: datetime}}
+  - {id: edited_at, type: datetime, label: Edited}
 relations:
   - {field: opportunity_id, references: {table: opportunities, field: id}, onDelete: cascade}
 ```
@@ -194,7 +195,10 @@ comments:
 ```
 
 Keeper writes comments itself: it starts threads, keeps a reply in the thread of the comment it
-answers, stamps the author from the session, and sets resolved on a thread's first comment. These
+answers, stamps the author from the session, and sets resolved on a thread's first comment. Authors
+can edit their own comments while the thread is open and they may still comment; the thread, reply
+and quoted passage stay as they were, and `edited_at` (optional, plain `datetime`, not computed)
+records the time so readers see "edited". Comments an agent wrote are not editable. These
 rules apply instead of the comment table's own edit rights, so a reviewer who can't edit the record
 can still comment when their role is listed. Share-link visitors read only. Admins may always
 comment. Commit workflows of AI tasks may create comments like any table.

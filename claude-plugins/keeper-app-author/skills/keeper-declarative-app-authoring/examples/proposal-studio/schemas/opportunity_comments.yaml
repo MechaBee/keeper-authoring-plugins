@@ -22,6 +22,7 @@ fields:
   - {id: author_kind, type: select, label: Written by, options: [person, ai]}
   - {id: agent_run_id, type: text, label: AI run}
   - {id: created_at, type: datetime, label: Posted, readonly: true, computed: {kind: now, on: create, format: datetime}}
+  - {id: edited_at, type: datetime, label: Edited}
 relations:
   - field: opportunity_id
     references: {table: opportunities, field: id}

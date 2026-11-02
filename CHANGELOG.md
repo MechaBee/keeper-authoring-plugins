@@ -3,6 +3,13 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.17.0 - 2026-11-02
+
+- Comment authors can edit their own comments: the table roles reference covers who may edit (the
+  author, while the thread is open and they may still comment; agent comments are not editable) and
+  the optional `edited_at` datetime field that shows "edited". The Proposal Studio and Issue Tracker
+  example comment tables carry `edited_at`. Needs the matching Keeper runtime.
+
 ## Keeper App Author 1.16.0 - 2026-10-31
 
 - AI actions move to one AI menu: the view reference, the task reference and the copy button pages
