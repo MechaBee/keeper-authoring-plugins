@@ -37,6 +37,14 @@ are left out, and nothing is changed. Expose the views an agent needs to look th
 between [tasks](../automation/task.md): a queue, a list by filter, a record page. A view a role may
 not open stays closed to that role's agents.
 
+An agent receives every data source by default, helpers included: a lookup, the full rows behind a
+`projected_table`. List the ones it should get in `exposure.sources` to keep the rest on screen only,
+for example a lean list for agents that projects wide records down to a few columns:
+
+```yaml
+exposure: {mcp: true, sources: [tasks]}   # task_records (whole rows) stays a screen-only helper
+```
+
 `view` accepts only `id`, `title`, and optional `description`. Put the entire navigation object at
 top level. Both `view.nav` and `view.show_in_nav` are ignored, not alternative syntax. Top-level
 `actions` contains `action_set` items, local `date_range_preset` actions, manual `query`

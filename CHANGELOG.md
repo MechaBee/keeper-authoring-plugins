@@ -3,6 +3,13 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.18.1 and Workspace Content 1.7.1 - 2026-11-11
+
+- New logos built on the MechaBee hexagon mark: App Author uses the plain mark, Workspace Content
+  adds three lines of text inside it, so the two plugins are easy to tell apart.
+- App Author: the views reference covers `exposure.sources`, which limits the data sources an
+  agent receives from a view (for example a lean list that keeps whole-row helpers on screen only).
+
 ## Keeper App Author 1.18.0 - 2026-11-02
 
 - Comment authors can also delete their own comments: the table roles reference covers deleting,
