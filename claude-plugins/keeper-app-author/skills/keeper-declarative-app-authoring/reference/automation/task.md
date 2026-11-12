@@ -260,6 +260,23 @@ or expiry. Source comparisons are best effort, and workflow commits retain their
 concurrency guarantees. Uncertain effects are never automatically retried. Do not promise atomic
 file-plus-record saves or automatic cleanup.
 
+### Tell people what the agent did (`post_hints`)
+
+A procedure can ask its agent to post a short update after the commit, to an update topic with a
+`post` block in [notifications.yaml](../application/notifications.md#agent-posts):
+
+```yaml
+commit: {mode: on_result, workflow: commit_checkpoint}
+post_hints: [{topic: progress}]
+```
+
+When the commit saves a record in the topic's `post.table`, `app_run_submit` returns a hint with
+that topic, table and record id; the agent sends it with `topic_post` and one or two sentences of
+its own. Up to 4 hints, each topic once. The commit output (or the commit workflow's result)
+must include a table the topic posts about, and the topic needs a recipient field that the commit
+workflow fills, such as the parent record's owner. Use hints instead of a rule on the same
+record: the agent's own words say more than a template.
+
 A connected agent picks a reference input from `app_procedure_input_options`. Narrow the list with the
 input's `reference_where`, an equality filter on the referenced table; preparing a run with a value
 outside it is refused. Use it so the agent sees only the rows it should work on:

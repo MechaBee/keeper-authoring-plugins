@@ -1,3 +1,19 @@
+# The Agent's questions and its designs or plans are asks: each stays open for the issue's
+# author and assignee until the Agent's status moves on (answers re-queue the issue, a review
+# hands it back). Everything else is a plain notification.
+topics:
+  - id: agent_questions
+    kind: ask
+    label: The Agent's questions
+    description: The Agent needs answers before it can go on with an issue.
+    open_while: {field: agent_status, equals: waiting_on_answers}
+    link: {view: issue, route: {issueId: "{id}"}}
+  - id: agent_reviews
+    kind: ask
+    label: The Agent's designs and plans to review
+    description: The Agent wrote a solution design or an implementation plan for you to review.
+    open_while: {field: agent_status, equals: design_in_review}
+    link: {view: issue, route: {issueId: "{id}"}}
 rules:
   - id: issue_opened
     table: issues
@@ -31,6 +47,7 @@ rules:
       push: "There is a new comment on an issue."
   # A connected agent's questions and designs, saved by its commit workflows.
   - id: issue_agent_questions
+    topic: agent_questions
     table: issues
     operation: update
     workflowIds: [commit_questions]
@@ -42,6 +59,7 @@ rules:
       inbox: "The Agent has questions on {ref}."
       push: "The Agent has questions on an issue."
   - id: issue_agent_design
+    topic: agent_reviews
     table: issues
     operation: update
     workflowIds: [commit_solution_design, commit_implementation_plan, commit_design_revision]

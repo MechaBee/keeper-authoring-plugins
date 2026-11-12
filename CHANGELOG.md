@@ -3,6 +3,25 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.20.1 and Workspace Content 1.9.0 - 2026-11-12
+
+- Workspace Content: new `inbox_read` tool (read scope). It returns what reached the person you work
+  for in Keeper apps since a point in time, oldest first, each item checked against their current
+  access. Answered asks show up as `answered` items for whoever raised them, so an agent learns
+  that a person replied. Reading marks nothing read. The skill reads it when picking up ongoing work.
+- Workspace Content 1.8.0 (folded in): new `topic_post` tool. When `app_run_submit` commits a result
+  that people follow, it returns `postHints`; the skill sends each one with `topic_post` and a short
+  plain-text update. App admins can post app news to every member with topic `app`.
+- App Author 1.20.1: the notifications reference says what happens when an ask resolves: whoever
+  raised it gets an inbox-only item their agent reads with `inbox_read`.
+- App Author 1.20.0 (folded in): agent posts. An update topic in `notifications.yaml` can take posts
+  with `post: {table, recipientFields}`, a procedure asks its agent to post with `post_hints`, and
+  every app has a built-in `app` topic for app news from admins.
+- App Author 1.19.0 (folded in): `notifications.yaml` accepts `topics`: asks that resolve themselves
+  when their record leaves its open state, updates, and a link to the view where the recipient
+  acts. The issue-tracker example tags its agent questions and design reviews as ask topics.
+- Needs the matching Keeper runtime (message hub).
+
 ## Keeper App Author 1.18.1 and Workspace Content 1.7.1 - 2026-11-11
 
 - New logos built on the MechaBee hexagon mark: App Author uses the plain mark, Workspace Content
