@@ -1,19 +1,30 @@
 # The Agent's questions and its designs or plans are asks: each stays open for the issue's
 # author and assignee until the Agent's status moves on (answers re-queue the issue, a review
-# hands it back). Everything else is a plain notification.
+# hands it back). `shipped` takes an agent's announcement only when someone asks for one; a team
+# channel connected to it shows the announcement with its text. Everything else is a plain
+# notification.
 topics:
   - id: agent_questions
     kind: ask
     label: The Agent's questions
     description: The Agent needs answers before it can go on with an issue.
+    action: Answer
     open_while: {field: agent_status, equals: waiting_on_answers}
     link: {view: issue, route: {issueId: "{id}"}}
   - id: agent_reviews
     kind: ask
     label: The Agent's designs and plans to review
     description: The Agent wrote a solution design or an implementation plan for you to review.
+    action: Review
     open_while: {field: agent_status, equals: design_in_review}
     link: {view: issue, route: {issueId: "{id}"}}
+  - id: shipped
+    kind: update
+    label: Shipped
+    description: An agent announces work it shipped on an issue, when someone asks it to.
+    link: {view: issue, route: {issueId: "{id}"}}
+    post: {table: issues, recipientFields: [author_user_id, assignee_user_id]}
+    channels: {include_text: true, title: "{ref} {title}"}
 rules:
   - id: issue_opened
     table: issues

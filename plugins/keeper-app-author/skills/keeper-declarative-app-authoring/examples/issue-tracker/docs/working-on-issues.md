@@ -66,6 +66,10 @@ it the change is deployed.
 - **Report a fix.** A comment headed **Fixed** says what changed, and the issue closes as
   completed: it moves to **Done**, loses the `needs-triage` label and leaves the Agent queue.
   Only ask for this once the fix is live.
+- **Announce what shipped.** Ask "tell the team TTR#19 shipped" and the agent posts a short
+  announcement to the issue's **Shipped** topic: what changed, with the commit or pull request.
+  It reaches the issue's author and assignee, and a team channel connected to the topic shows it
+  with a link to the issue. The agent posts only when you ask.
 - **File a new issue.** The agent opens an issue in the project, in the Backlog and unassigned,
   with you as its author. For a follow-up, the original issue's conversation names the new one.
 

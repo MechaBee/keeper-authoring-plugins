@@ -47,6 +47,7 @@ topics:
   - id: questions
     kind: ask
     label: Questions from agents
+    action: Answer
     open_while: {field: status, equals: open}
     link: {view: question, route: {questionId: "{id}"}}
   - id: progress
@@ -72,6 +73,9 @@ rules:
   wrote the record, usually through their agent) then gets one inbox-only item saying it no
   longer waits, which their agent reads with `inbox_read`; it arrives already read when they
   closed the ask themselves.
+- **`action`** (asks only, optional, up to 24 characters) is the verb on the ask's button in
+  Messages and in its email: "Answer", "Review", "Approve". The button opens `link`, where the
+  person sees the record and acts in the app. Without it the button says "Open".
 - **`kind: update`** is informational ("pushed a checkpoint"). It has no `open_while` and never
   resolves.
 - **`link`** names a view and fills its `route_state` route keys from the record with
@@ -99,6 +103,30 @@ messages. The agent writes the text, so the message says what the session actual
 - A post is plain text, up to 500 characters, and goes through the same inbox, push and
   per-recipient access checks as rule messages. The poster needs edit access and must be able
   to read the record. Each person may post at most 10 times an hour per app and topic.
+
+### Team channels
+
+App managers can connect a topic to a Discord channel on the app's manage page. By default a
+channel message names the topic and links to the record; what was said stays in Keeper, because
+people in the channel are outside its access checks. An update topic whose messages are written
+to be shared, such as release announcements, opts in to carrying its text:
+
+```yaml
+  - id: shipped
+    kind: update
+    label: Shipped
+    link: {view: issue, route: {issueId: "{id}"}}
+    post: {table: issues, recipientFields: [author_user_id, assignee_user_id]}
+    channels: {include_text: true, title: "{ref} {title}"}
+```
+
+- **`channels.include_text`** (update topics only): the channel shows the post's text, or a
+  rule's inbox line. Asks never carry text.
+- **`channels.title`** (optional, with `include_text`, up to 120 characters): the message title
+  after the topic label, with `{field_id}` placeholders from the record, for example
+  "Shipped: TTR#19 Week labels". Only put fields there the whole channel may see.
+- A post to a topic with a connected channel goes to the channel even when nobody else follows
+  the record.
 
 ### App news
 

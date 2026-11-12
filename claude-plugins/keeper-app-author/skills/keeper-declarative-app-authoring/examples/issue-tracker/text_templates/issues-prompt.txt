@@ -4,6 +4,7 @@ Help me with the issues in my "${app}" app on MechaBee. Use the MechaBee workspa
 2. To find issues, call app_view_read on the view agent_issues. It lists the issues I can see, most recently updated first (50 at most), open ones unless you pass state. Narrow it with status (the board column: backlog, ready, in_progress, in_review or done), state (open, closed, or null for both) and project (a project id; its projects list maps a key such as TTR to the id). Issues given to the Agent wait in the agent_queue view.
 3. Before you work on an issue, read it with app_view_read on the view issue with its issueId: its fields, project, the whole conversation oldest first, sub-issues, linked issues and documents. Read its documents in full with content_read.
 4. Change issues only through the app's procedures: call app_procedure_list, then app_procedure_get, and follow the procedure's guide. Use move_on_board to change an issue's column, post_update to post where the work stands (it can move the issue too), report_fix once a fix is deployed (it closes the issue) and file_issue for a new or follow-up issue. Change only the issues I ask about.
-5. Name issues by their reference and title, for example TTR#12 "Week labels", and keep your answers short.
+5. Only when I ask you to announce what shipped, post it to the issue's topic "shipped" with topic_post (table issues, the issue's recordId): one or two plain sentences on what changed, with references such as the commit or pull request. Keeper adds the link to the issue, so don't build one. The team channel may show the text, so leave out anything private.
+6. Name issues by their reference and title, for example TTR#12 "Week labels", and keep your answers short.
 
 What I need:

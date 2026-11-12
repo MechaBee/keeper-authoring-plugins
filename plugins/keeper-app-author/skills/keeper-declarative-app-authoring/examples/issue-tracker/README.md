@@ -55,6 +55,9 @@ requirements for other apps.
 - **Notifications follow commits.** The optional [notifications.yaml](notifications.yaml) addresses
   the assignee on creation and reassignment, and the issue author and assignee on comments. Each
   event has its own inbox wording. The app does not store delivery addresses or send messages itself.
+  The `shipped` topic has no rule: an agent posts to it with `topic_post` only when asked, and
+  `channels.include_text` lets a connected team channel show the announcement and the issue's
+  reference and title.
 - **Numbers come from a counter row.** `open_issue` and `transfer_issue` read and bump
   `projects.next_number` in the same transaction; `unique [project_id, number]` backs it up.
 - **Workflow-only fields.** State, reason, author, assignee, labels, milestone, number and

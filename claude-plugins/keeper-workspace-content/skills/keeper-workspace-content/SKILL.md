@@ -102,7 +102,10 @@ way to find the record a procedure needs.
    once with `topic_post` (its `topicId`, `table` and `recordId` unchanged) and one or two plain
    sentences on what this session did and what comes next. Posts are updates, never questions;
    skip it when nothing worth telling happened. App admins may post app news with topic `app`
-   and no record, for example a new version and what it adds.
+   and no record, for example a new version and what it adds. Write the text yourself and
+   reference what helps a reader (the record's name, a commit, a pull request URL); Keeper adds
+   the link to the record, so don't build one. A topic may share its text with a team channel,
+   so leave out anything private.
 
 Do not automatically repeat `write_uncertain` or `commit_uncertain` operations, or a run left in
 `committing`: an effect may already have happened. Report the run ID and status for review. Known

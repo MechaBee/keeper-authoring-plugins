@@ -3,6 +3,17 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.21.0 and Workspace Content 1.9.1 - 2026-11-12
+
+- App Author 1.21.0: ask topics in `notifications.yaml` take an optional `action`, the verb on the
+  ask's button in Keeper's Messages view and in its email ("Answer", "Review"). Update topics take
+  `channels: {include_text, title}`, so a connected team channel shows the message itself (with a
+  title from the record) instead of only a link. The issue-tracker example declares Answer and
+  Review, and a `shipped` topic its agent posts to only when asked.
+- Workspace Content 1.9.1: `topic_post` guidance. The agent writes its own text and references
+  what helps a reader (a commit, a pull request); Keeper adds the link to the record. A topic may
+  share its text with a team channel, so posts leave out anything private. No tool or scope change.
+
 ## Keeper App Author 1.20.1 and Workspace Content 1.9.0 - 2026-11-12
 
 - Workspace Content: new `inbox_read` tool (read scope). It returns what reached the person you work
