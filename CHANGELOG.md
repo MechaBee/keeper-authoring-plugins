@@ -3,6 +3,21 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.22.0 and Workspace Content 1.10.0 - 2026-11-13
+
+- App Author 1.22.0: the skill catches a change someone else made to an app while you were editing
+  it. `keeper-app-bundle.mjs download` records the revision and file hashes it wrote in
+  `.keeper-baseline.json`. After `app_upload_prepare`, the new `drift` command lists the server
+  changes the upload would undo instead of letting them be overwritten without notice. The new
+  `rebase` command merges a fresh `app_download` into a folder with local edits and leaves files
+  changed on both sides under `.keeper-conflicts/`. A matching `verify` of an apply result moves the
+  baseline forward. Also: workflow input sections take `tone` to tint their box, and a flexible
+  time field given a stored date-and-time keeps its time part.
+- Workspace Content 1.10.0: new read-only `attachment_read` tool. It opens a file attached to an
+  app record (a screenshot or a document in an issue comment) under the same check the browser
+  uses. An image comes back inline; any other file as a short-lived secret download link.
+  `app_view_read` lists the files linked in a view's records under `attachments`.
+
 ## Keeper App Author 1.21.0 and Workspace Content 1.9.1 - 2026-11-12
 
 - App Author 1.21.0: ask topics in `notifications.yaml` take an optional `action`, the verb on the

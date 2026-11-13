@@ -46,6 +46,20 @@ Storage conversion and deployment repair use [Migrate and repair](migrate-and-re
    folder and upload again. Retain `uploadId`, `baseRevision`, `candidateRevision`, `expiresAt`,
    and the exact modified/deleted path lists. Keep the folder unchanged until deployment and
    verification complete.
+7. For an existing app, check that nobody else changed it since the folder was downloaded:
+
+   ```bash
+   node <skill-dir>/scripts/keeper-app-bundle.mjs drift <app-folder> - <<'JSON'
+   <the app_upload_prepare result>
+   JSON
+   ```
+
+   `baseRevision` alone cannot tell this: it is the installed revision now, so a change made
+   after your download shows up in the diff as a file you are reverting. On drift the script
+   lists the server changes this upload would undo and exits 1. Do not apply that stage: call
+   `app_upload_abort`, bring the folder up to date with `rebase` (see
+   [Construct the candidate](author-and-update.md#construct-the-candidate)), and upload and
+   prepare again. A new app has nothing to drift from and passes.
 
 `files` (inline content) remains available on `app_upload_prepare` and `app_diff` for a change of
 one or two small files; it is not a way to deploy a whole app.
@@ -81,7 +95,9 @@ After apply, compare the returned revision with the staged `candidateRevision` (
 for a definition-only stage, `revision` for a data-replacement stage), then confirm the exact
 content: pass the apply result, or a later `app_get` result, to
 `node <skill-dir>/scripts/keeper-app-bundle.mjs verify <app-folder> -`. It compares every returned
-sha256 with the local files and needs no read-back of the installed app. A DynamoDB apply may return `state: "applied"` immediately when the compiled serving
+sha256 with the local files and needs no read-back of the installed app. When an apply result
+matches, it moves `.keeper-baseline.json` to the applied revision, so the same folder is ready for
+the next change. A DynamoDB apply may return `state: "applied"` immediately when the compiled serving
 plan is unchanged, including notification-only edits; otherwise it returns a deployment job.
 Compare a job result once it completes. If
 apply rejects, rolls back, or reports a revision mismatch despite an

@@ -15,7 +15,9 @@ its value. It cannot be combined with `readonly` or `computed`. Use it for refer
 stamps — for example a parent `timesheet_id` or accounting `period_id`.
 
 `input` optionally controls form presentation. Its `placeholder` is a non-empty string. A semantic
-`time` field may set `input.variant: flexible_text` to render a text box instead of the time picker.
+`time` field may set `input.variant: flexible_text` to render a text box instead of the time picker. A flexible
+time field given a stored date-and-time (`2026-10-13T09:00`, e.g. an action input prefilled from a record's `datetime`
+field) keeps its time part (`09:00`).
 The runtime accepts an hour (`9`, `09`), compact time (`930`, `0930`), or colon time (`9:30`,
 `09:30`), normalizes it to `HH:MM`, and validates it again on the server.
 

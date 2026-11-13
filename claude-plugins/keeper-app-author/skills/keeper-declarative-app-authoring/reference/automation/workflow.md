@@ -29,7 +29,9 @@ A workflow with `agent_commit: {task, point?}` is an [AI task](task.md) commit w
 `result.*` and `system.agentRun.*`, has empty `input_fields` and no `allowed_roles`, and only Keeper
 runs it.
 
-Input sections group existing input field ids, may set `columns` (1–3), and may use `visible_when`. Preview/result names a
+Input sections group existing input field ids, may set `columns` (1–3), may use `visible_when`, and may set
+`tone: neutral|info|success|warning|danger` to tint the section's box (e.g. a read-only summary of the record the action
+starts from, above the editable inputs; omit it for the plain box). Preview/result names a
 step and optional dotted `path`. Follow-up actions use the [component action reference](../views/actions/index.md). Read
 [`steps.md`](steps.md) for the closed step vocabulary.
 

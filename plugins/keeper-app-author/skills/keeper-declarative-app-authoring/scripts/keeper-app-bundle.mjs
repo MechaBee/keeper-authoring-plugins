@@ -10,14 +10,23 @@
 //   node keeper-app-bundle.mjs download <app-dir> <download-result.json | -> [--overwrite]
 //       Fetch an app_download (delivery "link") artifact, check every hash, and write the files.
 //       Refuses to replace existing local app files unless --overwrite is given.
+//       Records what it wrote in .keeper-baseline.json (revision and file hashes).
+//   node keeper-app-bundle.mjs drift <app-dir> <prepare-result.json | ->
+//       After app_upload_prepare: exit 0 when nobody changed the app since the baseline,
+//       otherwise list the server changes this upload would revert and exit 1.
+//   node keeper-app-bundle.mjs rebase <app-dir> <download-result.json | ->
+//       Merge a fresh app_download into a folder with local edits: files only the server
+//       changed are updated, files only you changed are kept, and files both changed get the
+//       server copy under .keeper-conflicts/ (exit 1 until you merge them and delete that folder).
 //   node keeper-app-bundle.mjs verify <app-dir> <result.json | ->
 //       Compare the files[] hashes in a prepare, apply or app_get result with the local files.
+//       After a matching apply result, moves the baseline to the applied revision.
 //
 // The wire format is plain: sha256 is lowercase hex over each file's UTF-8 bytes,
 // and the upload body is {"files":[{"path","content"}]}. Any equivalent tooling works.
 
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 
 // Mirrors shared/keeper/app-files.ts (isKeeperAppFilePath); a repository test keeps them equal.
@@ -44,7 +53,9 @@ export function isImportFile(path) {
   return segments[0] === "docs" && segments.length >= 3 && segments.slice(1).every((segment) => IMPORT_DOCUMENT_SEGMENT.test(segment));
 }
 
-const IGNORED_NAMES = new Set([".DS_Store", ".git", "node_modules", "__MACOSX"]);
+const BASELINE_FILE = ".keeper-baseline.json";
+const CONFLICTS_DIR = ".keeper-conflicts";
+const IGNORED_NAMES = new Set([".DS_Store", ".git", "node_modules", "__MACOSX", BASELINE_FILE, CONFLICTS_DIR]);
 
 function walk(root, current = root, found = []) {
   for (const entry of readdirSync(current, { withFileTypes: true })) {
@@ -82,7 +93,34 @@ function readJsonArgument(argument) {
   return parsed && typeof parsed === "object" && parsed.structuredContent ? parsed.structuredContent : parsed;
 }
 
+function assertNoConflicts(appDir) {
+  if (existsSync(join(appDir, CONFLICTS_DIR))) {
+    throw new Error(`${appDir} has unmerged server changes in ${CONFLICTS_DIR}/. Merge each one into its file, then delete ${CONFLICTS_DIR}/.`);
+  }
+}
+
+function readBaseline(appDir) {
+  const path = join(appDir, BASELINE_FILE);
+  if (!existsSync(path)) return null;
+  const baseline = JSON.parse(readFileSync(path, "utf8"));
+  return baseline && Array.isArray(baseline.files) ? baseline : null;
+}
+
+function writeBaseline(appDir, result, files) {
+  const baseline = {
+    note: "Written by keeper-app-bundle.mjs: the installed app this folder was last in step with. Do not edit.",
+    appId: result.appId ?? null,
+    revision: result.revision ?? null,
+    definitionRevision: result.definitionRevision ?? null,
+    dataRevision: result.dataRevision ?? null,
+    files: files.map((file) => ({ path: file.path, sha256: file.sha256, sizeBytes: file.sizeBytes }))
+      .sort((left, right) => left.path.localeCompare(right.path)),
+  };
+  writeFileSync(join(appDir, BASELINE_FILE), `${JSON.stringify(baseline, null, 2)}\n`, "utf8");
+}
+
 function manifest(appDir, definitionsOnly, dataImport) {
+  assertNoConflicts(appDir);
   const files = dataImport
     ? readAppFiles(appDir, isImportFile, "data import files")
     : readAppFiles(appDir).filter((file) => !definitionsOnly || !file.path.startsWith("data/"));
@@ -129,7 +167,8 @@ async function upload(appDir, resultArgument) {
   console.error(`Uploaded ${files.length} file(s), ${Buffer.byteLength(body, "utf8")} bytes, to bundle ${result.bundleId}.`);
 }
 
-async function download(appDir, resultArgument, overwrite) {
+// Fetch an app_download (delivery "link") artifact and check every hash against the result.
+async function fetchArtifact(resultArgument) {
   const parsed = readJsonArgument(resultArgument);
   const result = parsed && parsed.artifact ? parsed.artifact : parsed;
   if (!result || !result.download || typeof result.download.url !== "string" || !Array.isArray(result.files)) {
@@ -172,16 +211,23 @@ async function download(appDir, resultArgument, overwrite) {
   }
   for (const path of expectedDocuments.keys()) problems.push(`${path}: document missing from the download`);
   if (problems.length > 0) throw new Error(`Download rejected, nothing written:\n${problems.join("\n")}`);
+  return { result, files, documents };
+}
 
+function writeFile(appDir, path, content) {
+  const target = join(appDir, ...path.split("/"));
+  mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(target, content, "utf8");
+}
+
+async function download(appDir, resultArgument, overwrite) {
+  const { result, files, documents } = await fetchArtifact(resultArgument);
   const existing = existsSync(appDir) ? readAppFiles(appDir) : [];
   if (existing.length > 0 && !overwrite) {
     throw new Error(`${appDir} already holds ${existing.length} app file(s). Use an empty folder, or pass --overwrite to replace them.`);
   }
-  for (const file of [...files, ...documents]) {
-    const target = join(appDir, ...file.path.split("/"));
-    mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, file.content, "utf8");
-  }
+  for (const file of [...files, ...documents]) writeFile(appDir, file.path, file.content);
+  writeBaseline(appDir, result, result.files);
   const downloaded = new Set(files.map((file) => file.path));
   const leftovers = existing.map((file) => file.path).filter((path) => !downloaded.has(path));
   if (leftovers.length > 0) {
@@ -220,6 +266,96 @@ function verify(appDir, resultArgument) {
     return;
   }
   console.error(`All ${local.length} file(s) match exactly.`);
+  // An apply result is the installed state this folder now matches: move the baseline to it.
+  if (typeof result.uploadId === "string" && typeof result.previousRevision === "string" && typeof result.revision === "string") {
+    const previous = readBaseline(appDir);
+    const files = includeData
+      ? remote
+      : [...remote, ...(previous?.files ?? []).filter((file) => file.path.startsWith("data/"))];
+    writeBaseline(appDir, result, files);
+    console.error(`Baseline moved to revision ${result.revision}.`);
+  }
+}
+
+function drift(appDir, resultArgument) {
+  assertNoConflicts(appDir);
+  const result = readJsonArgument(resultArgument);
+  const diff = result?.diff;
+  if (!diff || typeof diff.baseRevision !== "string") throw new Error("Pass the app_upload_prepare result (it has diff.baseRevision).");
+  const preserve = result.dataMode === "preserve";
+  const baseline = readBaseline(appDir);
+  if (!baseline) {
+    const installed = [...(diff.modified ?? []), ...(diff.deleted ?? []), ...(diff.unchanged ?? [])];
+    if (installed.length === 0) {
+      console.error("New app: nothing installed to drift from.");
+      return;
+    }
+    console.error(`No ${BASELINE_FILE} in ${appDir}, so it is unknown what the server held when this folder was made. `
+      + "Call app_download (delivery \"link\") and run rebase on this folder, then upload and prepare again.");
+    process.exitCode = 1;
+    return;
+  }
+  const baselineRevision = preserve ? baseline.definitionRevision : baseline.revision;
+  if (baselineRevision === diff.baseRevision) {
+    console.error(`No drift: the app is still at the revision this folder came from (${diff.baseRevision}).`);
+    return;
+  }
+  // The server moved on. A file you did not edit that still differs from the server is a change
+  // someone else made, which this upload would undo.
+  const inScope = (path) => !preserve || !path.startsWith("data/");
+  const base = new Map(baseline.files.filter((file) => inScope(file.path)).map((file) => [file.path, file.sha256]));
+  const local = new Map(readAppFiles(appDir).filter((file) => inScope(file.path)).map((file) => [file.path, digest(file.content).sha256]));
+  const reverts = [];
+  for (const path of [...(diff.modified ?? []), ...(diff.added ?? [])]) {
+    if (inScope(path) && local.get(path) === base.get(path)) reverts.push(`${path}: changed on the server; this upload puts back your downloaded copy`);
+  }
+  for (const path of diff.deleted ?? []) {
+    if (inScope(path) && !base.has(path)) reverts.push(`${path}: added on the server; this upload deletes it`);
+  }
+  console.error(`Drift: the app changed since this folder was downloaded (${baselineRevision} → ${diff.baseRevision}).`);
+  if (reverts.length > 0) console.error(reverts.join("\n"));
+  console.error("Do not apply this stage. Call app_upload_abort, then app_download (delivery \"link\") and run rebase on this folder, merge any conflicts, and upload and prepare again.");
+  process.exitCode = 1;
+}
+
+async function rebase(appDir, resultArgument) {
+  assertNoConflicts(appDir);
+  const { result, files } = await fetchArtifact(resultArgument);
+  const baseline = readBaseline(appDir);
+  const serverHasData = files.some((file) => file.path.startsWith("data/"));
+  const inScope = (path) => serverHasData || !path.startsWith("data/");
+  const base = new Map((baseline?.files ?? []).map((file) => [file.path, file.sha256]));
+  const local = new Map(readAppFiles(appDir).filter((file) => inScope(file.path)).map((file) => [file.path, digest(file.content).sha256]));
+  const server = new Map(files.map((file) => [file.path, file]));
+  const updated = [];
+  const kept = [];
+  const conflicts = [];
+  for (const path of [...new Set([...local.keys(), ...server.keys()])].sort()) {
+    const ours = local.get(path);
+    const theirs = server.has(path) ? digest(server.get(path).content).sha256 : undefined;
+    const original = base.get(path);
+    if (ours === theirs) continue;
+    if (ours === original) {
+      if (theirs === undefined) rmSync(join(appDir, ...path.split("/")));
+      else writeFile(appDir, path, server.get(path).content);
+      updated.push(`${path}${theirs === undefined ? " (deleted on the server)" : ""}`);
+    } else if (theirs === original) {
+      kept.push(path);
+    } else {
+      writeFile(join(appDir, CONFLICTS_DIR), path, theirs === undefined ? "" : server.get(path).content);
+      conflicts.push(`${path}${theirs === undefined ? " (deleted on the server; the conflict copy is empty)" : ""}${ours === undefined ? " (you deleted it)" : ""}`);
+    }
+  }
+  writeBaseline(appDir, result, result.files);
+  if (updated.length > 0) console.error(`Updated from the server: ${updated.join(", ")}`);
+  if (kept.length > 0) console.error(`Kept your edits: ${kept.join(", ")}`);
+  if (conflicts.length > 0) {
+    console.error(`Both changed (server copy in ${CONFLICTS_DIR}/): ${conflicts.join(", ")}`);
+    console.error(`Merge each server copy into your file, then delete ${CONFLICTS_DIR}/ before uploading.`);
+    process.exitCode = 1;
+    return;
+  }
+  console.error(`Rebased onto revision ${result.revision ?? "unknown"}${baseline ? "" : " (no earlier baseline: every local edit was treated as yours)"}.`);
 }
 
 async function main(argv) {
@@ -232,7 +368,9 @@ async function main(argv) {
   if (command === "upload" && appDir && resultArgument) return upload(appDir, resultArgument);
   if (command === "download" && appDir && resultArgument) return download(appDir, resultArgument, overwrite);
   if (command === "verify" && appDir && resultArgument) return verify(appDir, resultArgument);
-  console.error("Usage: keeper-app-bundle.mjs manifest <app-dir> [--definitions-only | --data-import] | upload <app-dir> <result.json|-> | download <app-dir> <result.json|-> [--overwrite] | verify <app-dir> <result.json|->");
+  if (command === "drift" && appDir && resultArgument) return drift(appDir, resultArgument);
+  if (command === "rebase" && appDir && resultArgument) return rebase(appDir, resultArgument);
+  console.error("Usage: keeper-app-bundle.mjs manifest <app-dir> [--definitions-only | --data-import] | upload <app-dir> <result.json|-> | download <app-dir> <result.json|-> [--overwrite] | drift <app-dir> <prepare-result.json|-> | rebase <app-dir> <download-result.json|-> | verify <app-dir> <result.json|->");
   process.exitCode = 2;
 }
 

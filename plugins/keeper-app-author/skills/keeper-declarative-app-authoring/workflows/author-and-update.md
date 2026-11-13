@@ -46,8 +46,9 @@ domain fields and screen count to the brief while preserving runtime binding and
 
 The candidate is a local folder laid out like the installed app, with `app.yaml` at its root. Edit
 complete UTF-8 files there; the folder, not the conversation, holds the content. For an existing
-app, start from its current source: use an existing local copy when it matches the installed
-revision, otherwise call `app_download` with `delivery: "link"` and write the files with:
+app, start from its current source: reuse a local folder that this script downloaded or verified
+(it holds `.keeper-baseline.json`), otherwise call `app_download` with `delivery: "link"` and
+write the files with:
 
 ```bash
 node <skill-dir>/scripts/keeper-app-bundle.mjs download <app-folder> - <<'JSON'
@@ -57,7 +58,16 @@ JSON
 
 The script checks every file against the returned sha256 before writing and never prints the
 download address; treat that address as a secret. It refuses to replace existing local app files
-unless given `--overwrite`. Use `app_files_read` only for reading a few files, not to copy an app.
+unless given `--overwrite`. It records the downloaded revision and file hashes in
+`.keeper-baseline.json`, which [Apply](apply.md) uses to catch changes someone else made on the
+server in the meantime; keep that file with the folder and do not edit it.
+
+To bring a folder that has local edits up to date, never download over it with `--overwrite`:
+call `app_download` again and run `rebase` on the folder with that result. Files only the server
+changed are updated, files only you changed are kept, and a file both sides changed gets the
+server copy under `.keeper-conflicts/<path>`. Merge each one into your file, keeping both
+intents, then delete `.keeper-conflicts/`; the script refuses to build a manifest until you do.
+Use `app_files_read` only for reading a few files, not to copy an app.
 Paths are app-relative; see the [application reference](../reference/application/app.md) for the
 only accepted files. Include guide documents and `notifications.yaml` when present. Do not use
 absolute paths, traversal, duplicates, or binary content. Change installed apps only through the
