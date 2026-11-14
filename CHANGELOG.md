@@ -3,6 +3,18 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.23.2 - 2026-11-14
+
+- The AI task reference has a section on procedures an agent team can carry out: everything it
+  knows is its context (no shell or code checkout; Writer has no web), it can't ask while it
+  runs, its last message is the report people see, and runs are bounded by the team's time limit,
+  cost cap and one run per record at a time.
+- The notifications reference describes agent team reports to an update topic and its channel.
+- The issue-tracker plan guide works for a team run, which has no code and can't switch to
+  another procedure.
+- A view that hands work to a team that doesn't exist now fails the deploy
+  (`TASK_ACTION_UNKNOWN_TEAM`) instead of hiding the action.
+
 ## Keeper App Author 1.23.1 - 2026-11-14
 
 - A delegable procedure shows in the ✦ menu only when a view lists an `agent_task_action` with

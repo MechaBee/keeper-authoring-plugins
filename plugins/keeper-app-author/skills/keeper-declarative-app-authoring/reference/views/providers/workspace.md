@@ -9,7 +9,7 @@ uniform provider result or generated action set is required:
 | `record` | Provider-shaped record query |
 | `record_create_action` | Create `action_set`, commonly for `record_collection.create` |
 | `workflow_action` | Workflow `action_set`; requires `workflow_id` |
-| `agent_task_action` | [AI task](../../automation/task.md) `action_set`; requires `task_id`; presets inputs with `input__{field}`; `team` (`writer`, `researcher`) hands a delegable task to that agent team instead |
+| `agent_task_action` | [AI task](../../automation/task.md) `action_set`; requires `task_id`; presets inputs with `input__{field}`; `team` (`writer`, `researcher`) hands a [delegable](../../automation/task.md#procedures-a-team-can-carry-out) task to that agent team instead; hidden while the team is off or not set up |
 | `app_member_access_action` | Admin-only app membership activate/deactivate `action_set` |
 | `file` | `workspace_file`; requires `path` (an empty bound path resolves to an empty file; PDFs, images and binaries resolve without content and preview from their bytes) |
 | `file_collection` | File list; exactly one of `pattern` (a glob) or `folder` (a folder path, usually record-bound), optional `recursive` |

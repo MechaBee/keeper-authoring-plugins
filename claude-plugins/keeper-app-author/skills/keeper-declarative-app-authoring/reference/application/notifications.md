@@ -140,6 +140,11 @@ message names the record, who an ask waits on and who acted, with a link to the 
 - **`channels.title`** (optional, any topic, up to 120 characters): how the channel names the
   record, with `{field_id}` placeholders from it, in place of the reference label, for example
   "Shipped: TTR#19 Week labels". Only put fields there the whole channel may see.
+- **Agent team reports.** An app admin can point an agent team's job description (Manage → Agent
+  teams) at any update topic. Each finished team run then also reaches that topic's channel: the
+  team and procedure as the title, with the run's summary only when the topic sets
+  `include_text`. Declare such a topic (for example `agent_reports`) when a team should report to
+  the channel; it needs no rules.
 - A post to a topic with a connected channel goes to the channel even when nobody else follows
   the record.
 

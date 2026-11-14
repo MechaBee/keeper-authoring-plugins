@@ -12,11 +12,15 @@ anyone builds it.
   comments override the description), `sub_issues`, `links` and the issue's
   `documents`.
 - If you are working in the code the issue is about, read the code the change
-  touches and name the files. Do not change code in this procedure.
+  touches and name the files. Do not change code in this procedure. Without the
+  code (a hosted team such as Writer has none), plan from what the issue and its
+  documents say, and list what a developer must confirm in the code under Risks.
 - If you find the approach has real choices after all (more than one sensible
   way, a data model or interface to decide), stop and use
   `write_solution_design` instead. If something you need is missing and a guess
-  would change the plan, use `ask_questions`.
+  would change the plan, use `ask_questions`. When you can't switch procedures
+  (you were handed only this one), stop without saving and say which choice or
+  answer is missing.
 
 ## The plan (`plan`)
 

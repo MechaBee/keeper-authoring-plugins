@@ -276,6 +276,38 @@ data_sources:
     depends_on: [issue]
 ```
 
+Use only the teams Keeper has: `writer` (drafts and revises documents; no web) and `researcher`
+(researches on the web and in the app, and cites its sources). A misspelt team fails the deploy
+with `TASK_ACTION_UNKNOWN_TEAM`. A team the host hasn't set up yet stays out of the menu, like one
+switched off.
+
+### Procedures a team can carry out
+
+A team runs on a hosted agent, not in the person's session, so write the procedure for an agent
+that has only what Keeper gives it:
+
+- **Its context is everything it knows.** It has no shell, code checkout or local files, and
+  Writer has no web. Declare every record, table, document and file it needs in `context`; a guide
+  that says "read the code" or "check the site" works only for a person's own agent.
+- **It can't ask along the way.** Nobody answers while it runs. The guide says what to do when the
+  brief is too thin: stop and say what is missing, or return an output that asks (like the
+  issue tracker's `ask_questions`). Never have it guess to finish.
+- **Its last message is its report.** Nobody can open the hosted session. The run's summary in
+  the person's inbox and on the [runs card](../views/components/agent-task-runs.md) is the agent's
+  final message: the outcome, what it did, why it stopped and what the person does next. A guide
+  that ends "Tell the person…" gives that message its content.
+- **Limits.** A run gets the shorter of the team's time limit (Writer 30 minutes, Researcher 45)
+  and the task's `limits.timeout_s`, and stops at its cost cap: Writer $3, Researcher $5, or lower
+  when the job description sets one. The person who hands it over pays from their AI credit; the
+  menu shows the most it can cost them. Size the work to fit: one document, not a batch.
+- **One run at a time per record.** With a `target`, Keeper refuses a second team run of the same
+  procedure on that record while one is going. Give delegable tasks a `target`.
+- **The commit mode still applies.** `on_result` saves when the agent submits; `on_approval`
+  leaves the result proposed for review in the app, the same as for a connected agent.
+- **Reports.** The job description may name an update topic of the app for its reports; each
+  finished run then reaches that topic's [team channel](../application/notifications.md#team-channels)
+  too. `post_hints` still apply: the team posts the hints a commit returns.
+
 Use the same context, guide, record output and commit workflow grammar. Records stay logical for
 both JSONL and DynamoDB. Document outputs must include `{run.id}` in every path template. External
 writes use standard workspace existence checks and upserts, without atomic create-only semantics;
