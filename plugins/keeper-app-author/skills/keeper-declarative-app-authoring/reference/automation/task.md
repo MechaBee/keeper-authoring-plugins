@@ -256,9 +256,25 @@ Add `delegable: true` (`exposure: {mcp: true, delegable: true}`) when people may
 to a hosted agent team (Writer, Researcher) instead of running it with their own agent. The app
 definition only says it *can* be handed over: an app admin switches each team on in the app's
 Manage page (Agent teams), where the team's job description lists the procedures it takes, who may
-hand work over, a cost cap and how to do the job. That needs no redeploy. Mark draft, revise and
-research procedures delegable; leave out ones that need a person in the loop while they run.
-The older `teams: [writer]` form still works and counts as `delegable: true`.
+hand work over, a cost cap and how to do the job. Mark draft, revise and research procedures
+delegable; leave out ones that need a person in the loop while they run. The older
+`teams: [writer]` form still works and counts as `delegable: true`.
+
+People hand work over from a view: declare an `agent_task_action` source with a `team` and list it
+in the view's `actions` without a `placement`, so it joins the view bar's AI menu under "Writer
+works on it". It shows only while that team is switched on for the procedure in Manage, so
+switching teams on and off needs no redeploy:
+
+```yaml
+data_sources:
+  writer_plan_action:
+    kind: provider_resource
+    provider: workspace
+    resource: agent_task_action
+    params: {task_id: write_implementation_plan, team: writer, input__issue_id: {bind: state.issue_id}}
+    action_dialog: {hidden_inputs: [issue_id]}
+    depends_on: [issue]
+```
 
 Use the same context, guide, record output and commit workflow grammar. Records stay logical for
 both JSONL and DynamoDB. Document outputs must include `{run.id}` in every path template. External

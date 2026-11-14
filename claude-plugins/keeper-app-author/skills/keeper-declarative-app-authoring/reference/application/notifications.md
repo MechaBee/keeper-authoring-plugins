@@ -106,10 +106,25 @@ messages. The agent writes the text, so the message says what the session actual
 
 ### Team channels
 
-App managers can connect a topic to a Discord channel on the app's manage page. By default a
-channel message names the topic and links to the record; what was said stays in Keeper, because
-people in the channel are outside its access checks. An update topic whose messages are written
-to be shared, such as release announcements, opts in to carrying its text:
+App managers can connect a topic to a Discord channel on the app's manage page. A channel
+message names the record, who an ask waits on and who acted, with a link to the record:
+
+> **Review: ISS#1 Board cards show the assignee**
+> The Agent wrote a solution design or an implementation plan for you to review.
+> Waiting on Kim Lee and Sam Park · from Writer for Ana Diaz
+> *Issues*
+
+- The title is the ask's `action` (or the topic's label) and the record's name: its table's
+  `referenceLabelTemplate`, else its display field. The line under it is the topic's
+  `description`. The app name is the footer.
+- People appear by full name, never email; past two names the rest are counted ("and 3 others").
+  A write an agent made reads "from Writer for Ana Diaz", or "Agent for …" for a person's own
+  agent.
+- When the ask is answered, the same message turns grey and reads in the past tense: "Reviewed:
+  ISS#1 …", "Reviewed by Kim Lee". A topic without an `action` says "Done".
+- What was said stays in Keeper: no comment text, descriptions or other fields beyond the
+  record's name. An update topic whose messages are written to be shared, such as release
+  announcements, opts in to carrying its text:
 
 ```yaml
   - id: shipped
@@ -121,9 +136,9 @@ to be shared, such as release announcements, opts in to carrying its text:
 ```
 
 - **`channels.include_text`** (update topics only): the channel shows the post's text, or a
-  rule's inbox line. Asks never carry text.
-- **`channels.title`** (optional, with `include_text`, up to 120 characters): the message title
-  after the topic label, with `{field_id}` placeholders from the record, for example
+  rule's inbox line, in place of the description. Asks never carry text.
+- **`channels.title`** (optional, any topic, up to 120 characters): how the channel names the
+  record, with `{field_id}` placeholders from it, in place of the reference label, for example
   "Shipped: TTR#19 Week labels". Only put fields there the whole channel may see.
 - A post to a topic with a connected channel goes to the channel even when nobody else follows
   the record.

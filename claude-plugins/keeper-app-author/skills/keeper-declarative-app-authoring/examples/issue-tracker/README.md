@@ -24,7 +24,8 @@ Fifteen workflows own every change that should leave a trace: `open_issue`, `clo
 Eight [AI tasks](../../reference/automation/task.md), exposed to connected agents as procedures,
 let a coding agent work an issue. Four work the Agent queue: `ask_questions`,
 `write_implementation_plan`, `write_solution_design` and `revise_solution_design` (for either
-document). Four report work done in a session on any open issue or project: `post_update`
+document). `write_implementation_plan` is `delegable`: once an app admin switches the Writer team
+on in Manage with a job description, the issue page's ✦ menu offers it to Writer while the issue is Ready (`writer_plan_action` in the issue view). Four report work done in a session on any open issue or project: `post_update`
 (comment, optional board move), `move_on_board` (a column change alone, no comment), `report_fix` (comment, close as completed, Done, drop
 `needs-triage`, leave the Agent) and `file_issue` (a new or follow-up issue). Each is saved by its
 commit workflow. The issue page has two [`copy_text`](../../reference/views/copy-text.md) buttons

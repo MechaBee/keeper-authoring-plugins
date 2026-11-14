@@ -2,7 +2,8 @@ id: write_implementation_plan
 title: Write an implementation plan
 description: "Use for an issue given to the Agent whose solution is already clear and needs no design choices: a contained fix or change that a developer can start on at once. Reads the issue, its conversation, sub-issues, links, documents and the code you can see, then files a step-by-step implementation plan in the issue's documents for review. Use write_solution_design instead when the approach still has real choices, and ask_questions when you can't proceed without answers."
 kind: task
-exposure: {mcp: true}
+# A hosted agent team (Writer) may take it when an app admin switches the team on in Manage.
+exposure: {mcp: true, delegable: true}
 allowed_roles: [editor, developer, admin]
 input:
   # Only open issues the Agent holds and can work now: the picker is the Ready queue.

@@ -18,6 +18,8 @@ actions:
   - {id: close, kind: action_set, data_source: close_action}
   - {id: reopen, kind: action_set, data_source: reopen_action}
   - {id: hand_back, kind: action_set, data_source: hand_back_action}
+  # Hand the plan to the hosted Writer team; shown only once an app admin switches Writer on.
+  - {id: writer_plan, kind: action_set, data_source: writer_plan_action}
   # A prompt to paste into a connected agent session while the issue waits for the Agent.
   - id: agent_prompt
     kind: copy_text
@@ -162,6 +164,21 @@ data_sources:
       - {bind: source.issue.record.assignee_kind, operator: equals, value: agent}
       - {bind: source.issue.record.agent_status, operator: not_equals, value: ready}
     action_dialog: {preview: false, hidden_inputs: [issue_id]}
+    depends_on: [issue]
+    refresh_on: [state.issue_id]
+  writer_plan_action:
+    kind: provider_resource
+    provider: workspace
+    resource: agent_task_action
+    params:
+      task_id: write_implementation_plan
+      team: writer
+      input__issue_id: {bind: state.issue_id}
+    visible_when:
+      - {bind: source.issue.record.state, operator: equals, value: open}
+      - {bind: source.issue.record.assignee_kind, operator: equals, value: agent}
+      - {bind: source.issue.record.agent_status, operator: equals, value: ready}
+    action_dialog: {hidden_inputs: [issue_id]}
     depends_on: [issue]
     refresh_on: [state.issue_id]
   comment_action:

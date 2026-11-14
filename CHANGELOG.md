@@ -3,6 +3,15 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.23.1 - 2026-11-14
+
+- A delegable procedure shows in the ✦ menu only when a view lists an `agent_task_action` with
+  `team`. The AI task and workspace provider references now say so, and the issue-tracker example
+  hands its implementation plan to Writer that way.
+- The notifications reference describes the team-channel message: the record's name, who an ask
+  waits on and who acted (by full name, never email), and a past-tense edit once it is answered.
+  `channels.title` names the record on any topic and no longer needs `include_text`.
+
 ## Keeper App Author 1.23.0 - 2026-11-14
 
 - Procedures take `exposure: {mcp: true, delegable: true}` to say people may hand them to a
