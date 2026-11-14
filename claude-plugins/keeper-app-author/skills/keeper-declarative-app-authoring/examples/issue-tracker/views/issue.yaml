@@ -346,6 +346,21 @@ components:
               edit_flow: click_to_edit
               empty_text: No description yet.
 
+  # Agent team and connected-agent runs on this issue: what each did, or why it stopped.
+  # What an agent is doing on the issue now, or why it stopped: one quiet line above the tabs,
+  # so a notice about a run lands on its explanation.
+  agent_status:
+    kind: agent_task_runs
+    table: issues
+    record_id: {bind: state.issue_id}
+    presentation: {variant: inline}
+  # Every run on the issue, on its own tab.
+  agent_runs:
+    kind: agent_task_runs
+    title: Agent runs
+    table: issues
+    record_id: {bind: state.issue_id}
+    empty_message: No agent has worked on this issue yet.
   conversation:
     kind: comment_thread
     title: Conversation
@@ -453,7 +468,15 @@ layout:
       gap: md
       children:
         - component: issue_main
-        - component: conversation
+        - component: agent_status
+        - kind: tabs
+          tabs:
+            - id: conversation
+              label: Conversation
+              layout: {component: conversation}
+            - id: agent_runs
+              label: Agent runs
+              layout: {component: agent_runs}
     - kind: stack
       gap: md
       children:

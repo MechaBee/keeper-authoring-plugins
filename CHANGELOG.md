@@ -3,6 +3,21 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.23.0 - 2026-11-14
+
+- Procedures take `exposure: {mcp: true, delegable: true}` to say people may hand them to a
+  hosted agent team (Writer, Researcher). An app admin switches each team on in the app's Manage
+  page, with a job description, who may hand work over and a cost cap, without a redeploy. The
+  older `teams: [writer]` form still works.
+- Workflows can start from a record. `prefill` names the input holding the record id and maps
+  its fields onto the dialog's inputs, so each view passes only the id. An input section's
+  `record` shows that record read-only.
+- `agent_task_runs` takes `empty_message` for a card that has its own place, such as a tab. The
+  inline line also reports an agent team that stopped on its own, with its reason. The reference
+  shows the inline line plus a card on its own tab, and says how the component keeps itself up to
+  date (ten minutes while a run is active, then a refresh button). The issue-tracker example uses
+  this layout, with Conversation and Agent runs tabs.
+
 ## Keeper App Author 1.22.0 and Workspace Content 1.10.0 - 2026-11-13
 
 - App Author 1.22.0: the skill catches a change someone else made to an app while you were editing

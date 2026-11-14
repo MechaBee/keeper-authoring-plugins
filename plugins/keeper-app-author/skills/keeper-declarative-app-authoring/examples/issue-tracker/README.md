@@ -8,7 +8,7 @@ JSONL storage; the manifest omits `storage`.
 | View | For | Built from |
 | --- | --- | --- |
 | [Issues](views/issues.yaml) (default) | Everyone | `record_table` over a projection; Open/Closed filters, search and CSV export; Type and wrapping Created by columns by default; **Copy prompt for your agent** button |
-| [Issue](views/issue.yaml) (hidden, `?issueId=`) | Everyone | Editable `record_detail`; comment and event timeline; two-column details with Change type and Move on board dialogs; sub-issue and link lists; state-aware Close/Reopen |
+| [Issue](views/issue.yaml) (hidden, `?issueId=`) | Everyone | Editable `record_detail`; a line saying what an agent is doing now or why it stopped; Conversation and Agent runs tabs (each run's summary, including why a team stopped); two-column details with Change type and Move on board dialogs; sub-issue and link lists; state-aware Close/Reopen |
 | [Board](views/board.yaml) | Everyone | `record_board` per project: saved rank, WIP limit, facets, side-pane detail, and movement activity |
 | [My work](views/my_work.yaml) | Everyone | Tabs: assigned to me, opened by me, open issues nobody owns |
 | [Agent queue](views/agent_queue.yaml) | Everyone and connected agents | Tabs: issues ready for the Agent, and those waiting on people; exposed to MCP |

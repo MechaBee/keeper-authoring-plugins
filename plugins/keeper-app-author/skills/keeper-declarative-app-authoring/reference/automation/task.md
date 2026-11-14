@@ -252,6 +252,14 @@ is for, and an exposed task's description as when to use it, in the person's wor
 person asks to save this session's progress…"), plus what the agent gathers before preparing. Keep
 the procedure's know-how in the guide and the task definition, never in a plugin command or skill.
 
+Add `delegable: true` (`exposure: {mcp: true, delegable: true}`) when people may hand the procedure
+to a hosted agent team (Writer, Researcher) instead of running it with their own agent. The app
+definition only says it *can* be handed over: an app admin switches each team on in the app's
+Manage page (Agent teams), where the team's job description lists the procedures it takes, who may
+hand work over, a cost cap and how to do the job. That needs no redeploy. Mark draft, revise and
+research procedures delegable; leave out ones that need a person in the loop while they run.
+The older `teams: [writer]` form still works and counts as `delegable: true`.
+
 Use the same context, guide, record output and commit workflow grammar. Records stay logical for
 both JSONL and DynamoDB. Document outputs must include `{run.id}` in every path template. External
 writes use standard workspace existence checks and upserts, without atomic create-only semantics;
