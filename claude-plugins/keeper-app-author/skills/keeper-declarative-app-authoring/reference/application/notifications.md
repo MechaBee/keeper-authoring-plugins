@@ -18,7 +18,8 @@ rules:
 ```
 
 The file contains at most 32 rules. Each rule needs a unique `id`, a schema `table`, an
-`operation` (`create` or `update`), and at least one `recipientFields` entry. Each recipient
+`operation` (`create` or `update`), and at least one `recipientFields` entry (unless it is a
+channel-only rule; see [Channel-only rules](#channel-only-rules-team-feeds)). Each recipient
 field must be a single reference to `keeper_principals` on the changed record. For updates,
 `changedFields` matches when any named field actually changes. `workflowIds` limits matches to
 the named workflows; without it, direct edits can match. Split distinct transitions into
@@ -147,6 +148,41 @@ message names the record, who an ask waits on and who acted, with a link to the 
   the channel; it needs no rules.
 - A post to a topic with a connected channel goes to the channel even when nobody else follows
   the record.
+
+#### Channel-only rules (team feeds)
+
+A rule without `recipientFields` reaches no inbox: it only feeds the channels connected to its
+topic. Use it for what a team follows rather than one person, such as new comments or step
+assignments. It needs a `topic`, which must be an update topic, and takes no `delivery`,
+`priority`, `message.inbox` or `message.push`.
+
+```yaml
+topics:
+  - id: task_discussion
+    kind: update
+    label: Task discussion
+    link: {view: task, route: {taskId: "{task_id}"}}
+    channels: {include_text: true}
+rules:
+  - id: task_commented
+    topic: task_discussion
+    table: task_comments
+    operation: create
+    message:
+      channel: "{body}"
+```
+
+- **`message.channel`** (one line, up to 240 characters, any rule whose topic sets
+  `include_text`): the channel text in place of the inbox line. Its `{field_id}` placeholders may
+  also read `textarea` fields, which keep their line breaks (up to 1,500 characters each), so a
+  comment reads as written. A rule with recipients can set both: `inbox` for the person,
+  `channel` for the team.
+- **Comments are named after their record.** On a `role: comment` table, the channel title is the
+  commented record's name ("CP-001 · Pricing page"), not the comment, unless the topic sets
+  `channels.title`. Comments added in the Discussion or Review panels notify like any other write.
+- Nothing reaches the channel until a manager connects the topic, so a team feed is quiet by
+  default. Keep a person's own copy as an ask on another topic with recipients, so it waits in
+  their inbox.
 
 ### App news
 

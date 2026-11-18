@@ -3,6 +3,21 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.24.0 - 2026-11-18
+
+- Notifications: a rule without `recipientFields` is a channel-only rule. It feeds an update
+  topic's team channels (for example a Discord channel set under Manage → Notifications) and
+  reaches no inbox. `message.channel` sets its text, which may read long-text fields and keeps
+  line breaks. Comments now notify like any other write, and a channel post about a comment is
+  named after the record it is on.
+- Agent teams can be given a whole record ("Give to <Team>"), with no procedure, and work through
+  the app's shared views. The view reference describes the actions an agent can run
+  (`app_action_run`) and how to design views agents work in.
+- `comments` and `comment_thread` take `thread_actions`: buttons such as Ask AI or Summarise on
+  each thread, run with the thread's id preset.
+- `record_gantt` adds milestones, progress from child records, attention outlines, a saved-plan
+  baseline, date-clash warnings, quarter and all-range scales, and a list of undated rows.
+
 ## Keeper App Author 1.23.2 - 2026-11-14
 
 - The AI task reference has a section on procedures an agent team can carry out: everything it

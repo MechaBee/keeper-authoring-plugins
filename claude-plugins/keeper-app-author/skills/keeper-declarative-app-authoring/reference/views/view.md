@@ -32,10 +32,34 @@ and `exposure`.
 routed state keys (`route_state`, except `mode: export`) are the parameters an agent passes, so a
 record page takes its id and a list takes its filters. The agent gets each data source as data:
 table and record sources with a `_labels` map naming their references, comments, linked and
-collection documents, a document's text, stats and markdown. Action sets and screen-only sources
-are left out, and nothing is changed. Expose the views an agent needs to look things up before or
-between [tasks](../automation/task.md): a queue, a list by filter, a record page. A view a role may
-not open stays closed to that role's agents.
+collection documents, a document's text, stats and markdown; screen-only sources are left out, and
+reading changes nothing. Expose the views an agent needs to look things up before or between
+[tasks](../automation/task.md): a queue, a list by filter, a record page. A view a role may not open
+stays closed to that role's agents.
+
+The view also lists its `actions` for the agent, and `app_action_run` runs one as the person's own
+click would, with their role, row access and mutation policy: the view's action-set buttons
+(workflows, record create and update, document and collection actions), its comment box (new
+thread, reply, edit own comment, resolve), editing an `editable` `record_detail` and adding a row
+with a `record_form`. A disabled button is listed with its reason. Agents never delete: delete
+actions, unlinks and workflows with a `delete_record` or `replace_records` step are listed as
+unavailable. AI task and team hand-over actions are left out; agents use procedures for those.
+
+### Views agents work in
+
+A [team given a record](../automation/task.md#give-a-record-to-a-team) works through the shared
+views, so design those views for an agent as well as a person:
+
+- **A record page per table people hand over.** Keeper finds the record through a shared view
+  whose routed parameter opens that table's record (a `record` source bound to the routed state
+  key). A record shown only as a selected row inside another page has none: add a small record
+  page (it can stay out of `nav`) with the record, what it belongs to and its discussion.
+- **The actions it needs are on that page.** Status changes, the comment box, an editable detail
+  for fields it may set, and the form or button that adds a related row (a source, a task).
+- **Say what an action is for.** An action's label and description are all the agent sees; a
+  workflow's `title` fills in when the button has no description.
+- **Where to report.** Agents post where people read: a thread on the record, or a channel the job
+  description names. Prefer the app's own comment box to a report-only workflow.
 
 An agent receives every data source by default, helpers included: a lookup, the full rows behind a
 `projected_table`. List the ones it should get in `exposure.sources` to keep the rest on screen only,

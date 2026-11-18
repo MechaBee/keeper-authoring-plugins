@@ -255,12 +255,26 @@ the procedure's know-how in the guide and the task definition, never in a plugin
 Add `delegable: true` (`exposure: {mcp: true, delegable: true}`) when people may hand the procedure
 to a hosted agent team (Writer, Researcher) instead of running it with their own agent. The app
 definition only says it *can* be handed over: an app admin switches each team on in the app's
-Manage page (Agent teams), where the team's job description lists the procedures it takes, who may
+Manage page (Agent teams), where the team's job description lists the procedures it also takes, who may
 hand work over, a cost cap and how to do the job. Mark draft, revise and research procedures
 delegable; leave out ones that need a person in the loop while they run. The older
 `teams: [writer]` form still works and counts as `delegable: true`.
 
-People hand work over from a view: declare an `agent_task_action` source with a `team` and list it
+### Give a record to a team
+
+A switched-on team also takes a whole record, with no procedure: every record of a table that a
+shared view opens (see [views agents work in](../views/view.md#views-agents-work-in)) shows
+"Give to <Team>" in its AI menu, with one optional field for the person's message. The team
+reads the record, follows the job description, and works through the views' actions, collection
+documents and the delegable procedures, with the person's authority, in this app only. Changes
+apply without review unless a procedure's commit mode asks for one; the team never deletes and
+never changes the app's definition or members. Keeper lists every change it made under the
+record's header and in the person's inbox notice. Prefer this for open-ended work on a record
+(research an item, tidy a milestone); keep a procedure for a fixed form with a checked result.
+
+### Hand a procedure to a team
+
+People hand a procedure over from a view: declare an `agent_task_action` source with a `team` and list it
 in the view's `actions` without a `placement`, so it joins the view bar's AI menu under "Writer
 works on it". It shows only while that team is switched on for the procedure in Manage, so
 switching teams on and off needs no redeploy:

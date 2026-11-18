@@ -33,7 +33,7 @@ empty_message: No comments on this page yet.
 Required: `table`, a table-shaped `data_source` already filtered to one subject, `thread_field`
 and `body_field`. Optional: `title`, `description`, `author_field`, `created_field`,
 `resolved_field`, `summary_field`, `agent_field`, `anchor`, `create`, `reply`, `reply_to_field`,
-`resolve`, and `empty_message`. The open/resolved count
+`resolve`, `thread_actions`, and `empty_message`. The open/resolved count
 appears only when `resolved_field` is set.
 
 Rows sharing a `thread_field` value form one thread, ordered by `created_field`. The first comment
@@ -82,6 +82,16 @@ resolve:
   `limit: 1`) and update it. Optional `resolve_label` and `reopen_label`.
 - Both controls disappear for viewers who can't run their action. Have the comment workflow check
   that an answered comment belongs to the thread it joins.
+
+## Thread actions
+
+`thread_actions` adds buttons to each thread, run with the thread's id preset, the same as on the
+[`comments`](comments.md#thread-actions) component:
+
+```yaml
+thread_actions:
+  - {data_source: ask_ai, thread_input: thread_id, show_on: open}
+```
 
 ## Page-level conversations
 
