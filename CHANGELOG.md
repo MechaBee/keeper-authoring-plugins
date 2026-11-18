@@ -3,6 +3,20 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Workspace Content 1.11.0 - 2026-11-18
+
+- Acting in a Keeper app: `app_view_read` lists a view's `actions` (workflow buttons, the comment
+  box, editing an open record, adding a row with a form), and `app_action_run` runs one as the
+  person's own click would, with their role and the app's checks, attributed to the agent on
+  their behalf. Replies in a thread take `thread_id` and `reply_to_comment_id`.
+- `app_document_write` writes a collection document: a new one by `collectionId`, or a revision
+  checked against `baseVersionId`.
+- Agents never delete records, documents or links, or change an app's definition or members.
+- Work given to an agent team ("Give to <team>"): what the first message holds and how the team
+  works through that app only.
+- App memory: `app_memory_read` and `app_memory_write` keep one short set of notes per app across
+  runs, versioned, with every change visible to people and revertible.
+
 ## Keeper App Author 1.24.0 - 2026-11-18
 
 - Notifications: a rule without `recipientFields` is a channel-only rule. It feeds an update
