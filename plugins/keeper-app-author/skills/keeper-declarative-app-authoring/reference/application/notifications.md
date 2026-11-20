@@ -108,19 +108,22 @@ messages. The agent writes the text, so the message says what the session actual
 ### Team channels
 
 App managers can connect a topic to a Discord channel on the app's manage page. A channel
-message names the record, who an ask waits on and who acted, with a link to the record:
+message names the record and every person it concerns, by role, with a link to the record:
 
 > **Review: ISS#1 Board cards show the assignee**
-> The Agent wrote a solution design or an implementation plan for you to review.
-> Waiting on Kim Lee and Sam Park · from Writer for Ana Diaz
+> **Waiting on** Kim Lee and Sam Park · **Reviewer** Kim Lee · **By** Writer for Ana Diaz
 > *Issues*
 
 - The title is the ask's `action` (or the topic's label) and the record's name: its table's
-  `referenceLabelTemplate`, else its display field. The line under it is the topic's
-  `description`. The app name is the footer.
-- People appear by full name, never email; past two names the rest are counted ("and 3 others").
-  A write an agent made reads "from Writer for Ana Diaz", or "Agent for …" for a person's own
-  agent.
+  `referenceLabelTemplate`, else its display field. The app name is the footer. An ask whose
+  record has a name shows no description: the title says what to do. Without a name the topic's
+  `description` explains it.
+- People appear as fields under their role, by full name, never email; past two names the rest
+  are counted ("and 3 others"). Every message names who acted (**By**; "Writer for Ana Diaz" when
+  an agent acted for a person), an ask names who it is **Waiting on**, and a comment reply names whom
+  it is **Replying to**. The app adds its own roles with `channels.people`.
+- Links name the workspace owner by an opaque key, never by email: a channel may be read by
+  people the workspace is not shared with, and the link opens only for those it is.
 - When the ask is answered, the same message turns grey and reads in the past tense: "Reviewed:
   ISS#1 …", "Reviewed by Kim Lee". A topic without an `action` says "Done".
 - What was said stays in Keeper: no comment text, descriptions or other fields beyond the
@@ -141,6 +144,15 @@ message names the record, who an ask waits on and who acted, with a link to the 
 - **`channels.title`** (optional, any topic, up to 120 characters): how the channel names the
   record, with `{field_id}` placeholders from it, in place of the reference label, for example
   "Shipped: TTR#19 Week labels". Only put fields there the whole channel may see.
+- **`channels.people`** (optional, any topic, 1–3 entries): the people the record names, each a
+  `keeper_principals` reference (single or multiple) on every table a rule of the topic watches,
+  shown under its `label`. Name the roles a team needs to know whom it concerns:
+
+  ```yaml
+      channels:
+        title: "{task_code} · {title}"
+        people: [{field: assignee_user_id, label: Step owner}, {field: reviewer_user_id, label: Reviewer}]
+  ```
 - **Agent team reports.** An app admin can point an agent team's job description (Manage → Agent
   teams) at any update topic. Each finished team run then also reaches that topic's channel: the
   team and procedure as the title, with the run's summary only when the topic sets
@@ -174,9 +186,12 @@ rules:
 
 - **`message.channel`** (one line, up to 240 characters, any rule whose topic sets
   `include_text`): the channel text in place of the inbox line. Its `{field_id}` placeholders may
-  also read `textarea` fields, which keep their line breaks (up to 1,500 characters each), so a
-  comment reads as written. A rule with recipients can set both: `inbox` for the person,
-  `channel` for the team.
+  also read `textarea` fields. A channel shows the gist: the first paragraph, cut at a sentence
+  once it passes about 400 characters, with "…" when there is more; the link opens the rest. A
+  rule with recipients can set both: `inbox` for the person, `channel` for the team.
+- **Write the outcome first.** A comment a workflow writes for an agent reaches the channel by its
+  first paragraph, so put what happened there ("Published: live at …") and the audit trail
+  (authorization, hashes, file paths) in later paragraphs.
 - **Comments are named after their record.** On a `role: comment` table, the channel title is the
   commented record's name ("CP-001 · Pricing page"), not the comment, unless the topic sets
   `channels.title`. Comments added in the Discussion or Review panels notify like any other write.

@@ -90,6 +90,14 @@ independent units that should land as they finish. Keep context to what the job 
 only what the requester can see. Write the guide as instructions to a capable colleague, and mark
 AI-made records with an app field reviewers can see.
 
+When a job takes several decisions before anything is saved (add a scenario to a task, hand work
+to a team), make it a guided flow: one workflow whose `input_sections` are the steps, shown with
+[`action_dialog.layout: steps`](../reference/views/providers/workspace.md#step-by-step-dialogs-action_dialoglayout-steps)
+and ending on a `done` screen that says what happens next. Put the flows people open the app for on
+[flow pages](../reference/views/components/flow.md) under a "Work with" `nav.group`, and gather them
+on a work-with page with [flow cards](../reference/views/components/toolbar.md#flow-cards). Keep
+dialogs for quick changes in the context of a record.
+
 When people carry text from the app into another tool, such as a prompt for a coding-agent
 session or a command, give them a [copy button](copy-text.md) filled in from the record instead of a
 template to edit by hand.

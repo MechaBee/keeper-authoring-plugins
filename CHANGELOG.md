@@ -3,6 +3,23 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.25.0 - 2026-11-20
+
+- Guided flows. A `workflow_action` can show its `input_sections` one step at a time
+  (`action_dialog.layout: steps`), with Review last, and end on a done screen that says what
+  happens next (`action_dialog.done`, with up to three links that may bind the workflow result).
+  When the action's `on_success` gives the saved record to a team, Review names the team and its
+  cost limit, and the action is disabled with the reason when the team can't start.
+- A select with two options can render as a switch (`input.variant: switch`) for "pick or start"
+  choices.
+- A `toolbar` with `presentation.variant: cards` lists flows and links as cards with their steps
+  and hand-over; a link takes a `description`.
+- New `flow` component: one guided flow on its own page, with the step in the URL
+  (`?flowStep=`, reserved on every view), drafts kept across a refresh, and presets from a link
+  through `route_state`.
+- Team channel messages name every person a record concerns by role (`channels.people`), show the
+  first paragraph of long text, and never put the owner's email in links.
+
 ## Workspace Content 1.11.0 - 2026-11-18
 
 - Acting in a Keeper app: `app_view_read` lists a view's `actions` (workflow buttons, the comment

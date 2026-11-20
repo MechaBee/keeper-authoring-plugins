@@ -20,6 +20,8 @@ String shorthand means `sync`. Modes are:
 - `hydrate`: read inbound only.
 - `export`: export on navigation only.
 
+The query key `flowStep` is reserved for a [flow page](../components/flow.md)'s step on every view.
+
 `omit_values` contains primitives removed from generated queries. Explicit `navigate.query`
 overrides automatic export. A collection selection stored in a synced state key becomes
 deep-linkable and supports browser-back closing of overlay/mobile detail.

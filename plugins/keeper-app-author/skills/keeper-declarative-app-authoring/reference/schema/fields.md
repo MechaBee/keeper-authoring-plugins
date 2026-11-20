@@ -29,6 +29,11 @@ without an edit. Set `search` to get the picker below that threshold, or `defaul
 plain dropdown above it. Under this variant `input.placeholder` is the search box's placeholder.
 Options are matched by label, not by stored id.
 
+A `select` with exactly two options may set `input.variant: switch` to render a two-way segmented
+switch instead of a dropdown. Use it for a choice between two modes that changes what comes next,
+such as "Add to a queued task" or "Start a new task", with `visible_when` on the fields or input
+sections of each mode. A third option is an error: a choice among three or more stays a dropdown.
+
 A `text` field may set `input.variant: workspace_folder` to link a record to a workspace folder —
 the place a customer's or project's documents live. Forms show a folder picker instead of a text
 box, and the field stores the folder's workspace path while every surface (tables, cards, detail)

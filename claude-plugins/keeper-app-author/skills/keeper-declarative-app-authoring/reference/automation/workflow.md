@@ -31,7 +31,8 @@ runs it.
 
 Input sections group existing input field ids, may set `columns` (1–3), may use `visible_when`, and may set
 `tone: neutral|info|success|warning|danger` to tint the section's box (e.g. a read-only summary of the record the action
-starts from, above the editable inputs; omit it for the plain box). Preview/result names a
+starts from, above the editable inputs; omit it for the plain box). A view can show titled sections
+one at a time as a [step-by-step dialog](../views/providers/workspace.md#step-by-step-dialogs-action_dialoglayout-steps). Preview/result names a
 step and optional dotted `path`. Follow-up actions use the [component action reference](../views/actions/index.md). Read
 [`steps.md`](steps.md) for the closed step vocabulary.
 

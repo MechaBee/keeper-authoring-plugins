@@ -104,6 +104,76 @@ Membership changes emit `app.member.added`, `app.member.removed`, `app.member.ro
 `app.member.invitation_pending`. Event identity is the stable principal when one exists; profile
 records are never membership identity.
 
+## Step-by-step dialogs: `action_dialog.layout: steps`
+
+A `workflow_action` whose job takes several decisions can show the workflow's `input_sections` one
+at a time instead of one long form. Each section is a step, and its `title` is the step's label.
+The last step is Review: the entered values, section by section, with a Change link on each, and the
+workflow preview when it has one. Nothing is saved until Review's button, which carries the action's
+label.
+
+```yaml
+add_scenario_action:
+  kind: provider_resource
+  provider: workspace
+  resource: workflow_action
+  params:
+    workflow_id: add_scenario_to_task
+    label: Add the scenario
+    description: Pick a queued task or start a new one, then write the scenario.
+  action_dialog:
+    layout: steps
+    done:
+      title: The scenario is ready
+      message: It runs the next time someone works the task.
+      links:
+        - {label: Open the scenario, viewId: scenario, query: {scenarioId: {bind: action.result.scenario_id}}}
+        - {label: Open the task, viewId: task, query: {taskId: {bind: action.result.task_id}}}
+```
+
+- The workflow needs at least two `input_sections`, each with a `title`, and every input the dialog
+  shows must be in one of them; otherwise verification reports `VIEW_ACTION_STEPS_INVALID`.
+- A section hidden by its `visible_when` drops out of the steps, so a two-way `input.variant: switch`
+  ([fields](../../schema/fields.md)) plus `visible_when` on each mode's sections gives one flow two
+  paths.
+- Next checks only the current step's required fields and rules. A field error from the server goes
+  back to the step that holds the field.
+- The `description` param is a sentence under the dialog's title, and the text of the action's
+  [flow card](../components/toolbar.md#flow-cards).
+- `layout: steps` is for `workflow_action` only.
+
+### Ending on a done screen: `action_dialog.done`
+
+With `layout: steps`, `done` replaces closing the dialog with a confirmation. Say what happens next
+("You'll get a notice when it finishes"), not what was just saved.
+
+- `title` (required) and `message` are plain text.
+- `links` (1 to 3) each take a `label`, a `viewId` and an optional `query`. A query value is a plain
+  value or a binding to `action.result.<field>`, the workflow's `result`; the first link is the
+  primary button.
+- The done screen shows after the workflow **and** its `on_success` follow-ups finish. If a
+  follow-up fails, the screen says the record is saved and what didn't happen, in place of the
+  message.
+- An `on_success` `navigate` does not run when there is a done screen (warning
+  `VIEW_ACTION_DONE_SKIPS_NAVIGATE`); offer that view as a link instead.
+
+### Handing the saved record to a team
+
+When the action's `on_success` [gives the saved record to a team](../../automation/task.md#give-a-record-to-a-team)
+(`start_agent_team_assignment` with a fixed `team`), the flow says so before anything is saved:
+Review ends with "…and the Tester starts on it (up to $2.00 for this run)". The action is disabled,
+with the reason, when that team is off, not set up, or not open to the viewer. A team chosen at run time (`team: {bind: ...}`) is checked only when it runs.
+
+```yaml
+  on_success:
+    - type: provider_action
+      provider: workspace
+      action: start_agent_team_assignment
+      params: {team: tester, table: test_tasks, record_id: {bind: action.result.id}}
+```
+
+To give a guided flow the whole page instead of a dialog, put it on a [flow page](../components/flow.md).
+
 ## `action_dialog` preset groups
 
 `workflow_action` and `record_create_action` may attach quick-fill presets to the generated dialog
