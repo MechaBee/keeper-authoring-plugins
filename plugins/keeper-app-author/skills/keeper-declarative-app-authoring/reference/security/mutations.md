@@ -30,6 +30,9 @@ mutationPolicy:
   taskIds}`, where `taskIds` is required and lists the tasks whose commit workflows may write the
   table. Verification fails the upload when a commit workflow writes a channel-gated table that
   does not admit its task.
+  The `automation` channel admits workflows run by an [automation](../automation/automations.md):
+  `automation: {operations, automationIds}`. A workflow an automation runs needs this channel on
+  every table it writes; it does not need to be listed in the `workflow` channel.
 - `relationField` + `allowWhen` (provided together) — a relation lifecycle rule: a row may be
   mutated only while the record reached through the `relationField` relation has `field` in
   `values`. Example: a time entry is editable only while its accounting `period` `status` is

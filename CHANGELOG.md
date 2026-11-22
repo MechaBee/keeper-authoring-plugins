@@ -3,6 +3,19 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.26.1 - 2026-11-22
+
+- New automations reference, `reference/automation/automations.md`: triggers (record, schedule,
+  email, manual), bindings, steps, limits, and writing through workflows that the table's
+  `automation` mutation channel admits.
+- AI step output size limits: at most 24 optional fields, counting those inside `many` items, and
+  how to keep schemas the model provider accepts (required numbers with 0 for "not given",
+  yes/no/unknown options instead of optional booleans, smaller steps).
+- `reference/security/mutations.md` documents the `automation` channel.
+- `workflows/apply.md` names every argument of `app_upload_begin`, `app_upload_prepare` and
+  `app_upload_apply`, and says `baseRevision` and the changed-path lists are under `diff` in the
+  prepare result.
+
 ## Keeper App Author 1.26.0 - 2026-11-22
 
 - New `send_email` workflow step, documented in `reference/automation/steps.md`. A person sends one

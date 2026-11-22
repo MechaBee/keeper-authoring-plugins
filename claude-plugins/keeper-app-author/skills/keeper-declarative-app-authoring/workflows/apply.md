@@ -18,9 +18,11 @@ Storage conversion and deployment repair use [Migrate and repair](migrate-and-re
    Add `--definitions-only` for definition work on an existing app, so local JSONL stays out of
    the upload. A file reported as excluded is either a misplaced app file (fix its path) or a
    local note.
-3. Call `app_upload_begin` with the `manifest` array from that output. Fix every reported
-   `rejectedPaths` entry or `problems` item in one pass and call it again. The result names the files the server still
-   needs; unchanged installed files are reused automatically.
+3. Call `app_upload_begin` with `agentId`, `workspaceId`, `appId`, `purpose: "app"` and the
+   `manifest` array from that output (`purpose: "data_import"` is for
+   [importing data](import-data.md)). Fix every reported `rejectedPaths` entry or `problems` item
+   in one pass and call it again. The result names the files the server still needs; unchanged
+   installed files are reused automatically.
 4. When `missing` is not empty, upload exactly those files with the returned capability as one
    JSON body `{"files":[{"path","content"}]}`. Pass the result to the script on standard input
    or as a file; it never prints the upload address. Treat the upload URL
@@ -34,16 +36,17 @@ Storage conversion and deployment repair use [Migrate and repair](migrate-and-re
 
    An expired capability or bundle needs a new `app_upload_begin`, which uploads only what is
    still missing.
-5. Call `app_upload_prepare` with the `bundleId`, the intended `mode`, and `dataMode`. For existing
+5. Call `app_upload_prepare` with `agentId`, `workspaceId`, `appId`, the `bundleId`, the intended
+   `mode`, and `dataMode`; add `includeData: true` when the upload carries JSONL. For existing
    definition work, use `dataMode: "preserve"` with a `--definitions-only` manifest. Use `replace` for
    a complete definition set, or `merge` for an explicitly partial overlay. Live-data replacement
    requires explicit user intent, app-admin replacement capability, `dataMode: "replace"`, and
    `mode: "replace"`. Prepare validates, diffs, and stages in one call; a successful prepare
    consumes the bundle.
-6. Review `validation`, then `added`, `modified`, `deleted`, `unchanged`, and
-   `unknownInstalledPaths`. Definition-only changes must not modify or delete JSONL. If a `replace`
+6. Review `validation`, then `diff.added`, `diff.modified`, `diff.deleted`, `diff.unchanged`, and
+   `diff.unknownInstalledPaths`. Definition-only changes must not modify or delete JSONL. If a `replace`
    candidate unintentionally drops an installed guide or `notifications.yaml`, restore it in the
-   folder and upload again. Retain `uploadId`, `baseRevision`, `candidateRevision`, `expiresAt`,
+   folder and upload again. Retain `uploadId`, `diff.baseRevision`, `diff.candidateRevision`, `expiresAt`,
    and the exact modified/deleted path lists. Keep the folder unchanged until deployment and
    verification complete.
 7. For an existing app, check that nobody else changed it since the folder was downloaded:
@@ -72,11 +75,12 @@ authorization remains valid when it covers the prepared result; ask for missing 
 the diff exposes a material effect beyond it. Do not request authorization for a hypothetical
 change before preparing the reviewable result.
 
-Call `app_upload_apply` with the exact stage and:
+Call `app_upload_apply` with `agentId`, `workspaceId`, the `uploadId` (it takes no `appId`; the
+stage names the app) and:
 
 ```text
-expectedRevision = baseRevision
-acknowledgedDestructivePaths = sorted(modified + deleted)
+expectedRevision = diff.baseRevision
+acknowledgedDestructivePaths = sorted(diff.modified + diff.deleted)
 ```
 
 Acknowledge every modified or deleted path and no others. Added files do not require destructive

@@ -9,6 +9,7 @@ produces that behavior and respects the table's write policy.
 | One direct record operation, without lifecycle orchestration | [Provider action](../views/actions/provider-action.md) |
 | Deterministic lifecycle or multiple-record write | [Workflow](workflow.md) and selected [steps](steps.md) |
 | AI work that creates or updates records or files | [AI task](task.md) |
+| Work that starts by itself: on a record change, a schedule, an incoming email | [Automation](automations.md) |
 | Legacy: one markdown field from a prompt | [Templated-prompt agent](agent.md) |
 
 AI is for generated content, not deterministic calculation. Use an [AI task](task.md) for new AI
