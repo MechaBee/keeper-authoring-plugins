@@ -6,6 +6,7 @@
 | `record` | [One record](record.md) |
 | `projected_table` | [Read-only joins and derivations](projected-table.md) |
 | `aggregate_table` | [Grouped counts and numeric summaries](aggregate-table.md) |
+| `aggregate` | [Server-side report query](../components/report.md#2-ask-with-an-aggregate-source), drawn by a `report` |
 | `provider_resource` | [Provider resource](provider-resource.md) |
 
 Provider resource/action names are closed vocabularies. Read the selected provider:

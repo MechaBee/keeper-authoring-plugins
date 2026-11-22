@@ -86,7 +86,8 @@ resolves the listed sources once against the current filter state. Top-level `fi
 item has `id`, `label`, `state_key`, `input_type: text|number|date`, optional `placeholder`, and
 optional `on_change` actions; `state_select` items follow the
 [`state_select` option-source rules](components/toolbar.md). Read those before authoring either
-top-level filters or toolbar selectors.
+top-level filters or toolbar selectors. A `period` item picks the period a
+[report](components/report.md#2-ask-with-an-aggregate-source) covers.
 
 On desktop the View Bar keeps text search, the period control and two more filters in sight; when
 at least two more would follow, they fold behind one `Filters` button, and the ones that are set

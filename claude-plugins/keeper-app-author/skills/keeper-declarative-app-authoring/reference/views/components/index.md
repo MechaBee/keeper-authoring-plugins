@@ -13,8 +13,10 @@
 | Weekly time matrix | [Timesheet week grid](timesheet-week-grid.md) |
 | Record markdown | [Markdown panel](markdown-panel.md) |
 | AI task runs, proposal review | [AI task runs](agent-task-runs.md) |
+| Automation runs on one record, for app admins | [Automation runs](automation-runs.md) |
 | Legacy agent invocation | [Agent action panel](agent-action-panel.md) |
 | Local controls; flow cards on a work-with page | [Toolbar](toolbar.md), [action bar](action-bar.md) |
+| Pivot tables, totals, tiles and charts over every readable row | [Report](report.md) |
 | Provider stats | [Stats grid](stats-grid.md) |
 | Provider timeline | [Timeline panel](timeline-panel.md) |
 | Provider inbox | [Inbox thread panel](inbox-thread-panel.md) |

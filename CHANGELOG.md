@@ -3,6 +3,12 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.25.1 - 2026-11-22
+
+- Documentation only. New reference pages for the `report` component, covering the table
+  `reporting` declaration, the `aggregate` source and the `period` filter it reads, and for the
+  `automation_runs` component. Every view component kind now has a reference page.
+
 ## Keeper App Author 1.25.0 - 2026-11-20
 
 - Guided flows. A `workflow_action` can show its `input_sections` one step at a time
