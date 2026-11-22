@@ -22,6 +22,7 @@ requester's time zone (UTC when unknown); write it into `datetime` fields such a
 | `create_records` | `table`, bound `records_from` array |
 | `update_records` | `table`, bound `records_from` array of objects that each carry the primary key |
 | `replace_records` | `table`, bound `records_from` array |
+| `send_email` | `to`, `subject`, `text`; optional `cc`, `from_name`, `thread`, `copy_sender` (see below) |
 
 Scripts receive only declared input and helpers; no ambient network or process APIs. Prefer
 declarative record steps. `update_records` updates each listed record with the entry's other keys,
@@ -34,6 +35,38 @@ For expected user-correctable failures, call `helpers.inputError(fieldId, messag
 field-level validation error, or `helpers.actionError(message)` for an action-level business
 rejection. Do not use these helpers for unexpected program faults; ordinary thrown errors remain
 internal failures.
+
+## Sending email
+
+`send_email` sends one plain-text email when the workflow succeeds. Only a person sends: a workflow
+with this step cannot be an `agent_commit` workflow, cannot be run by an automation, and is listed
+as unavailable to agents. Have the AI or automation write a draft field and a status such as
+`ready_to_send`; the person reviews it and runs the sending workflow.
+
+```yaml
+- id: mail
+  kind: send_email
+  to: {bind: step.request.contact_email}      # one address or a comma-separated list
+  subject: {bind: step.subject.text}
+  text: {bind: step.request.quote_draft}
+  from_name: Danubia Freight                  # sender's display name; default MechaBee
+  thread: {bind: step.request.thread_key}     # Email in thread_key: sent as a reply in that conversation
+- id: mark_sent
+  kind: update_record
+  table: requests
+  record_id: {bind: input.request_id}
+  values: {status: sent, sent_at: {bind: system.nowLocal}}
+```
+
+- At most one `send_email` per workflow, at most 5 recipients across `to` and `cc`, and 200 emails
+  per app per day.
+- Mail comes from the platform address. Reply-To is the app's Email in address (while Email in is
+  on) plus the person who sent it, so replies come back into the app's email automation and to
+  their own mailbox. The sender gets a blind copy unless `copy_sender: false`.
+- The email goes out after every other step has succeeded and before the changes are saved. If
+  sending fails, nothing is saved. A copy of the app's own mail that comes back through Email in is
+  stored without starting the email automation.
+- The step's output is `{to, cc, subject, thread}`.
 
 ## Guards and optional references
 

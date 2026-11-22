@@ -3,6 +3,15 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.26.0 - 2026-11-22
+
+- New `send_email` workflow step, documented in `reference/automation/steps.md`. A person sends one
+  plain-text email when the workflow succeeds: `to`, `subject`, `text`, optional `cc`,
+  `from_name`, `thread` (reply inside an Email in conversation) and `copy_sender`. Replies come back
+  to the app's Email in address and to the sender.
+- Only people send: a workflow with `send_email` cannot be an agent commit workflow or run by an
+  automation, and agents see it as unavailable. Let AI and automations write the draft.
+
 ## Keeper App Author 1.25.2 - 2026-11-22
 
 - Bundle script fix. `keeper-app-bundle.mjs` now includes `automations/<id>.yaml` files in upload
