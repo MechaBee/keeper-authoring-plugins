@@ -19,7 +19,9 @@ view falls back to a letter monogram there.
 All keys are optional. `visible: false` hides a contextual destination. Omitting `nav`, or omitting
 `visible`, leaves the view visible. Never use `view.nav` or `view.show_in_nav`; the runtime ignores
 both shapes.
-`preserve_route_keys` is `"*"` or a list of safe route keys.
+`preserve_route_keys` is `"*"` or a list of safe route keys. It limits both the route values and the
+synced `route_state` the current view carries into this one. Use `[]` when another view uses the
+same route key with a different meaning (one view's `period` is a month key, this view's a record id).
 
 ## Grouped left menu
 

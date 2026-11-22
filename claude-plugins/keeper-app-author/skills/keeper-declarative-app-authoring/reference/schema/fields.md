@@ -34,6 +34,11 @@ switch instead of a dropdown. Use it for a choice between two modes that changes
 such as "Add to a queued task" or "Start a new task", with `visible_when` on the fields or input
 sections of each mode. A third option is an error: a choice among three or more stays a dropdown.
 
+A `reference` field may set `input.no_options_text` (a non-empty string) to say what to do when its
+picker has nothing to choose from, typically because `reference_where` leaves no rows. Forms show it
+under the empty picker in place of `helpText`. Point to the other way forward, for example the
+other side of a switch: `No queued tasks. Choose Make a new task instead.`
+
 A `text` field may set `input.variant: workspace_folder` to link a record to a workspace folder —
 the place a customer's or project's documents live. Forms show a folder picker instead of a text
 box, and the field stores the folder's workspace path while every surface (tables, cards, detail)

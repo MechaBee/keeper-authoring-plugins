@@ -3,6 +3,16 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.25.2 - 2026-11-22
+
+- Bundle script fix. `keeper-app-bundle.mjs` now includes `automations/<id>.yaml` files in upload
+  manifests. Before, it left them out without a warning, so an app's automations never reached the
+  server.
+- A `reference` field can set `input.no_options_text` to say what to do when its picker has nothing
+  to choose from.
+- `preserve_route_keys` also limits the synced `route_state` a menu switch carries into a view; use
+  `[]` when two views share a route key with different meanings.
+
 ## Keeper App Author 1.25.1 - 2026-11-22
 
 - Documentation only. New reference pages for the `report` component, covering the table

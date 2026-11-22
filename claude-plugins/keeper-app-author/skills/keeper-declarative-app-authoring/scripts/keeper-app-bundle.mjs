@@ -33,7 +33,7 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 const ALLOWED_APP_FILE_PATTERNS = [
   /^app\.yaml$/,
   /^notifications\.yaml$/,
-  /^(?:schemas|views|workflows|agents)\/[A-Za-z0-9_-]+\.ya?ml$/,
+  /^(?:schemas|views|workflows|agents|automations)\/[A-Za-z0-9_-]+\.ya?ml$/,
   /^ai\/[A-Za-z0-9_-]+\.md$/,
   /^docs\/[A-Za-z0-9_-]+\.md$/,
   /^text_templates\/[A-Za-z0-9_-]+\.txt$/,
