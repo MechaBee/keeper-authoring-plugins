@@ -1,0 +1,61 @@
+id: create_opportunity
+title: New opportunity
+allowed_roles: [editor, admin]
+success_message: Opportunity created.
+invalidate: "*"
+input_fields:
+  - {id: title, type: text, label: Title, required: true, input: {placeholder: Cold-chain monitoring rollout}}
+  - {id: customer_id, type: reference, label: Customer, referenceTable: customers, required: true}
+  - id: stage
+    type: select
+    label: Stage
+    required: true
+    default: discovery
+    options:
+      - {value: discovery, label: Discovery}
+      - {value: qualified, label: Qualified}
+      - {value: proposal, label: Proposal}
+      - {value: negotiation, label: Negotiation}
+  - {id: close_date, type: date, label: Expected close}
+  - {id: value, type: number, label: Value, min: 0, currency: EUR}
+steps:
+  - id: customer
+    kind: get_record
+    table: customers
+    record_id: {bind: input.customer_id}
+  - id: check
+    kind: script
+    input:
+      customer: {bind: step.customer, fallback: null}
+      title: {bind: input.title}
+    code: |
+      if (!input.customer) helpers.inputError("customer_id", "Choose a customer.");
+      const title = String(input.title || "").trim();
+      if (!title) helpers.inputError("title", "Give the opportunity a title.");
+      return {
+        title: title,
+        // The opportunity's own documents. Keeper names the collection's folder
+        // after it, under docs/proposal-studio/, and keeps it if the
+        // opportunity is renamed. Agents may write into it.
+        collection: {
+          name: input.customer.name + " · " + title,
+          in_library: false,
+          features: ["comments", "review_status", "agent_tasks"],
+        },
+      };
+  - id: collection
+    kind: create_record
+    table: collections
+    values_from: {bind: step.check.collection}
+  - id: create
+    kind: create_record
+    table: opportunities
+    values:
+      title: {bind: step.check.title}
+      customer_id: {bind: step.customer.id}
+      customer_name: {bind: step.customer.name}
+      stage: {bind: input.stage, fallback: discovery}
+      close_date: {bind: input.close_date, fallback: null}
+      value: {bind: input.value, fallback: null}
+      collection_id: {bind: step.collection.id}
+result: {step: create}

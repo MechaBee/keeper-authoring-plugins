@@ -1,0 +1,118 @@
+id: commit_filed_issue
+title: Save the Agent's new issue
+agent_commit: {task: file_issue}
+input_fields: []
+steps:
+  - id: project
+    kind: get_record
+    table: projects
+    record_id: {bind: system.agentRun.input.project_id}
+  - id: flags
+    kind: script
+    input:
+      follow_up_of: {bind: system.agentRun.input.follow_up_of, fallback: null}
+      priority: {bind: result.issue.priority, fallback: null}
+    code: |
+      return {has_origin: Boolean(input.follow_up_of), has_priority: Boolean(input.priority)};
+  - id: origin
+    kind: get_record
+    table: issues
+    when: {bind: step.flags.has_origin, fallback: false}
+    record_id: {bind: system.agentRun.input.follow_up_of}
+  - id: priority
+    kind: get_record
+    table: priorities
+    when: {bind: step.flags.has_priority, fallback: false}
+    record_id: {bind: result.issue.priority}
+  - id: prepare
+    kind: script
+    label: Number the issue
+    input:
+      project: {bind: step.project, fallback: null}
+      origin: {bind: step.origin, fallback: null}
+      has_origin: {bind: step.flags.has_origin}
+      priority: {bind: step.priority, fallback: null}
+      issue: {bind: result.issue}
+      requester: {bind: system.agentRun.requesterId}
+    code: |
+      const project = input.project;
+      if (!project) helpers.actionError("This project is no longer available.");
+      if (project.archived === true) helpers.actionError("This project is archived and accepts no new issues.");
+      if (input.has_origin && !input.origin) helpers.actionError("The issue it follows up is no longer available.");
+      if (input.origin && input.origin.project_id !== project.id) {
+        helpers.actionError("A follow-up must be filed in the same project as the issue it came from.");
+      }
+      const draft = input.issue ?? {};
+      const title = String(draft.title ?? "").trim();
+      if (!title) helpers.actionError("Give the issue a title.");
+      if (draft.priority && (!input.priority || input.priority.active === false)) {
+        helpers.actionError("Choose one of the project's active priorities, or none.");
+      }
+
+      // A follow-up always names the issue it came from.
+      const describe = (body, origin) => {
+        const text = String(body ?? "").trim();
+        if (!origin || text.includes(origin.ref)) return text || null;
+        return (text ? text + "\n\n" : "") + `Follow-up of ${origin.ref}.`;
+      };
+
+      // The counter row is read and written in this transaction, so two issues
+      // opened at once cannot receive the same number.
+      const number = Number.isInteger(project.next_number) && project.next_number > 0 ? project.next_number : 1;
+      return {
+        project_values: {next_number: number + 1},
+        issue_values: {
+          project_id: project.id,
+          number,
+          ref: `${project.key}#${number}`,
+          title,
+          body: describe(draft.body, input.origin),
+          issue_type: draft.issue_type,
+          priority: draft.priority || null,
+          state: "open",
+          author_user_id: input.requester,
+          assignee_member_id: null,
+          assignee_user_id: null,
+          labels: Array.isArray(draft.labels) ? [...new Set(draft.labels)] : [],
+          milestone_id: null,
+          parent_issue_id: null,
+          board_status: "backlog",
+          position: number * 1000,
+          board_hidden: false,
+          locked: false,
+          comment_count: 0,
+        },
+      };
+  - id: bump_counter
+    kind: update_record
+    table: projects
+    record_id: {bind: system.agentRun.input.project_id}
+    values_from: {bind: step.prepare.project_values}
+  - id: issue
+    kind: create_record
+    table: issues
+    values_from: {bind: step.prepare.issue_values}
+  # Under related_resource_grant, activity and link rows can't be written for an
+  # issue created in this same transaction, so the trace goes on the origin issue.
+  - id: trace
+    kind: script
+    label: Record the follow-up on the issue it came from
+    input:
+      issue: {bind: step.issue}
+      origin: {bind: step.origin, fallback: null}
+      requester: {bind: system.agentRun.requesterId}
+      run_id: {bind: system.agentRun.id}
+    code: |
+      const origin = input.origin;
+      // The run id makes the conversation show the row as "Agent (on behalf of <person>)".
+      return {
+        events: origin
+          ? [{issue_id: origin.id, kind: "agent", summary: `filed ${input.issue.ref} as a follow-up`,
+              actor_user_id: input.requester, agent_run_id: input.run_id}]
+          : [],
+      };
+  - id: record_events
+    kind: create_records
+    table: issue_activity
+    records_from: {bind: step.trace.events}
+result: {step: issue}

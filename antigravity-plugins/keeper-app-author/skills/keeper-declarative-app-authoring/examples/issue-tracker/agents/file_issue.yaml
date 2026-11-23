@@ -1,0 +1,49 @@
+id: file_issue
+title: File a new issue
+description: "Use when the person asks you to record a problem or a piece of work as an issue, or when you find something worth tracking while working (a bug you didn't fix, a follow-up, a part of an issue left for later): opens a new issue in a project, with its type, priority and labels, and, for a follow-up, records it in the conversation of the issue it came from. Read the project's open issues first so you don't file a duplicate."
+kind: task
+exposure: {mcp: true}
+allowed_roles: [editor, developer, admin]
+input:
+  - id: project_id
+    type: reference
+    label: Project
+    referenceTable: projects
+    required: true
+    reference_where: {archived: false}
+  - id: follow_up_of
+    type: reference
+    label: Follow-up of
+    referenceTable: issues
+    helpText: Optional. The issue this one came from, in the same project. Its conversation records the new issue.
+context:
+  project:
+    {kind: record, table: projects, id: {bind: input.project_id}, required: true, label: Project}
+  follow_up_of:
+    {kind: record, table: issues, id: {bind: input.follow_up_of}, label: The issue it came from}
+  open_issues:
+    kind: table
+    table: issues
+    filter: {project_id: {bind: input.project_id}, state: open}
+    sort: {field: number, direction: desc}
+    limit: 300
+    fields: [ref, title, issue_type, labels]
+    label: The project's open issues
+  issue_types:
+    {kind: table, table: issue_types, filter: {active: true}, limit: 50, label: Issue types}
+  priorities:
+    {kind: table, table: priorities, filter: {active: true}, limit: 50, label: Priorities}
+  labels:
+    {kind: table, table: labels, filter: {active: true}, limit: 100, label: Labels}
+guide: ai/file-issue.md
+executor: {kind: agent}
+output:
+  records:
+    issue:
+      table: issues
+      op: create
+      fields: [title, body, issue_type, priority, labels]
+      constraints:
+        issue_type: {in: context.issue_types}
+commit: {mode: on_result, workflow: commit_filed_issue}
+limits: {timeout_s: 1800}

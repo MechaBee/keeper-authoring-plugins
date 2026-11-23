@@ -1,0 +1,55 @@
+table: issue_links
+version: 2
+primaryKey: id
+idPrefix: link
+displayField: label
+# Every relationship is stored twice, once from each side, and the two rows
+# share a pair_id. An issue page then lists its links with one plain filter.
+rowAccess:
+  mode: policy
+  allOf:
+    - kind: related_resource_grant
+      resourceTable: issues
+      resourceField: id
+      targetField: source_issue_id
+mutationPolicy:
+  allowedRoles: [editor, developer, admin]
+  bypassRoles: [admin]
+  channels:
+    workflow:
+      operations: [create, delete]
+      workflowIds: [link_issues, unlink_issues]
+validationPolicy:
+  unique:
+    - fields: [source_issue_id, target_issue_id]
+      message: These issues are already linked.
+queryPaths:
+  - id: by_source
+    equalityFields: [source_issue_id]
+    orderFields: [created_at]
+  - id: by_pair
+    equalityFields: [pair_id]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: pair_id, type: text, label: Pair, required: true, workflowOnly: true}
+  - {id: source_issue_id, type: reference, label: Issue, referenceTable: issues, required: true, workflowOnly: true}
+  - {id: target_issue_id, type: reference, label: Linked issue, referenceTable: issues, required: true, workflowOnly: true}
+  - id: relation
+    type: select
+    label: Relationship
+    required: true
+    workflowOnly: true
+    options:
+      - {value: blocks, label: Blocks}
+      - {value: blocked_by, label: Blocked by}
+      - {value: relates_to, label: Related to}
+  - {id: label, type: text, label: Link, required: true, workflowOnly: true}
+  - {id: created_by_user_id, type: reference, label: Linked by, referenceTable: keeper_principals, required: true, workflowOnly: true}
+  - {id: created_at, type: datetime, label: Linked, readonly: true, computed: {kind: now, on: create, format: datetime}}
+relations:
+  - field: source_issue_id
+    references: {table: issues, field: id}
+    onDelete: cascade
+  - field: target_issue_id
+    references: {table: issues, field: id}
+    onDelete: cascade

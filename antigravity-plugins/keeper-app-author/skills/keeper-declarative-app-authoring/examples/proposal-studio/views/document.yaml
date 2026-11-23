@@ -1,0 +1,54 @@
+view:
+  id: document
+  title: Document
+nav:
+  visible: false
+state:
+  document_id: null
+route_state:
+  document_id: {route: documentId, mode: sync}
+data_sources:
+  document:
+    kind: provider_resource
+    provider: workspace
+    resource: document
+    params:
+      document_id: {bind: state.document_id}
+    refresh_on: [state.document_id]
+  review:
+    kind: provider_resource
+    provider: workspace
+    resource: comments
+    params:
+      table: document_comments
+      target_id: {bind: state.document_id}
+    refresh_on: [state.document_id]
+components:
+  page:
+    kind: document_page
+    data_source: document
+    empty_message: This document doesn't exist.
+    record_views:
+      opportunities: {view: opportunity, query_param: opportunityId}
+  ai_review:
+    kind: agent_task_runs
+    title: Agent revisions
+    table: documents
+    record_id: {bind: state.document_id}
+    tasks: [revise_document]
+  review_threads:
+    kind: comments
+    title: Review
+    data_source: review
+    empty_message: No review comments. Select a passage in the text to comment on it.
+layout:
+  kind: split
+  direction: horizontal
+  sizes: [3, 2]
+  children:
+    - component: page
+    - kind: stack
+      gap: md
+      children:
+        - component: ai_review
+        - component: review_threads

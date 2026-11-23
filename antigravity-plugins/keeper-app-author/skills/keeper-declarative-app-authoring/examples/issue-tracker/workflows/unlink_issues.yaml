@@ -1,0 +1,80 @@
+id: unlink_issues
+title: Remove a link
+appearance: secondary
+allowed_roles: [editor, developer, admin]
+actor_required: true
+success_message: Link removed.
+invalidate: "*"
+input_fields:
+  - {id: issue_id, type: reference, label: This issue, referenceTable: issues, required: true, readonly: true}
+  - id: link_id
+    type: reference
+    label: Link
+    referenceTable: issue_links
+    required: true
+    reference_filters:
+      - {record_field: issue_id, value_field: source_issue_id, when_empty: none}
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: input.issue_id}
+  - id: link
+    kind: get_record
+    table: issue_links
+    record_id: {bind: input.link_id}
+  - id: other
+    kind: get_record
+    table: issues
+    record_id: {bind: step.link.target_issue_id, fallback: null}
+  - id: pair
+    kind: query_records
+    table: issue_links
+    filter:
+      pair_id: {bind: step.link.pair_id, fallback: null}
+    limit: 2
+  - id: prepare
+    kind: script
+    label: Find both sides of the link
+    input:
+      issue: {bind: step.issue, fallback: null}
+      link: {bind: step.link, fallback: null}
+      pair: {bind: step.pair, fallback: null}
+      other: {bind: step.other, fallback: null}
+      actor: {bind: system.actorUserId}
+    code: |
+      const issue = input.issue;
+      const link = input.link;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      if (!link || link.source_issue_id !== issue.id) {
+        helpers.inputError("link_id", "Choose one of this issue's links.");
+      }
+      const rows = Array.isArray(input.pair) ? input.pair : [];
+      const mirror = rows.find((row) => row.id !== link.id) ?? null;
+
+      const otherRef = input.other ? input.other.ref : "an issue";
+      const events = [{issue_id: issue.id, kind: "unlinked", summary: `removed the link to ${otherRef}`, actor_user_id: input.actor}];
+      if (mirror) {
+        events.push({issue_id: mirror.source_issue_id, kind: "unlinked", summary: `removed the link to ${issue.ref}`, actor_user_id: input.actor});
+      }
+      return {
+        link_id: link.id,
+        has_mirror: Boolean(mirror),
+        mirror_id: mirror ? mirror.id : null,
+        events,
+      };
+  - id: delete_link
+    kind: delete_record
+    table: issue_links
+    record_id: {bind: step.prepare.link_id}
+    mode: block
+  - id: delete_mirror
+    kind: delete_record
+    table: issue_links
+    when: {bind: step.prepare.has_mirror, fallback: false}
+    record_id: {bind: step.prepare.mirror_id}
+    mode: block
+  - id: record_events
+    kind: create_records
+    table: issue_activity
+    records_from: {bind: step.prepare.events}

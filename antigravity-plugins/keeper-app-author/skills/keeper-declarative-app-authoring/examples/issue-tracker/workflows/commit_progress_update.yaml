@@ -1,0 +1,60 @@
+id: commit_progress_update
+title: Save the Agent's progress update
+agent_commit: {task: post_update}
+input_fields: []
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: system.agentRun.input.issue_id}
+  - id: prepare
+    kind: script
+    label: Check the update
+    input:
+      issue: {bind: step.issue, fallback: null}
+      body: {bind: result.update.body, fallback: ""}
+      next_status: {bind: system.agentRun.input.board_status, fallback: null}
+      requester: {bind: system.agentRun.requesterId}
+      run_id: {bind: system.agentRun.id}
+    code: |
+      const issue = input.issue;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      if (issue.state !== "open") helpers.actionError("This issue was closed while the Agent worked.");
+      if (issue.locked === true) helpers.actionError("The conversation is locked. Only admins can comment.");
+      const text = String(input.body ?? "").trim();
+      if (!text) helpers.actionError("The update is empty.");
+
+      const names = {backlog: "Backlog", ready: "Ready", in_progress: "In progress", in_review: "In review", done: "Done"};
+      const next = input.next_status || null;
+      const moves = Boolean(next) && next !== issue.board_status;
+      const issueValues = {comment_count: (Number(issue.comment_count) || 0) + 1};
+      if (moves) issueValues.board_status = next;
+
+      // Stored under the person who ran the agent; the run id makes the
+      // conversation show each row as "Agent (on behalf of <person>)".
+      const row = (kind, summary, body) => ({
+        issue_id: issue.id, kind, summary, body: body ?? null,
+        actor_user_id: input.requester, agent_run_id: input.run_id,
+      });
+      const events = moves
+        ? [row("board_moved", "moved this on the board from " + (names[issue.board_status] || issue.board_status) + " to " + names[next])]
+        : [];
+      return {
+        issue_values: issueValues,
+        comment_values: row("comment", "posted an update", "**Update**\n\n" + text),
+        events,
+      };
+  - id: comment
+    kind: create_record
+    table: issue_activity
+    values_from: {bind: step.prepare.comment_values}
+  - id: update_issue
+    kind: update_record
+    table: issues
+    record_id: {bind: system.agentRun.input.issue_id}
+    values_from: {bind: step.prepare.issue_values}
+  - id: record_events
+    kind: create_records
+    table: issue_activity
+    records_from: {bind: step.prepare.events}
+result: {step: comment}

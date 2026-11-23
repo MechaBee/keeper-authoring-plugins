@@ -1,0 +1,27 @@
+id: commit_document_revision
+title: Save AI revision
+agent_commit: {task: revise_document}
+input_fields: []
+steps:
+  # Keeper has already written the revision onto the document. It refuses one
+  # whose document changed after the AI read it, so this never runs for it.
+  - id: derive
+    kind: script
+    input:
+      note: {bind: result.change_note.body}
+      revision: {bind: result.revision.revision}
+    code: |
+      // Posted as the person who asked; the first line says the AI wrote it.
+      return {body: "**AI revision " + input.revision + "**\n\n" + String(input.note || "").trim()};
+  - id: note
+    kind: create_record
+    table: document_comments
+    values:
+      document_id: {bind: result.revision.id}
+      thread_id: {bind: system.agentRun.id}
+      body: {bind: step.derive.body}
+      author_user_id: {bind: system.agentRun.requesterId}
+      author_kind: ai
+      is_resolved: false
+      agent_run_id: {bind: system.agentRun.id}
+result: {step: note}

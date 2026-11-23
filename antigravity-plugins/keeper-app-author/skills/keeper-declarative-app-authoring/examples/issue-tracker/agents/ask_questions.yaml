@@ -1,0 +1,42 @@
+id: ask_questions
+title: Ask questions about an issue
+description: "Use when an issue given to the Agent can't be designed or revised without answers from people: posts the questions as one comment on the issue and moves it out of the Issues agent queue until someone replies."
+kind: task
+exposure: {mcp: true}
+allowed_roles: [editor, developer, admin]
+input:
+  - id: issue_id
+    type: reference
+    label: Issue
+    referenceTable: issues
+    required: true
+    reference_where: {assignee_kind: agent, agent_status: ready, state: open}
+target: {table: issues, id: {bind: input.issue_id}}
+context:
+  issue:
+    {kind: record, table: issues, id: {bind: input.issue_id}, required: true, label: The issue}
+  project:
+    {kind: record, table: projects, id: {bind: context.issue.project_id}, label: Project}
+  conversation:
+    kind: table
+    table: issue_activity
+    filter: {issue_id: {bind: input.issue_id}}
+    sort: {field: occurred_at, direction: asc}
+    limit: 300
+    label: Conversation and events
+  documents:
+    kind: documents
+    record:
+      table: issues
+      id: {bind: input.issue_id}
+      collection_field: collection_id
+      link_table: issue_documents
+    limit: 20
+    label: The issue's documents
+guide: ai/ask-questions.md
+executor: {kind: agent}
+output:
+  records:
+    questions: {table: issue_activity, op: create, fields: [body]}
+commit: {mode: on_result, workflow: commit_questions}
+limits: {timeout_s: 1800}

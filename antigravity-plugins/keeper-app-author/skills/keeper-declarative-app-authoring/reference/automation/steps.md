@@ -1,0 +1,125 @@
+# Workflow Step References
+
+Every step requires a unique safe `id`, one documented `kind`, and optional `when` boolean or
+workflow boolean binding. Workflow bindings use `input.*`, `step.*`, and the workflow `system.*`
+bindings (`system.nowIso`, `system.nowLocal`, `system.actorUserId`, `system.actorEmail`, `system.appRole`,
+`system.workspaceAccessMode`, `system.workflowId`; the `system.actor*` bindings require
+`actor_required: true`).
+
+`system.nowLocal` is the current time as a `datetime` field value (`YYYY-MM-DDTHH:MM`) in the
+requester's time zone (UTC when unknown); write it into `datetime` fields such as `completed_at`.
+`system.nowIso` is the exact instant, for comparisons and text.
+
+| Kind | Required shape |
+| --- | --- |
+| `get_record` | `table`, bound `record_id` |
+| `query_records` | `table`; optional equality `filter`, one-field `sort`, positive `limit`, and compiler-owned `performance` intent |
+| `collect_records` | `table`, positive `maxRecords` (at most 10000); optional equality `filter`, one-field `sort`, and compiler-owned `performance` intent |
+| `script` | synchronous JavaScript `code`; optional `label`, declared `input` |
+| `create_record` | `table` and non-empty `values`, bound `values_from`, or both |
+| `update_record` | `table`, `record_id`, and `values`, `values_from`, or both |
+| `delete_record` | `table`, `record_id`; optional `mode: block|cascade` |
+| `create_records` | `table`, bound `records_from` array |
+| `update_records` | `table`, bound `records_from` array of objects that each carry the primary key |
+| `replace_records` | `table`, bound `records_from` array |
+| `send_email` | `to`, `subject`, `text`; optional `cc`, `from_name`, `thread`, `copy_sender` (see below) |
+
+Scripts receive only declared input and helpers; no ambient network or process APIs. Prefer
+declarative record steps. `update_records` updates each listed record with the entry's other keys,
+under the same checks as `update_record`; keys an entry leaves out keep their values, and an empty
+list changes nothing. Use it to change several existing rows, such as closing a task's open steps.
+Bulk replace rewrites a table and requires explicit user authorization when existing data may be
+lost; never use it to update a few rows.
+
+For expected user-correctable failures, call `helpers.inputError(fieldId, message)` to return a
+field-level validation error, or `helpers.actionError(message)` for an action-level business
+rejection. Do not use these helpers for unexpected program faults; ordinary thrown errors remain
+internal failures.
+
+## Sending email
+
+`send_email` sends one plain-text email when the workflow succeeds. Only a person sends: a workflow
+with this step cannot be an `agent_commit` workflow, cannot be run by an automation, and is listed
+as unavailable to agents. Have the AI or automation write a draft field and a status such as
+`ready_to_send`; the person reviews it and runs the sending workflow.
+
+```yaml
+- id: mail
+  kind: send_email
+  to: {bind: step.request.contact_email}      # one address or a comma-separated list
+  subject: {bind: step.subject.text}
+  text: {bind: step.request.quote_draft}
+  from_name: Danubia Freight                  # sender's display name; default MechaBee
+  thread: {bind: step.request.thread_key}     # Email in thread_key: sent as a reply in that conversation
+- id: mark_sent
+  kind: update_record
+  table: requests
+  record_id: {bind: input.request_id}
+  values: {status: sent, sent_at: {bind: system.nowLocal}}
+```
+
+- At most one `send_email` per workflow, at most 5 recipients across `to` and `cc`, and 200 emails
+  per app per day.
+- Mail comes from the platform address. Reply-To is the app's Email in address (while Email in is
+  on) plus the person who sent it, so replies come back into the app's email automation and to
+  their own mailbox. The sender gets a blind copy unless `copy_sender: false`.
+- The email goes out after every other step has succeeded and before the changes are saved. If
+  sending fails, nothing is saved. A copy of the app's own mail that comes back through Email in is
+  stored without starting the email automation.
+- The step's output is `{to, cc, subject, thread}`.
+
+## Guards and optional references
+
+`when` accepts a literal boolean or a binding that resolves to a boolean; strings, reference ids,
+numbers, and null are not truthy/falsy guards. A guard's `fallback` applies only to an unresolved
+binding (`undefined`), not a resolved null or nonboolean. Direct nonboolean input bindings are
+rejected by validation; dynamic script outputs are checked at execution.
+
+For an optional `assignee_id` reference, normalize presence once and guard the lookup:
+
+```yaml
+steps:
+  - id: flags
+    kind: script
+    input:
+      assignee_id: {bind: input.assignee_id, fallback: null}
+    code: 'return {has_assignee: Boolean(input.assignee_id)};'
+  - id: member
+    kind: get_record
+    table: keeper_app_members
+    record_id: {bind: input.assignee_id}
+    when: {bind: step.flags.has_assignee}
+  - id: check_assignment
+    kind: script
+    input:
+      has_assignee: {bind: step.flags.has_assignee}
+      member: {bind: step.member}
+    code: |
+      if (input.has_assignee && !input.member) {
+        helpers.inputError("assignee_id", "Choose an active app member, or leave the assignment empty.");
+      }
+      return true;
+```
+
+An empty assignment skips the lookup and the skipped step produces null. A supplied nonmember id
+returns null and receives the field error. Pending invitations are not active members yet. Built-in
+directory capabilities and privacy are described in [membership](../security/membership.md).
+
+`query_records.performance` uses the same logical `intent` (`auto`, `indexed`, or `bounded_scan`)
+and optional positive `maxFallbackRecords` bound as a table data source. It does not authorize or
+describe physical DynamoDB indexes. Read [Storage](../storage/index.md) when the
+workflow belongs to a DynamoDB app.
+
+`query_records` is a page/limited read and must not be treated as a complete set. Use
+`collect_records` only when workflow logic genuinely requires every matching record. Keeper follows
+all transport pages under one stable revision and fails when the result exceeds `maxRecords`; it
+never returns a silently truncated collection. Collect before writing the same table.
+
+Workflow reads and writes are staged in memory. A workflow with staged writes submits one logical
+all-or-nothing transaction fence, and read-only tables that informed those writes remain
+revision-guarded at commit. App-member directory reads are separate control-plane snapshots, not
+stored app tables, and are not included in that storage fence. A workflow with no staged writes
+performs no storage commit. DynamoDB
+must fit the compiled physical transaction limits. JSONL uses a durable internal `PREPARED` image,
+recovers an interrupted publication before serving records, and replaces the image with a compact
+terminal head. These storage artifacts are Keeper-owned and never belong in an app candidate.

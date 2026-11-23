@@ -1,0 +1,18 @@
+{
+  "name": "keeper-workspace-content",
+  "displayName": "Keeper Workspace Content",
+  "version": "1.11.0",
+  "description": "Save, report and look up work in MechaBee: carry out Keeper app procedures, read the views apps share, and read and revise workspace content.",
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "Find my workspace notes and help me revise a draft.",
+    "Look up the latest status updates recorded in my Keeper apps.",
+    "Read the shared views from my workspace and summarize open items."
+  ],
+  "author": {
+    "name": "MechaBee",
+    "url": "https://mechabee.com/"
+  },
+  "homepage": "https://mechabee.com",
+  "repository": "https://github.com/MechaBee/keeper-authoring-plugins"
+}

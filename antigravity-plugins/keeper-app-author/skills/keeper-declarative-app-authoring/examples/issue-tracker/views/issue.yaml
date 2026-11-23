@@ -1,0 +1,503 @@
+view:
+  id: issue
+  title: Issue
+  description: >-
+    One issue with what you need to work on it: its fields, project, the whole conversation and
+    event history (oldest first), sub-issues, linked issues and its documents (read a document's
+    text with content_read on its path). Find issue ids with the agent_issues or agent_queue view.
+# Connected agents read an issue here: its conversation, sub-issues, links and documents.
+exposure: {mcp: true}
+nav:
+  visible: false
+state:
+  issue_id: null
+route_state:
+  issue_id: {route: issueId, mode: sync}
+# One state-aware primary action; everything rarer waits in "More actions".
+actions:
+  - {id: close, kind: action_set, data_source: close_action}
+  - {id: reopen, kind: action_set, data_source: reopen_action}
+  - {id: hand_back, kind: action_set, data_source: hand_back_action}
+  # Hand the plan to the hosted Writer team; shown only once an app admin switches Writer on.
+  - {id: writer_plan, kind: action_set, data_source: writer_plan_action}
+  # A prompt to paste into a connected agent session while the issue waits for the Agent.
+  - id: agent_prompt
+    kind: copy_text
+    label: Copy agent prompt
+    template: agent-prompt
+    agent: true
+    description: Paste into a Claude Code or Codex session connected to MechaBee. The agent reads the issue and either asks its questions, writes an implementation plan or writes a solution design.
+    values:
+      issue_id: {bind: state.issue_id}
+      issue_ref: {bind: source.issue.record.ref}
+      issue_title: {bind: source.issue.record.title}
+      agent: {bind: context.agentId}
+      workspace: {bind: context.workspaceId}
+      app: {bind: context.appId}
+    visible_when:
+      - {bind: source.issue.record.state, operator: equals, value: open}
+      - {bind: source.issue.record.assignee_kind, operator: equals, value: agent}
+      - {bind: source.issue.record.agent_status, operator: equals, value: ready}
+    appearance: secondary
+  # A prompt to paste into your own agent session when you work the issue yourself.
+  - id: work_prompt
+    kind: copy_text
+    label: Copy prompt to work on it
+    template: work-prompt
+    agent: true
+    description: Paste into a Claude Code or Codex session connected to MechaBee. The agent reads the issue, posts progress updates while it works, and reports the fix when it is deployed.
+    values:
+      issue_id: {bind: state.issue_id}
+      issue_ref: {bind: source.issue.record.ref}
+      issue_title: {bind: source.issue.record.title}
+      agent: {bind: context.agentId}
+      workspace: {bind: context.workspaceId}
+      app: {bind: context.appId}
+    visible_when:
+      - {bind: source.issue.record.state, operator: equals, value: open}
+      - {bind: source.issue.record.assignee_kind, operator: not_equals, value: agent}
+    appearance: secondary
+  - {id: add_subissue, kind: action_set, data_source: subissue_action, placement: overflow}
+  - {id: link, kind: action_set, data_source: link_action, placement: overflow}
+  - {id: unlink, kind: action_set, data_source: unlink_action, placement: overflow}
+  - {id: lock, kind: action_set, data_source: lock_action, placement: overflow}
+  - {id: unlock, kind: action_set, data_source: unlock_action, placement: overflow}
+  - {id: transfer, kind: action_set, data_source: transfer_action, placement: overflow}
+  - {id: delete, kind: action_set, data_source: delete_action, placement: overflow}
+share:
+  enabled: true
+  route_keys: [issueId]
+  allowed_audiences: [owner_only, authenticated_link]
+  views: []
+data_sources:
+  issue:
+    kind: record
+    table: issues
+    id: {bind: state.issue_id}
+    refresh_on: [state.issue_id]
+  # The project the issue belongs to: its key, name and description give a connected agent context.
+  project:
+    kind: record
+    table: projects
+    id: {bind: source.issue.record.project_id}
+    refresh_on: [state.issue_id]
+  # Loaded so assignee chips and principal names resolve for everyone.
+  members:
+    kind: table
+    table: members
+    sort: {field: display_name, direction: asc}
+  # Comments and events in one timeline, oldest first.
+  activity:
+    kind: table
+    table: issue_activity
+    filter:
+      issue_id: {bind: state.issue_id}
+    sort: {field: occurred_at, direction: asc}
+    refresh_on: [state.issue_id]
+  sub_issues:
+    kind: table
+    table: issues
+    filter:
+      parent_issue_id: {bind: state.issue_id}
+    where:
+      all:
+        - {field: parent_issue_id, op: is_not_null}
+    sort: {field: number, direction: asc}
+    refresh_on: [state.issue_id]
+  links:
+    kind: table
+    table: issue_links
+    filter:
+      source_issue_id: {bind: state.issue_id}
+    sort: {field: created_at, direction: asc}
+    refresh_on: [state.issue_id]
+  # The issue's own folder (the solution design lives here) and documents linked to it.
+  documents:
+    kind: provider_resource
+    provider: workspace
+    resource: linked_documents
+    params:
+      table: issues
+      record_id: {bind: state.issue_id}
+      link_table: issue_documents
+      collection_field: collection_id
+    refresh_on: [state.issue_id]
+
+  close_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: close_issue
+      label: Close issue
+      input__issue_id: {bind: state.issue_id}
+      input__project_id: {bind: source.issue.record.project_id, fallback: null}
+    visible_when:
+      - {bind: source.issue.record.state, operator: equals, value: open}
+    action_dialog: {preview: false, hidden_inputs: [issue_id, project_id]}
+    depends_on: [issue]
+    refresh_on: [state.issue_id]
+  reopen_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: reopen_issue
+      label: Reopen issue
+      input__issue_id: {bind: state.issue_id}
+    visible_when:
+      - {bind: source.issue.record.state, operator: equals, value: closed}
+    action_dialog: {preview: false, hidden_inputs: [issue_id]}
+    depends_on: [issue]
+    refresh_on: [state.issue_id]
+  # After the Agent asked or delivered: send it back to work, with an optional note.
+  hand_back_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: hand_back_to_agent
+      label: Hand back to the Agent
+      input__issue_id: {bind: state.issue_id}
+    visible_when:
+      - {bind: source.issue.record.state, operator: equals, value: open}
+      - {bind: source.issue.record.assignee_kind, operator: equals, value: agent}
+      - {bind: source.issue.record.agent_status, operator: not_equals, value: ready}
+    action_dialog: {preview: false, hidden_inputs: [issue_id]}
+    depends_on: [issue]
+    refresh_on: [state.issue_id]
+  writer_plan_action:
+    kind: provider_resource
+    provider: workspace
+    resource: agent_task_action
+    params:
+      task_id: write_implementation_plan
+      team: writer
+      input__issue_id: {bind: state.issue_id}
+    visible_when:
+      - {bind: source.issue.record.state, operator: equals, value: open}
+      - {bind: source.issue.record.assignee_kind, operator: equals, value: agent}
+      - {bind: source.issue.record.agent_status, operator: equals, value: ready}
+    action_dialog: {hidden_inputs: [issue_id]}
+    depends_on: [issue]
+    refresh_on: [state.issue_id]
+  comment_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: add_comment
+      label: Comment
+      input__issue_id: {bind: state.issue_id}
+    action_dialog: {preview: false, hidden_inputs: [issue_id]}
+    refresh_on: [state.issue_id]
+  assign_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: assign_issue
+      label: Assign
+      input__issue_id: {bind: state.issue_id}
+      input__member_id: {bind: source.issue.record.assignee_member_id, fallback: null}
+      input__worked_by: {bind: source.issue.record.assignee_kind, fallback: person}
+    action_dialog: {preview: false, hidden_inputs: [issue_id]}
+    depends_on: [issue]
+    refresh_on: [state.issue_id]
+  labels_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: set_labels
+      label: Labels
+      input__issue_id: {bind: state.issue_id}
+    action_dialog: {preview: false, hidden_inputs: [issue_id]}
+    refresh_on: [state.issue_id]
+  milestone_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: set_milestone
+      label: Milestone
+      input__issue_id: {bind: state.issue_id}
+      input__project_id: {bind: source.issue.record.project_id, fallback: null}
+      input__milestone_id: {bind: source.issue.record.milestone_id, fallback: null}
+    action_dialog: {preview: false, hidden_inputs: [issue_id, project_id]}
+    depends_on: [issue]
+    refresh_on: [state.issue_id]
+  type_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: set_issue_type
+      label: Change type
+      input__issue_id: {bind: state.issue_id}
+      input__issue_type: {bind: source.issue.record.issue_type, fallback: null}
+    action_dialog: {preview: false, hidden_inputs: [issue_id]}
+    depends_on: [issue]
+    refresh_on: [state.issue_id]
+  board_column_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: move_issue_on_board
+      label: Move on board
+      input__issue_id: {bind: state.issue_id}
+      input__board_status: {bind: source.issue.record.board_status, fallback: null}
+    action_dialog: {preview: false, hidden_inputs: [issue_id]}
+    depends_on: [issue]
+    refresh_on: [state.issue_id]
+  subissue_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: open_issue
+      label: Add a sub-issue
+      input__project_id: {bind: source.issue.record.project_id, fallback: null}
+      input__parent_issue_id: {bind: state.issue_id}
+    action_dialog: {preview: false, hidden_inputs: [project_id, parent_issue_id]}
+    depends_on: [issue]
+    refresh_on: [state.issue_id]
+  link_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: link_issues
+      label: Link an issue
+      input__issue_id: {bind: state.issue_id}
+      input__project_id: {bind: source.issue.record.project_id, fallback: null}
+    action_dialog: {preview: false, hidden_inputs: [issue_id, project_id]}
+    depends_on: [issue]
+    refresh_on: [state.issue_id]
+  unlink_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: unlink_issues
+      label: Remove a link
+      input__issue_id: {bind: state.issue_id}
+    action_dialog: {preview: false, hidden_inputs: [issue_id]}
+    refresh_on: [state.issue_id]
+  lock_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: lock_conversation
+      label: Lock conversation
+      input__issue_id: {bind: state.issue_id}
+      input__mode: lock
+    visible_when:
+      - {bind: source.issue.record.locked, operator: not_equals, value: true}
+    action_dialog: {preview: false, hidden_inputs: [issue_id, mode]}
+    depends_on: [issue]
+    refresh_on: [state.issue_id]
+  unlock_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: lock_conversation
+      label: Unlock conversation
+      input__issue_id: {bind: state.issue_id}
+      input__mode: unlock
+    visible_when:
+      - {bind: source.issue.record.locked, operator: equals, value: true}
+    action_dialog: {preview: false, hidden_inputs: [issue_id, mode]}
+    depends_on: [issue]
+    refresh_on: [state.issue_id]
+  transfer_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: transfer_issue
+      label: Transfer to another project
+      input__issue_id: {bind: state.issue_id}
+    action_dialog: {preview: false, hidden_inputs: [issue_id]}
+    refresh_on: [state.issue_id]
+  delete_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: delete_issue
+      label: Delete issue
+      input__issue_id: {bind: state.issue_id}
+    action_dialog: {preview: false, hidden_inputs: [issue_id]}
+    refresh_on: [state.issue_id]
+
+components:
+  issue_main:
+    kind: record_detail
+    table: issues
+    data_source: issue
+    mode: editable
+    save_mode: explicit
+    save_label: Save changes
+    show_primary_key: false
+    empty_message: This issue doesn't exist, or you don't have access to its project.
+    header:
+      title_field: {field: title, mode: edit, ui: {edit_flow: click_to_edit}}
+      meta_fields:
+        - {field: state, mode: display, ui: {variant: badge, show_label: false}}
+        - {field: ref, mode: display, ui: {show_label: false, copyable: true}}
+        - {field: author_user_id, mode: display, ui: {variant: reference_chip}}
+        - {field: created_at, mode: display, ui: {show_label: false}}
+    sections:
+      - id: description
+        fields:
+          - field: body
+            mode: edit
+            ui:
+              variant: markdown
+              width: full
+              show_label: false
+              edit_flow: click_to_edit
+              empty_text: No description yet.
+
+  # Agent team and connected-agent runs on this issue: what each did, or why it stopped.
+  # What an agent is doing on the issue now, or why it stopped: one quiet line above the tabs,
+  # so a notice about a run lands on its explanation.
+  agent_status:
+    kind: agent_task_runs
+    table: issues
+    record_id: {bind: state.issue_id}
+    presentation: {variant: inline}
+  # Every run on the issue, on its own tab.
+  agent_runs:
+    kind: agent_task_runs
+    title: Agent runs
+    table: issues
+    record_id: {bind: state.issue_id}
+    empty_message: No agent has worked on this issue yet.
+  conversation:
+    kind: comment_thread
+    title: Conversation
+    table: issue_activity
+    data_source: activity
+    thread_field: id
+    body_field: body
+    summary_field: summary
+    author_field: actor_user_id
+    # Comments a connected agent wrote read "Agent (on behalf of <person>)".
+    agent_field: agent_run_id
+    created_field: created_at
+    create:
+      data_source: comment_action
+      presentation: inline
+      placeholder: Leave a comment. Markdown is supported.
+    empty_message: Nothing has happened yet.
+
+  issue_properties:
+    kind: record_detail
+    title: Details
+    table: issues
+    data_source: issue
+    mode: editable
+    save_mode: autosave
+    density: compact
+    show_primary_key: false
+    actions_source: [assign_action, labels_action, milestone_action, type_action, board_column_action]
+    # Short values pair up whenever the side panel has room for two columns.
+    sections:
+      - id: properties
+        columns: 2
+        fields:
+          - {field: assignee_member_id, mode: display, ui: {variant: reference_chip, empty_text: No one}}
+          # Shown only while the Agent works the issue on the assignee's behalf.
+          - field: agent_status
+            mode: display
+            ui: {variant: badge}
+            when:
+              visible: [{field: assignee_kind, operator: equals, value: agent}]
+          - {field: labels, mode: display, ui: {empty_text: None}}
+          - {field: issue_type, mode: display, ui: {variant: reference_chip}}
+          - {field: priority, mode: edit, ui: {edit_flow: click_to_edit, empty_text: None}}
+          - {field: board_status, mode: display, ui: {variant: badge}}
+          - {field: milestone_id, mode: display, ui: {variant: reference_chip, empty_text: None}}
+          - field: parent_issue_id
+            mode: edit
+            ui:
+              label: Parent
+              variant: reference_link
+              reference_link: {detail_view: issue, query_param: issueId}
+              edit_flow: click_to_edit
+              empty_text: None
+              width: full
+          # Shown only while locked, as a sentence rather than a Yes/No flag.
+          - field: locked
+            mode: display
+            field_schema: {type: text, label: Conversation}
+            value: Locked
+            ui: {help_text: Only admins can comment., width: full}
+            when:
+              visible: [{field: locked, operator: equals, value: true}]
+
+  files:
+    kind: linked_documents
+    title: Documents
+    data_source: documents
+    open: {view: document, query_param: documentId}
+    empty_message: No documents. The Agent's solution design appears here.
+
+  children:
+    kind: record_list
+    title: Sub-issues
+    data_source: sub_issues
+    density: compact
+    hide_when_empty: true
+    title_field: title
+    badge_field: state
+    meta_fields: [ref]
+    on_row_click:
+      - type: navigate
+        viewId: issue
+        query:
+          issueId: {bind: record.id}
+
+  relationships:
+    kind: record_list
+    title: Linked issues
+    data_source: links
+    density: compact
+    hide_when_empty: true
+    title_field: label
+    on_row_click:
+      - type: navigate
+        viewId: issue
+        query:
+          issueId: {bind: record.target_issue_id}
+
+layout:
+  kind: split
+  direction: horizontal
+  sizes: [7, 3]
+  children:
+    - kind: stack
+      gap: md
+      children:
+        - component: issue_main
+        - component: agent_status
+        - kind: tabs
+          tabs:
+            - id: conversation
+              label: Conversation
+              layout: {component: conversation}
+            - id: agent_runs
+              label: Agent runs
+              layout: {component: agent_runs}
+    - kind: stack
+      gap: md
+      children:
+        - component: issue_properties
+        - component: files
+        - component: children
+        - component: relationships

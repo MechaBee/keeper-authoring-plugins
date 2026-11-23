@@ -1,0 +1,51 @@
+table: periods
+version: 2
+primaryKey: id
+idPrefix: period
+displayField: period_key
+rowAccess:
+  mode: all
+mutationPolicy:
+  allowedRoles: [admin]
+validationPolicy:
+  unique:
+    - fields: [period_key]
+      message: Each calendar month may have only one period.
+  checks:
+    - id: calendar_month_bounds
+      operations: [create, update]
+      message: The period must cover exactly its stated calendar month.
+      input:
+        candidate: {kind: candidate}
+      code: |
+        const candidate = input.candidate;
+        const key = String(candidate.period_key ?? "");
+        const start = String(candidate.period_start ?? "");
+        const end = String(candidate.period_end ?? "");
+        if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(key)) return false;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) return false;
+        const [year, month] = key.split("-").map(Number);
+        const expectedStart = `${key}-01`;
+        const expectedEnd = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
+        return start === expectedStart && end === expectedEnd;
+queryPaths:
+  - id: by_period_key
+    equalityFields: []
+    orderFields: [period_key]
+  - id: exact_period_key
+    equalityFields: [period_key]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: period_key, type: text, label: Month (YYYY-MM), required: true, helpText: "Enter the calendar month, for example 2026-08."}
+  - {id: period_start, type: date, label: Starts, required: true}
+  - {id: period_end, type: date, label: Ends, required: true}
+  - id: status
+    type: select
+    label: Status
+    required: true
+    default: open
+    options:
+      - {value: open, label: Open}
+      - {value: locked, label: Locked}
+  - {id: created_at, type: datetime, label: Created, readonly: true, computed: {kind: now, on: create, format: datetime}}
+  - {id: updated_at, type: datetime, label: Updated, readonly: true, computed: {kind: now, on: always, format: datetime}}

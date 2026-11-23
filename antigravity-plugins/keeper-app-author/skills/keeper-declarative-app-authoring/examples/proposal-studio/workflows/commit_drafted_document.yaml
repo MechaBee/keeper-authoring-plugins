@@ -1,0 +1,33 @@
+id: commit_drafted_document
+title: Save AI draft
+agent_commit: {task: draft_document}
+input_fields: []
+steps:
+  # Keeper has already written the draft into the opportunity's collection;
+  # result.draft is that document.
+  - id: derive
+    kind: script
+    input:
+      handover: {bind: result.handover.body}
+      title: {bind: result.draft.title}
+    code: |
+      // Posted as the person who asked; the first line says the AI wrote it.
+      return {body: "**AI handover · " + input.title + "**\n\n" + String(input.handover || "").trim()};
+  - id: mark_draft
+    kind: update_record
+    table: documents
+    record_id: {bind: result.draft.id}
+    values:
+      review_status: draft
+  - id: handover
+    kind: create_record
+    table: opportunity_comments
+    values:
+      opportunity_id: {bind: system.agentRun.input.opportunity_id}
+      thread_id: {bind: system.agentRun.id}
+      body: {bind: step.derive.body}
+      author_user_id: {bind: system.agentRun.requesterId}
+      author_kind: ai
+      is_resolved: false
+      agent_run_id: {bind: system.agentRun.id}
+result: {step: handover}

@@ -1,0 +1,123 @@
+# Author and Update
+
+Use for new applications and definition changes. This workflow produces a validated, reviewable
+candidate; publication follows [Apply](apply.md).
+
+## Establish the baseline
+
+Resolve the target using [Inspect and open](inspect-and-open.md), reusing discovery already completed
+for this task. Read `contract_read(topic: "application")` before constructing or changing a
+candidate. For new apps and changes to writes, workflows, validation, constraints, or read
+completeness, read `contract_read(topic: "all")` and inspect `consistency` before designing the
+change. There is no standalone `consistency` topic. It defines the `query_records`/`collect_records`
+distinction, JSONL-only legacy query validation, transaction guarantees, and constraint backfill.
+A label-only edit does not need that additional reading. Reuse a current contract already read
+in this task rather than requesting it repeatedly.
+
+For an existing app, call `app_get`, inspect `effectiveAccess`, and bring its definitions into the
+candidate folder as described in [Construct the candidate](#construct-the-candidate). Preserve the returned revision, source files,
+installed guide documents, and `notifications.yaml`. Read the affected files and every definition
+that refers to a changed table, field, view, workflow, or agent. Inspect actual app definitions,
+rather than unrelated sibling apps as templates.
+
+Definition work uses `dataMode: "preserve"` and omits JSONL. Do not obtain live records just to
+carry them forward. Use schema information and synthetic examples to reason about shape. If the
+change needs backfill, data rewriting, or tighter access, follow [Migrate and repair](migrate-and-repair.md)
+and [App security](../reference/security/index.md) as applicable.
+
+## Design only the affected scope
+
+For a new app or substantial redesign, use [App design](../design/app-design.md). For a small edit,
+retain the existing storage engine, unaffected topology, and policies. Read the exact
+[syntax references](../reference/index.md) needed by the change. Do not infer keys from related
+types or silently ignored fields.
+
+Turn the user's brief into a compact acceptance checklist before choosing the topology. Cover each
+required field, relationship, role-visible attribute, lifecycle transition, comment or activity
+surface, and primary create/edit path. Mark requirements that depend on platform-owned identity or
+access policy so they are not accidentally implemented as ordinary app data. Use the checklist to
+review the candidate and later to select smoke tests; do not invent a fixed screen or test count.
+
+An [example](../examples/index.md) is optional. When using a whole app as a starting point, inspect
+its descriptors and dependencies. For one interaction, read its relevant composition only. Adapt
+domain fields and screen count to the brief while preserving runtime binding and action syntax.
+
+## Construct the candidate
+
+The candidate is a local folder laid out like the installed app, with `app.yaml` at its root. Edit
+complete UTF-8 files there; the folder, not the conversation, holds the content. For an existing
+app, start from its current source: reuse a local folder that this script downloaded or verified
+(it holds `.keeper-baseline.json`), otherwise call `app_download` with `delivery: "link"` and
+write the files with:
+
+```bash
+node <skill-dir>/scripts/keeper-app-bundle.mjs download <app-folder> - <<'JSON'
+<the app_download result>
+JSON
+```
+
+The script checks every file against the returned sha256 before writing and never prints the
+download address; treat that address as a secret. It refuses to replace existing local app files
+unless given `--overwrite`. It records the downloaded revision and file hashes in
+`.keeper-baseline.json`, which [Apply](apply.md) uses to catch changes someone else made on the
+server in the meantime; keep that file with the folder and do not edit it.
+
+To bring a folder that has local edits up to date, never download over it with `--overwrite`:
+call `app_download` again and run `rebase` on the folder with that result. Files only the server
+changed are updated, files only you changed are kept, and a file both sides changed gets the
+server copy under `.keeper-conflicts/<path>`. Merge each one into your file, keeping both
+intents, then delete `.keeper-conflicts/`; the script refuses to build a manifest until you do.
+Use `app_files_read` only for reading a few files, not to copy an app.
+Paths are app-relative; see the [application reference](../reference/application/app.md) for the
+only accepted files. Include guide documents and `notifications.yaml` when present. Do not use
+absolute paths, traversal, duplicates, or binary content. Change installed apps only through the
+Keeper MCP upload tools, never by writing the installed app's storage directly.
+Every candidate includes `app.yaml`, even when only `notifications.yaml` is changing.
+
+For a new app, include `app.yaml`, required schemas, all requested views, and the actions/navigation
+that make those views usable. Include workflows, agents, and seed data when needed by the brief.
+Put notification rules in optional `notifications.yaml`, never in `app.yaml`.
+For new apps, use manifest `schemaVersion: 2`. New tables use `version: 2` with explicit `rowAccess`;
+these are separate declarations. Examples containing legacy version-1
+schemas illustrate syntax compatibility, not the default for new team data.
+
+For existing apps, select the intended definition mode:
+
+- `replace`: candidate is the complete desired definition/content set; omitted files are deleted.
+- `merge`: an explicitly partial overlay; omitted installed files remain.
+
+Both use `dataMode: "preserve"` for definition-only work. New JSONL apps may include requested
+seed rows. DynamoDB candidates contain no JSONL; see [Storage](../reference/storage/index.md).
+
+## Check fitness and validity
+
+Check the changed behavior and its dependencies, extending to the whole app for new creation:
+
+- `defaultView` is a usable first destination for the intended audience, normally a primary work
+  or browse surface. Do not accidentally land members on an admin-only screen or a detail/edit
+  screen requiring an unprovided selection. An explicitly requested admin-only app may have an
+  admin landing view. Hidden contextual views have incoming links supplying their required routes.
+- Trace each table to a view, workflow, agent, relation, projection, or security-policy dependency;
+  each workflow/agent must have an invocation path or an intentional external caller. Flag orphan
+  schemas and dead automation. Do not delete existing data-bearing tables merely because the UI
+  does not show them; resolve their purpose and deletion impact first.
+- File stems and descriptor IDs agree; schema `table` and any JSONL stem agree. Cross-file fields,
+  relations, sources, components, workflows, and agents resolve.
+- Mutations target the intended record and authorized source. Projections stay read-only; view
+  filters do not stand in for row access. Review changed access with the security reference.
+- Labels describe the user's task. Avoid duplicate detail fields and configuration prose in UI copy.
+- Retain installed guides. Update guide content when a changed status, workflow, role, or view makes
+  it inaccurate; use [guide design](../design/user-guide.md) for new explanatory content.
+- Retain installed notification rules unless their removal is requested. Validate recipient fields,
+  workflow selectors, message placeholders, and overlap priorities against the effective candidate.
+
+Server validation runs on the uploaded folder: `app_upload_prepare` validates, diffs, and stages in
+one call without changing the installed app (see [Apply](apply.md)). Do not send the same candidate
+through `app_validate` or `app_diff` first. Fix errors in the folder, upload again, and review
+warnings for real risks rather than assuming a valid candidate satisfies the brief. Report any
+unresolved limitation.
+
+When a workspace change is requested, continue to [Apply](apply.md), which owns upload, staging,
+revision checks, deployment progress, and launch. For a review-only request, upload the folder as
+described there and call `app_diff` with the `bundleId` instead of preparing; report the validation
+and diff without staging.

@@ -3,6 +3,14 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Antigravity packages - 2026-11-23
+
+- New `antigravity-plugins/` folder with Antigravity packages of Keeper App Author 1.26.1 and
+  Keeper Workspace Content 1.11.0: the same skills and MCP servers as the Codex and Claude
+  packages, with an `.antigravity-plugin/plugin.json` manifest and `mcp_config.json`.
+- `npm run validate` checks the Antigravity packages too: manifest, matching version, logo,
+  MCP servers and skills identical to the other platforms.
+
 ## Keeper App Author 1.26.1 - 2026-11-22
 
 - New automations reference, `reference/automation/automations.md`: triggers (record, schedule,

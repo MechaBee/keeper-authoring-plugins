@@ -1,0 +1,324 @@
+view:
+  id: admin_reports
+  title: Team reports
+  description: Filter and export all policy-visible time entries.
+nav:
+  title: Team reports
+  order: 45
+  icon: users
+  group:
+    id: reports
+    label: Reports
+    icon: bar-chart-3
+access:
+  allowed_roles: [admin]
+state:
+  from_date: null
+  to_date: null
+  client_id: null
+  project_id: null
+  owner_user_id: null
+  selected_entry_id: null
+route_state:
+  from_date: {route: from, mode: sync}
+  to_date: {route: to, mode: sync}
+  client_id: {route: client, mode: sync}
+  project_id: {route: project, mode: sync}
+  owner_user_id: {route: member, mode: sync}
+actions:
+  - id: this_month
+    kind: date_range_preset
+    label: This month
+    preset: this_month
+    from_state_key: from_date
+    to_state_key: to_date
+    appearance: secondary
+  - id: this_year
+    kind: date_range_preset
+    label: This year
+    preset: this_year
+    from_state_key: from_date
+    to_state_key: to_date
+    appearance: secondary
+  - id: run_report
+    kind: query
+    label: Query
+    data_sources: [report_entries_base, report_principals, report_entries]
+filters:
+  - {id: from_date, kind: state_input, label: From, state_key: from_date, input_type: date}
+  - {id: to_date, kind: state_input, label: To, state_key: to_date, input_type: date}
+  - id: member
+    kind: state_select
+    label: Member
+    state_key: owner_user_id
+    options_source: report_members
+    value_field: user_id
+    label_field: alias
+    placeholder: All members
+    clearable: true
+    clear_label: All members
+  - id: client
+    kind: state_select
+    label: Client
+    state_key: client_id
+    options_source: report_clients
+    value_field: id
+    label_field: name
+    placeholder: All clients
+    clearable: true
+    clear_label: All clients
+    on_change:
+      - {type: set_state, key: project_id, value: null}
+  - id: project
+    kind: state_select
+    label: Project
+    state_key: project_id
+    options_source: report_projects
+    value_field: id
+    label_field: name
+    placeholder: All projects
+    clearable: true
+    clear_label: All projects
+data_sources:
+  admin_entry_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params: {workflow_id: create_admin_time_entry, label: Add entry for member}
+    action_dialog:
+      preview: false
+      preset_groups:
+        - id: work_date_shortcuts
+          placement: {after_field: work_date}
+          presentation: {variant: chips, mode: inline}
+          source:
+            kind: generator
+            generator: relative_dates
+            items: [today, yesterday]
+            item:
+              label: {bind: record.label}
+              values:
+                work_date: {bind: record.value}
+          apply: {type: patch_input}
+  report_members:
+    kind: table
+    table: member_profiles
+    filter: {active: true}
+    sort: {field: alias, direction: asc}
+    read: complete
+  report_clients:
+    kind: table
+    table: clients
+    sort: {field: name, direction: asc}
+    read: complete
+  report_projects:
+    kind: table
+    table: projects
+    sort: {field: name, direction: asc}
+    read: complete
+  report_tasks:
+    kind: table
+    table: tasks
+    sort: {field: name, direction: asc}
+    read: complete
+  report_principals:
+    kind: provider_resource
+    provider: workspace
+    resource: table
+    params: {table: keeper_principals, limit: 10000}
+    depends_on: [report_entries_base]
+  report_entries_base:
+    kind: table
+    table: time_entries
+    where:
+      all:
+        - {field: work_date, op: gte, value: {bind: state.from_date}, when_empty: ignore}
+        - {field: work_date, op: lte, value: {bind: state.to_date}, when_empty: ignore}
+        - {field: owner_user_id, op: equals, value: {bind: state.owner_user_id}, when_empty: ignore}
+        - {field: project_id, op: equals, value: {bind: state.project_id}, when_empty: ignore}
+    sort: {field: work_date, direction: desc}
+    read: complete
+    max_records: 20000
+    performance: {intent: indexed}
+    refresh_on: [state.from_date, state.to_date, state.owner_user_id, state.project_id]
+  selected_entry:
+    kind: record
+    table: time_entries
+    id: {bind: state.selected_entry_id}
+    refresh_on: [state.selected_entry_id]
+  report_entries:
+    kind: projected_table
+    schema: team_report_entries
+    from: {source: report_entries_base, as: entry}
+    lookups:
+      - {source: report_projects, as: project, local: entry.project_id, foreign: id, mode: inner}
+      - {source: report_clients, as: client, local: project.client_id, foreign: id, mode: left}
+      - {source: report_tasks, as: task, local: entry.task_id, foreign: id, mode: left}
+      - {source: report_principals, as: principal, local: entry.owner_user_id, foreign: id, mode: left}
+      - {source: report_members, as: member, local: entry.owner_user_id, foreign: user_id, mode: left}
+    where:
+      - kind: script
+        label: Apply selected client filter
+        input:
+          workDate: {path: entry.work_date}
+          projectClientId: {path: project.client_id}
+          selectedClientId: {bind: state.client_id}
+        code: |
+          const workDate = String(input.workDate ?? "");
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(workDate)) return false;
+
+          if (input.selectedClientId && input.projectClientId !== input.selectedClientId) return false;
+          return true;
+    fields:
+      - {field: id, value: {path: entry.id}}
+      - {field: client_id, value: {path: project.client_id}}
+      - field: client_name
+        value: {op: coalesce, values: [{path: client.name}, {literal: Unknown client}]}
+      - {field: project_id, value: {path: entry.project_id}}
+      - {field: project_name, value: {path: project.name}}
+      - {field: task_name, value: {path: task.name}}
+      - field: member_email
+        value: {op: coalesce, values: [{path: principal.email}, {literal: Unknown user}]}
+      - field: member_alias
+        value: {op: coalesce, values: [{path: member.alias}, {literal: Unknown user}]}
+      - {field: billable, value: {path: entry.billable}}
+      - {field: work_date, value: {path: entry.work_date}}
+      - {field: duration_minutes, value: {path: entry.duration_minutes}}
+      - {field: description, value: {path: entry.description}}
+      - field: start_time
+        value:
+          kind: script
+          input: {value: {path: entry.started_at}}
+          code: |
+            const value = String(input.value ?? "");
+            const match = value.match(/T(\d{2}:\d{2})/);
+            return match ? match[1] : null;
+      - field: end_time
+        value:
+          kind: script
+          input: {value: {path: entry.ended_at}}
+          code: |
+            const value = String(input.value ?? "");
+            const match = value.match(/T(\d{2}:\d{2})/);
+            return match ? match[1] : null;
+    sort: {field: work_date, direction: desc}
+    refresh_on: [state.client_id]
+components:
+  admin_entry:
+    kind: action_bar
+    title: Add entry for member
+    description: Create a time entry for a member, then review it in the report below.
+    data_source: admin_entry_action
+  report_table:
+    kind: record_table
+    title: Entries
+    data_source: report_entries
+    columns:
+      - {field: client_name, label: Client, sticky: true, hideable: false}
+      - {field: project_name, label: Project}
+      - {field: task_name, label: Task, empty_text: No task}
+      - {field: member_email, label: User}
+      - {field: member_alias, label: User alias, hidden: true}
+      - {field: billable, label: Billable, align: center, width: narrow}
+      - {field: work_date, label: Work date, width: narrow}
+      - field: duration_minutes
+        label: Duration
+        align: right
+        width: narrow
+        summary: sum
+        duration_presentation: {storage_unit: minutes, display_unit: hours, display_format: hh_mm}
+      - {field: description, label: Description, wrap: true, width: wide, empty_text: "—"}
+      - {field: start_time, label: Start, width: narrow, empty_text: "—"}
+      - {field: end_time, label: End, width: narrow, empty_text: "—"}
+    search: {enabled: true, placeholder: Search loaded descriptions, fields: [description]}
+    sort: {enabled: true, default: {field: work_date, direction: desc}}
+    paging: {page_size: 50}
+    column_visibility: {enabled: true}
+    density: compact
+    selection:
+      state_key: selected_entry_id
+      desktop: split
+      mobile: page
+      persist: false
+      reconcile: clear
+    detail:
+      title: Entry details
+      table: time_entries
+      data_source: selected_entry
+      mode: editable
+      save_mode: explicit
+      save_label: Save entry
+      density: compact
+      show_primary_key: false
+      header:
+        title_field: {field: work_date, mode: display, ui: {label: Work date}}
+        meta_fields:
+          - {field: owner_user_id, mode: display, ui: {label: User, variant: reference_chip}}
+      sections:
+        - id: work
+          title: Work
+          columns: 2
+          fields:
+            - {field: project_id, mode: edit}
+            - {field: task_id, mode: edit, ui: {empty_text: No task}}
+            - {field: started_at, mode: edit, ui: {label: Start, input: {variant: flexible_text, date_field: work_date, placeholder: "e.g. 9, 930, or 09:30"}}}
+            - {field: ended_at, mode: edit, ui: {label: End, input: {variant: flexible_text, date_field: work_date, placeholder: "e.g. 11, 1100, or 11:00"}}}
+            - {field: duration_minutes, mode: edit, ui: {label: Duration (minutes)}}
+            - {field: billable, mode: edit}
+            - {field: description, mode: edit, ui: {width: full}}
+      actions:
+        - id: delete_entry
+          label: Delete entry
+          appearance: destructive
+          confirm: Delete this time entry? This cannot be undone.
+          action:
+            type: provider_action
+            provider: workspace
+            action: delete_record
+            params:
+              table: time_entries
+              recordId: {bind: record.id}
+              mode: block
+            on_success:
+              - {type: set_state, key: selected_entry_id, value: null}
+              - type: refresh
+                data_sources: [report_entries_base, report_entries]
+      compute:
+        rules:
+          - id: clear_task_for_project
+            target: task_id
+            when: {on: change, of: [project_id]}
+            script: |
+              return null;
+          - id: duration_from_range
+            target: duration_minutes
+            when: {on: change, of: [started_at, ended_at]}
+            script: |
+              if (!fields.started_at || !fields.ended_at) return;
+              const mins = (new Date(fields.ended_at) - new Date(fields.started_at)) / 60000;
+              return Number.isFinite(mins) && mins > 0 ? Math.round(mins) : undefined;
+          - id: end_from_duration
+            target: ended_at
+            when: {on: change, of: [duration_minutes]}
+            script: |
+              const minutes = Number(fields.duration_minutes);
+              if (!fields.started_at || !Number.isFinite(minutes) || minutes <= 0) return;
+              const base = new Date(fields.started_at);
+              if (!Number.isFinite(base.getTime())) return;
+              const d = new Date(base.getTime() + minutes * 60000);
+              const pad = (n) => String(n).padStart(2, "0");
+              return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    export:
+      enabled: true
+      label: Export CSV
+      filename: time-tracker-all-entries.csv
+      fields: [client_name, project_name, task_name, member_email, member_alias, billable, work_date, duration_minutes, description, start_time, end_time]
+      scope: complete
+      max_records: 20000
+    empty_message: No entries match these filters.
+layout:
+  kind: stack
+  gap: md
+  children:
+    - component: admin_entry
+    - component: report_table

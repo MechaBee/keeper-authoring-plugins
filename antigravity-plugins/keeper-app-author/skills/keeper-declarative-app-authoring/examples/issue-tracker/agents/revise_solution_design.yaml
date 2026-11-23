@@ -1,0 +1,85 @@
+id: revise_solution_design
+title: Revise a design or plan
+description: "Use when an issue given to the Agent is back in the Issues agent queue and already has a solution design or implementation plan: rewrites that document to answer the conversation since it was written and the review comments on its passages. Name the issue and the document."
+kind: task
+exposure: {mcp: true}
+allowed_roles: [editor, developer, admin]
+input:
+  - id: issue_id
+    type: reference
+    label: Issue
+    referenceTable: issues
+    required: true
+    reference_where: {assignee_kind: agent, agent_status: ready, state: open}
+  - id: document_id
+    type: reference
+    label: Design or plan
+    referenceTable: documents
+    required: true
+    reference_where: {state: active}
+    helpText: The solution design or implementation plan in the issue's own documents.
+target: {table: issues, id: {bind: input.issue_id}}
+context:
+  issue:
+    {kind: record, table: issues, id: {bind: input.issue_id}, required: true, label: The issue}
+  project:
+    {kind: record, table: projects, id: {bind: context.issue.project_id}, label: Project}
+  conversation:
+    kind: table
+    table: issue_activity
+    filter: {issue_id: {bind: input.issue_id}}
+    sort: {field: occurred_at, direction: asc}
+    limit: 300
+    label: Conversation and events
+  sub_issues:
+    kind: table
+    table: issues
+    filter: {parent_issue_id: {bind: input.issue_id}}
+    sort: {field: number, direction: asc}
+    limit: 50
+    label: Sub-issues
+  links:
+    kind: table
+    table: issue_links
+    filter: {source_issue_id: {bind: input.issue_id}}
+    limit: 50
+    label: Linked issues
+  current:
+    {kind: documents, document: {bind: input.document_id}, limit: 1, required: true, label: Current text}
+  review:
+    kind: table
+    table: document_comments
+    filter: {document_id: {bind: input.document_id}}
+    sort: {field: created_at, direction: asc}
+    limit: 200
+    label: Review comments on the design
+  documents:
+    kind: documents
+    record:
+      table: issues
+      id: {bind: input.issue_id}
+      collection_field: collection_id
+      link_table: issue_documents
+    limit: 20
+    label: The issue's documents
+  # The design must be in this issue's folder: otherwise preparing the run is refused.
+  design:
+    kind: table
+    table: documents
+    filter: {id: {bind: input.document_id}, collection_id: {bind: context.issue.collection_id}}
+    limit: 1
+    required: true
+    label: The design, in this issue's documents
+guide: ai/revise-solution-design.md
+executor: {kind: agent}
+output:
+  documents:
+    design:
+      op: revise
+      document: {bind: input.document_id}
+      fields: [summary]
+      max_bytes: 131072
+  records:
+    handover: {table: issue_activity, op: create, fields: [body]}
+commit: {mode: on_result, workflow: commit_design_revision}
+limits: {timeout_s: 3600}

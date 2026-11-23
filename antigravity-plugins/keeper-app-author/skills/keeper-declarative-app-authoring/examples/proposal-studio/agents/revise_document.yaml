@@ -1,0 +1,49 @@
+id: revise_document
+title: Revise a document
+description: Writes the next version of an opportunity's document, addressing its open review comments and your instructions. You accept or reject it in the app.
+kind: task
+exposure: {mcp: true}
+allowed_roles: [editor, admin]
+input:
+  - {id: document_id, type: reference, label: Document, referenceTable: documents, required: true}
+  - id: instructions
+    type: textarea
+    label: What to change
+    required: true
+    helpText: For example "Address the open review comments" or "Shorten the timeline section".
+target: {table: documents, id: {bind: input.document_id}}
+context:
+  document:
+    {kind: record, table: documents, id: {bind: input.document_id}, required: true, label: Document}
+  current:
+    {kind: documents, document: {bind: input.document_id}, limit: 1, required: true, label: Current text}
+  review:
+    kind: table
+    table: document_comments
+    # Every review comment: a thread is open or resolved by its first comment.
+    filter: {document_id: {bind: input.document_id}}
+    sort: {field: created_at, direction: asc}
+    limit: 200
+    label: Review comments
+  # The opportunity whose collection holds the document. Library documents
+  # have none, and their collections don't allow agent tasks, so preparing a
+  # revision of one is refused.
+  opportunity:
+    kind: table
+    table: opportunities
+    filter: {collection_id: {bind: context.document.collection_id}}
+    limit: 1
+    label: Opportunity brief
+guide: ai/revise-document.md
+executor: {kind: agent}
+output:
+  documents:
+    revision:
+      op: revise
+      document: {bind: input.document_id}
+      fields: [summary]
+      max_bytes: 262144
+  records:
+    change_note: {table: document_comments, op: create, fields: [body]}
+commit: {mode: on_approval, workflow: commit_document_revision}
+limits: {timeout_s: 3600}

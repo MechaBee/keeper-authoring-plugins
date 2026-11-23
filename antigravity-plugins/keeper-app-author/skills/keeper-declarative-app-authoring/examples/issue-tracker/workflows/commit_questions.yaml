@@ -1,0 +1,53 @@
+id: commit_questions
+title: Save the Agent's questions
+agent_commit: {task: ask_questions}
+input_fields: []
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: system.agentRun.input.issue_id}
+  - id: prepare
+    kind: script
+    label: Check the issue is still the Agent's
+    input:
+      issue: {bind: step.issue, fallback: null}
+      body: {bind: result.questions.body, fallback: ""}
+
+      requester: {bind: system.agentRun.requesterId}
+      run_id: {bind: system.agentRun.id}
+    code: |
+      const issue = input.issue;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      // People may have reassigned, closed or answered the issue while the agent worked.
+      if (issue.state !== "open" || issue.assignee_kind !== "agent" || issue.agent_status !== "ready") {
+        helpers.actionError("This issue is no longer in the Agent queue.");
+      }
+      const text = String(input.body ?? "").trim();
+      if (!text) helpers.actionError("The questions are empty.");
+      const heading = "**Questions**";
+      const summary = "asked questions";
+      const status = "waiting_on_answers";
+      return {
+        issue_values: {agent_status: status, comment_count: (Number(issue.comment_count) || 0) + 1},
+        // Stored under the person who ran the agent; the run id makes the
+        // conversation show it as "Agent (on behalf of <person>)".
+        comment_values: {
+          issue_id: issue.id,
+          kind: "comment",
+          summary,
+          body: text ? heading + "\n\n" + text : heading,
+          actor_user_id: input.requester,
+          agent_run_id: input.run_id,
+        },
+      };
+  - id: update_issue
+    kind: update_record
+    table: issues
+    record_id: {bind: system.agentRun.input.issue_id}
+    values_from: {bind: step.prepare.issue_values}
+  - id: comment
+    kind: create_record
+    table: issue_activity
+    values_from: {bind: step.prepare.comment_values}
+result: {step: comment}

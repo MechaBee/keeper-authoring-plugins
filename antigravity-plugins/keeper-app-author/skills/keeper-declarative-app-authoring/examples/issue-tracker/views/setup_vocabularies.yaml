@@ -1,0 +1,193 @@
+view:
+  id: setup_vocabularies
+  title: Labels & types
+  description: The words this team files issues under. Ids stay as they are, so renaming an entry leaves every issue that uses it intact.
+nav:
+  order: 55
+  icon: tags
+  group:
+    id: setup
+    label: Setup
+    icon: settings
+    order: 90
+access:
+  allowed_roles: [admin]
+state:
+  active_tab: labels
+  selected_label_id: null
+  selected_type_id: null
+  selected_priority_id: null
+route_state:
+  active_tab: {route: tab, mode: sync}
+data_sources:
+  labels:
+    kind: table
+    table: labels
+    sort: {field: position, direction: asc}
+  issue_types:
+    kind: table
+    table: issue_types
+    sort: {field: position, direction: asc}
+  priorities:
+    kind: table
+    table: priorities
+    sort: {field: position, direction: asc}
+  label_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: labels
+      label: New label
+      fields: name,description,color,position
+      field__active: true
+      field__position: 100
+    on_success:
+      - {type: refresh, data_sources: [labels]}
+      - {type: set_state, key: selected_label_id, value: {bind: action.result.id}}
+  type_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: issue_types
+      label: New type
+      fields: name,color,position
+      field__active: true
+      field__position: 100
+    on_success:
+      - {type: refresh, data_sources: [issue_types]}
+      - {type: set_state, key: selected_type_id, value: {bind: action.result.id}}
+  priority_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: priorities
+      label: New priority
+      fields: name,color,position
+      field__active: true
+      field__position: 100
+    on_success:
+      - {type: refresh, data_sources: [priorities]}
+      - {type: set_state, key: selected_priority_id, value: {bind: action.result.id}}
+components:
+  labels_workspace:
+    kind: record_collection
+    title: Labels
+    show_title: false
+    table: labels
+    data_source: labels
+    search: {enabled: true, placeholder: Search labels, fields: [name, description]}
+    create: {data_source: label_create_action, label: New label}
+    # An entry an issue still carries cannot be deleted; retire it instead.
+    delete: {enabled: true, label: Delete, confirm: Delete this label? Issues that carry it keep it until it is removed from them., mode: block}
+    selection:
+      state_key: selected_label_id
+      desktop: split
+      mobile: page
+      reconcile: first_available
+    summary:
+      title_field: name
+      color_field: color
+      meta_fields: [description, position]
+    detail:
+      title: Label
+      mode: editable
+      save_mode: explicit
+      save_label: Save label
+      density: compact
+      show_primary_key: false
+      sections:
+        - id: label
+          columns: 2
+          fields:
+            - {field: name, mode: edit}
+            - {field: color, mode: edit}
+            - {field: position, mode: edit}
+            - {field: active, mode: edit}
+            - {field: description, mode: edit, ui: {width: full}}
+
+  types_workspace:
+    kind: record_collection
+    title: Types
+    show_title: false
+    table: issue_types
+    data_source: issue_types
+    create: {data_source: type_create_action, label: New type}
+    delete: {enabled: true, label: Delete, confirm: Delete this type? Issues already filed under it keep it., mode: block}
+    selection:
+      state_key: selected_type_id
+      desktop: split
+      mobile: page
+      reconcile: first_available
+    summary:
+      title_field: name
+      color_field: color
+      meta_fields: [position]
+    detail:
+      title: Type
+      mode: editable
+      save_mode: explicit
+      save_label: Save type
+      density: compact
+      show_primary_key: false
+      sections:
+        - id: type
+          columns: 2
+          fields:
+            - {field: name, mode: edit}
+            - {field: color, mode: edit}
+            - {field: position, mode: edit}
+            - {field: active, mode: edit}
+
+  priorities_workspace:
+    kind: record_collection
+    title: Priorities
+    show_title: false
+    table: priorities
+    data_source: priorities
+    create: {data_source: priority_create_action, label: New priority}
+    delete: {enabled: true, label: Delete, confirm: Delete this priority? Issues already set to it keep it., mode: block}
+    selection:
+      state_key: selected_priority_id
+      desktop: split
+      mobile: page
+      reconcile: first_available
+    summary:
+      title_field: name
+      color_field: color
+      meta_fields: [position]
+    detail:
+      title: Priority
+      description: Order decides the urgent-first sort in the issue list, not the name.
+      mode: editable
+      save_mode: explicit
+      save_label: Save priority
+      density: compact
+      show_primary_key: false
+      sections:
+        - id: priority
+          columns: 2
+          fields:
+            - {field: name, mode: edit}
+            - {field: color, mode: edit}
+            - {field: position, mode: edit}
+            - {field: active, mode: edit}
+
+layout:
+  kind: tabs
+  state_key: active_tab
+  tabs:
+    - id: labels
+      label: Labels
+      icon: tags
+      layout: {component: labels_workspace}
+    - id: types
+      label: Types
+      icon: shapes
+      layout: {component: types_workspace}
+    - id: priorities
+      label: Priorities
+      icon: signal-high
+      layout: {component: priorities_workspace}

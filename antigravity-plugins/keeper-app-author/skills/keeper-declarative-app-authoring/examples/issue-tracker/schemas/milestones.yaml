@@ -1,0 +1,44 @@
+table: milestones
+version: 2
+primaryKey: id
+idPrefix: milestone
+displayField: title
+referenceLabelTemplate: "${title}"
+rowAccess:
+  mode: policy
+  allOf:
+    - kind: resource_grant
+      resourceField: project_id
+      directGrants: {table: project_user_access, resourceField: project_id, principalField: user_id}
+      groupGrants: {table: project_group_access, resourceField: project_id, groupField: group_id}
+      groupMemberships: {table: group_memberships, groupField: group_id, principalField: user_id}
+mutationPolicy:
+  allowedRoles: [editor, developer, admin]
+validationPolicy:
+  unique:
+    - fields: [project_id, title]
+      message: This project already has a milestone with that title.
+queryPaths:
+  - id: by_project_due
+    equalityFields: [project_id]
+    orderFields: [due_on]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: project_id, type: reference, label: Project, referenceTable: projects, required: true, reference_where: {archived: false}}
+  - {id: title, type: text, label: Title, required: true}
+  - {id: due_on, type: date, label: Due}
+  - {id: description, type: textarea, label: Description, contentFormat: markdown}
+  - id: state
+    type: select
+    label: State
+    required: true
+    default: open
+    options:
+      - {value: open, label: Open}
+      - {value: closed, label: Closed}
+  - {id: created_at, type: datetime, label: Created, readonly: true, computed: {kind: now, on: create, format: datetime}}
+  - {id: updated_at, type: datetime, label: Updated, readonly: true, computed: {kind: now, on: always, format: datetime}}
+relations:
+  - field: project_id
+    references: {table: projects, field: id}
+    onDelete: block

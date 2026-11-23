@@ -1,0 +1,48 @@
+id: commit_board_move
+title: Save the Agent's board move
+agent_commit: {task: move_on_board}
+input_fields: []
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: system.agentRun.input.issue_id}
+  - id: prepare
+    kind: script
+    label: Check the move
+    input:
+      issue: {bind: step.issue, fallback: null}
+      next_status: {bind: result.move.board_status, fallback: null}
+      requester: {bind: system.agentRun.requesterId}
+      run_id: {bind: system.agentRun.id}
+    code: |
+      const issue = input.issue;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      if (issue.state !== "open") helpers.actionError("This issue was closed while the Agent worked.");
+      const names = {backlog: "Backlog", ready: "Ready", in_progress: "In progress", in_review: "In review"};
+      const next = input.next_status;
+      if (next === "done") helpers.actionError("Use report_fix to finish an issue: it moves it to Done and closes it.");
+      if (!Object.prototype.hasOwnProperty.call(names, next)) helpers.actionError("Choose backlog, ready, in_progress or in_review.");
+      if (next === issue.board_status) helpers.actionError("The issue is already in " + names[next] + ".");
+      const from = names[issue.board_status] || issue.board_status;
+      return {
+        issue_values: {board_status: next},
+        // The run id makes the history show "Agent (on behalf of <person>)".
+        event_values: {
+          issue_id: issue.id,
+          kind: "board_moved",
+          summary: "moved this on the board from " + from + " to " + names[next],
+          actor_user_id: input.requester,
+          agent_run_id: input.run_id,
+        },
+      };
+  - id: update_issue
+    kind: update_record
+    table: issues
+    record_id: {bind: system.agentRun.input.issue_id}
+    values_from: {bind: step.prepare.issue_values}
+  - id: record_event
+    kind: create_record
+    table: issue_activity
+    values_from: {bind: step.prepare.event_values}
+result: {step: update_issue}

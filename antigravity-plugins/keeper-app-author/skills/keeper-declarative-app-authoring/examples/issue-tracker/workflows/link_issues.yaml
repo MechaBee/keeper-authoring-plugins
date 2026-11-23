@@ -1,0 +1,100 @@
+id: link_issues
+title: Link an issue
+appearance: secondary
+allowed_roles: [editor, developer, admin]
+actor_required: true
+success_message: Issues linked.
+invalidate: "*"
+input_fields:
+  - {id: issue_id, type: reference, label: This issue, referenceTable: issues, required: true, readonly: true}
+  - {id: project_id, type: reference, label: Project, referenceTable: projects, required: true, readonly: true}
+  - id: relation
+    type: select
+    label: This issue
+    required: true
+    options:
+      - {value: blocks, label: Blocks}
+      - {value: blocked_by, label: Is blocked by}
+      - {value: relates_to, label: Is related to}
+  - id: other_issue_id
+    type: reference
+    label: Other issue
+    referenceTable: issues
+    required: true
+    input: {variant: search, placeholder: Find an issue in this project}
+    reference_filters:
+      - {record_field: project_id, value_field: project_id, when_empty: none}
+input_defaults:
+  relation: relates_to
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: input.issue_id}
+  - id: other
+    kind: get_record
+    table: issues
+    record_id: {bind: input.other_issue_id}
+  - id: existing
+    kind: query_records
+    table: issue_links
+    filter:
+      source_issue_id: {bind: input.issue_id}
+      target_issue_id: {bind: input.other_issue_id}
+    limit: 1
+  - id: prepare
+    kind: script
+    label: Build both sides of the link
+    input:
+      issue: {bind: step.issue, fallback: null}
+      other: {bind: step.other, fallback: null}
+      existing: {bind: step.existing, fallback: null}
+      relation: {bind: input.relation}
+      actor: {bind: system.actorUserId}
+    code: |
+      const issue = input.issue;
+      const other = input.other;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      if (!other) helpers.inputError("other_issue_id", "Choose an issue you have access to.");
+      if (other.id === issue.id) helpers.inputError("other_issue_id", "An issue can't be linked to itself.");
+      if (other.project_id !== issue.project_id) {
+        helpers.inputError("other_issue_id", "Choose an issue from the same project.");
+      }
+      if (Array.isArray(input.existing) && input.existing.length > 0) {
+        helpers.inputError("other_issue_id", "These issues are already linked. Remove that link to change it.");
+      }
+
+      const inverse = {blocks: "blocked_by", blocked_by: "blocks", relates_to: "relates_to"};
+      const phrase = {blocks: "Blocks", blocked_by: "Blocked by", relates_to: "Related to"};
+      const eventPhrase = {blocks: "marked this as blocking", blocked_by: "marked this as blocked by", relates_to: "linked this to"};
+      const relation = String(input.relation ?? "");
+      if (!inverse[relation]) helpers.inputError("relation", "Choose how the issues relate.");
+
+      // Both rows share one pair id, so either side can remove the whole link.
+      const pairId = [issue.id, other.id].sort().join("__");
+      const side = (from, to, rel) => ({
+        pair_id: pairId,
+        source_issue_id: from.id,
+        target_issue_id: to.id,
+        relation: rel,
+        label: `${phrase[rel]} ${to.ref} ${to.title}`,
+        created_by_user_id: input.actor,
+      });
+      const event = (on, rel, to) => ({
+        issue_id: on.id,
+        kind: "linked",
+        summary: `${eventPhrase[rel]} ${to.ref}`,
+        actor_user_id: input.actor,
+      });
+      return {
+        links: [side(issue, other, relation), side(other, issue, inverse[relation])],
+        events: [event(issue, relation, other), event(other, inverse[relation], issue)],
+      };
+  - id: create_links
+    kind: create_records
+    table: issue_links
+    records_from: {bind: step.prepare.links}
+  - id: record_events
+    kind: create_records
+    table: issue_activity
+    records_from: {bind: step.prepare.events}

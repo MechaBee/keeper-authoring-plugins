@@ -1,0 +1,62 @@
+id: write_solution_design
+title: Write a solution design
+description: "Use for an issue given to the Agent whose approach still has real choices to make (architecture, data model, trade-offs) and that has no design yet. Reads the issue, its conversation, sub-issues, links, documents and the code you can see, then files a solution design in the issue's documents for review. Use write_implementation_plan instead when the solution is already clear, revise_solution_design when the issue already has a design or plan, and ask_questions when you can't proceed without answers."
+kind: task
+exposure: {mcp: true}
+allowed_roles: [editor, developer, admin]
+input:
+  # Only open issues the Agent holds and can work now: the picker is the Ready queue.
+  - id: issue_id
+    type: reference
+    label: Issue
+    referenceTable: issues
+    required: true
+    reference_where: {assignee_kind: agent, agent_status: ready, state: open}
+target: {table: issues, id: {bind: input.issue_id}}
+context:
+  issue:
+    {kind: record, table: issues, id: {bind: input.issue_id}, required: true, label: The issue}
+  project:
+    {kind: record, table: projects, id: {bind: context.issue.project_id}, label: Project}
+  conversation:
+    kind: table
+    table: issue_activity
+    filter: {issue_id: {bind: input.issue_id}}
+    sort: {field: occurred_at, direction: asc}
+    limit: 300
+    label: Conversation and events
+  sub_issues:
+    kind: table
+    table: issues
+    filter: {parent_issue_id: {bind: input.issue_id}}
+    sort: {field: number, direction: asc}
+    limit: 50
+    label: Sub-issues
+  links:
+    kind: table
+    table: issue_links
+    filter: {source_issue_id: {bind: input.issue_id}}
+    limit: 50
+    label: Linked issues
+  documents:
+    kind: documents
+    record:
+      table: issues
+      id: {bind: input.issue_id}
+      collection_field: collection_id
+      link_table: issue_documents
+    limit: 20
+    label: The issue's documents
+guide: ai/write-solution-design.md
+executor: {kind: agent}
+output:
+  documents:
+    design:
+      op: create
+      collection: {bind: context.issue.collection_id}
+      fields: [summary]
+      max_bytes: 131072
+  records:
+    handover: {table: issue_activity, op: create, fields: [body]}
+commit: {mode: on_result, workflow: commit_solution_design}
+limits: {timeout_s: 3600}

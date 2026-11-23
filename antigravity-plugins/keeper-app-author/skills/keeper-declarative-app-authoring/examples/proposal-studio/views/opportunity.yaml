@@ -1,0 +1,132 @@
+view:
+  id: opportunity
+  title: Opportunity
+nav:
+  visible: false
+state:
+  opportunity_id: null
+route_state:
+  opportunity_id: {route: opportunityId, mode: sync}
+actions:
+  - {id: change_customer, kind: action_set, data_source: change_customer_action, placement: overflow}
+data_sources:
+  opportunity:
+    kind: record
+    table: opportunities
+    id: {bind: state.opportunity_id}
+    refresh_on: [state.opportunity_id]
+  customers:
+    kind: table
+    table: customers
+    sort: {field: name, direction: asc}
+  discussion:
+    kind: provider_resource
+    provider: workspace
+    resource: comments
+    params:
+      table: opportunity_comments
+      target_id: {bind: state.opportunity_id}
+    refresh_on: [state.opportunity_id]
+  # The opportunity's own collection (call notes, RFP extracts, working
+  # documents) and the library documents linked to it.
+  documents:
+    kind: provider_resource
+    provider: workspace
+    resource: linked_documents
+    params:
+      table: opportunities
+      record_id: {bind: state.opportunity_id}
+      link_table: opportunity_documents
+      collection_field: collection_id
+    refresh_on: [state.opportunity_id]
+  change_customer_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: change_customer
+      label: Change customer
+      input__opportunity_id: {bind: state.opportunity_id}
+      input__customer_id: {bind: source.opportunity.record.customer_id, fallback: null}
+    action_dialog: {preview: false, hidden_inputs: [opportunity_id]}
+    depends_on: [opportunity]
+    refresh_on: [state.opportunity_id]
+
+components:
+  brief:
+    kind: record_detail
+    table: opportunities
+    data_source: opportunity
+    mode: editable
+    save_mode: explicit
+    save_label: Save brief
+    show_primary_key: false
+    empty_message: This opportunity doesn't exist.
+    header:
+      title_field: {field: title, mode: edit, ui: {edit_flow: click_to_edit}}
+      meta_fields:
+        - {field: customer_id, mode: display, ui: {variant: reference_chip}}
+        - {field: stage, mode: display, ui: {variant: badge, show_label: false}}
+    sections:
+      - id: brief
+        fields:
+          - {field: needs, mode: edit, ui: {variant: markdown, width: full, edit_flow: click_to_edit, empty_text: What problem are they trying to solve?}}
+          - {field: requirements, mode: edit, ui: {variant: markdown, width: full, edit_flow: click_to_edit, empty_text: No requirements yet.}}
+          - {field: decision_criteria, mode: edit, ui: {variant: markdown, width: full, edit_flow: click_to_edit, empty_text: Who decides, and what matters to them?}}
+
+  discussion_thread:
+    kind: comments
+    title: Discussion
+    data_source: discussion
+    placeholder: Start a new thread. Markdown is supported.
+    empty_message: No discussion yet. Agents read this, so note decisions here.
+
+  details:
+    kind: record_detail
+    title: Details
+    table: opportunities
+    data_source: opportunity
+    mode: editable
+    save_mode: autosave
+    density: compact
+    show_primary_key: false
+    sections:
+      - id: properties
+        columns: 2
+        fields:
+          - {field: stage, mode: edit, ui: {edit_flow: click_to_edit}}
+          - {field: value, mode: edit, ui: {edit_flow: click_to_edit, empty_text: Not set}}
+          - {field: close_date, mode: edit, ui: {edit_flow: click_to_edit, empty_text: Not set}}
+          - {field: owner_member_id, mode: edit, ui: {edit_flow: click_to_edit, empty_text: No one}}
+
+  ai_runs:
+    kind: agent_task_runs
+    title: Agent drafts
+    table: opportunities
+    record_id: {bind: state.opportunity_id}
+    tasks: [draft_document]
+    presentation: {variant: inline}
+
+  files:
+    kind: linked_documents
+    title: Documents
+    data_source: documents
+    open: {view: document, query_param: documentId}
+    open_collection: {view: library, query_param: collectionId}
+
+layout:
+  kind: split
+  direction: horizontal
+  sizes: [3, 2]
+  children:
+    - kind: stack
+      gap: md
+      children:
+        - component: brief
+        - component: discussion_thread
+    - kind: stack
+      gap: md
+      children:
+        - component: details
+        - component: ai_runs
+        - component: files

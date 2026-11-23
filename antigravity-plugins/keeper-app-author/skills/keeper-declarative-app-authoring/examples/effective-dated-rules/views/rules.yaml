@@ -1,0 +1,198 @@
+view:
+  id: rules
+  title: Effective rules
+  description: Select a stable logical rule to inspect its current snapshot and dated history.
+
+nav:
+  order: 10
+
+route_state:
+  selected_rule_id: ruleId
+
+state:
+  selected_rule_id: ""
+
+actions:
+  - id: create_rule
+    kind: action_set
+    data_source: create_rule_action
+  - id: create_successor
+    kind: action_set
+    data_source: successor_action
+  - id: reconcile_today
+    kind: action_set
+    data_source: reconcile_action
+  - id: end_rule
+    kind: action_set
+    data_source: end_rule_action
+
+data_sources:
+  rules:
+    kind: table
+    table: rules
+    sort:
+      field: name
+      direction: asc
+  rule_versions:
+    kind: table
+    table: rule_versions
+    sort:
+      field: effective_from
+      direction: desc
+  selected_rule:
+    kind: record
+    table: rules
+    id:
+      bind: state.selected_rule_id
+    refresh_on:
+      - state.selected_rule_id
+  current_snapshot:
+    kind: record
+    table: current_rules
+    id:
+      bind: state.selected_rule_id
+    refresh_on:
+      - state.selected_rule_id
+  selected_versions:
+    kind: table
+    table: rule_versions
+    filter:
+      rule_id:
+        bind: state.selected_rule_id
+    sort:
+      field: effective_from
+      direction: desc
+    refresh_on:
+      - state.selected_rule_id
+  create_rule_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: create_rule
+      label: New rule
+    on_success:
+      - type: set_state
+        key: selected_rule_id
+        value:
+          bind: action.result.id
+  successor_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    refresh_on:
+      - state.selected_rule_id
+    params:
+      workflow_id: create_successor_rule
+      label: Create successor
+      input__rule_id:
+        bind: state.selected_rule_id
+  end_rule_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    refresh_on:
+      - state.selected_rule_id
+    params:
+      workflow_id: end_rule
+      label: End rule
+      input__rule_id:
+        bind: state.selected_rule_id
+  reconcile_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    refresh_on:
+      - state.selected_rule_id
+    params:
+      workflow_id: reconcile_rule_today
+      label: Reconcile today
+      input__rule_id:
+        bind: state.selected_rule_id
+
+components:
+  rules_table:
+    kind: record_table
+    title: Logical rules
+    data_source: rules
+    selection:
+      state_key: selected_rule_id
+      reconcile: first_available
+    columns:
+      - field: name
+      - field: category
+      - field: status
+      - field: current_version_id
+    on_row_click:
+      - type: set_state
+        key: selected_rule_id
+        value:
+          bind: record.id
+  logical_rule_detail:
+    kind: record_detail
+    title: Logical identity
+    table: rules
+    data_source: selected_rule
+    mode: read_only
+    show_primary_key: false
+    empty_message: Select a rule.
+    header:
+      title_field: name
+      meta_fields:
+        - category
+        - status
+    sections:
+      - id: lifecycle
+        title: Lifecycle pointer
+        fields:
+          - field: current_version_id
+  current_rule_detail:
+    kind: record_detail
+    title: Current snapshot
+    table: current_rules
+    data_source: current_snapshot
+    mode: read_only
+    show_primary_key: false
+    empty_message: This rule has no current snapshot.
+    header:
+      title_field: rule_name
+      meta_fields:
+        - category
+        - effective_from
+        - effective_to
+    sections:
+      - id: current_value
+        title: Current value
+        columns: 2
+        fields:
+          - field: value
+          - field: unit
+          - field: version_id
+          - field: last_change_reason
+  version_history:
+    kind: record_table
+    title: Version history
+    data_source: selected_versions
+    columns:
+      - field: version_number
+      - field: effective_from
+      - field: effective_to
+      - field: value
+      - field: unit
+      - field: change_reason
+      - field: supersedes_version_id
+
+layout:
+  kind: split
+  direction: horizontal
+  sizes:
+    - 1
+    - 2
+  children:
+    - component: rules_table
+    - kind: stack
+      gap: md
+      children:
+        - component: logical_rule_detail
+        - component: current_rule_detail
+        - component: version_history

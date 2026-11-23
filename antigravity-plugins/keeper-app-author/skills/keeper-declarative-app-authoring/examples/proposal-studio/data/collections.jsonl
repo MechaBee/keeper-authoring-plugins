@@ -1,0 +1,8 @@
+{"id":"coll_company","name":"Company","description":"Who we are, security and compliance, references.","folder":"docs/proposal-studio/company","features":["comments"],"in_library":true}
+{"id":"coll_product","name":"Product","description":"What Cold Chain and Dispatch do, integrations and rollout.","folder":"docs/proposal-studio/product","features":["comments"],"in_library":true}
+{"id":"coll_sales","name":"Sales","description":"Pricing principles, objections, case studies.","folder":"docs/proposal-studio/sales","features":["comments"],"in_library":true}
+{"id":"coll_templates","name":"Templates","description":"Document structures. Link one to an opportunity with the note \"Use this structure\".","folder":"docs/proposal-studio/templates","features":["comments"],"in_library":true}
+{"id":"coll_northwind","name":"Northwind Foods · Cold-chain monitoring rollout","folder":"docs/proposal-studio/northwind-foods-cold-chain-monitoring-rollout","features":["comments","review_status","agent_tasks"],"in_library":false}
+{"id":"coll_acme","name":"Acme Logistics · Dispatch automation pilot","folder":"docs/proposal-studio/acme-logistics-dispatch-automation-pilot","features":["comments","review_status","agent_tasks"],"in_library":false}
+{"id":"coll_harbor","name":"Harbor Clinic · Patient transport scheduling","folder":"docs/proposal-studio/harbor-clinic-patient-transport-scheduling","features":["comments","review_status","agent_tasks"],"in_library":false}
+{"id":"coll_kestrel","name":"Kestrel Pharma · GDP temperature audit trail","folder":"docs/proposal-studio/kestrel-pharma-gdp-temperature-audit-trail","features":["comments","review_status","agent_tasks"],"in_library":false}

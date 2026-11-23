@@ -1,0 +1,4 @@
+{"id": "bug", "name": "Bug", "color": "#d1383d", "position": 10, "active": true, "created_at": "2026-09-17T09:00", "updated_at": "2026-09-17T09:00"}
+{"id": "feature", "name": "Feature", "color": "#2b7fd6", "position": 20, "active": true, "created_at": "2026-09-17T09:00", "updated_at": "2026-09-17T09:00"}
+{"id": "task", "name": "Task", "color": "#5b6275", "position": 30, "active": true, "created_at": "2026-09-17T09:00", "updated_at": "2026-09-17T09:00"}
+{"id": "question", "name": "Question", "color": "#8a4fd0", "position": 40, "active": true, "created_at": "2026-09-17T09:00", "updated_at": "2026-09-17T09:00"}

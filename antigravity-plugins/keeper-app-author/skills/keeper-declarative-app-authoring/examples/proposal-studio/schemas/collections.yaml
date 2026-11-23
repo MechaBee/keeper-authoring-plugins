@@ -1,0 +1,25 @@
+table: collections
+version: 1
+primaryKey: id
+idPrefix: coll
+displayField: name
+# A collection is a workspace folder; the files in it are its documents. The
+# library's shelves are collections, and so is each opportunity's own folder.
+role: collection
+rowAccess: {mode: all}
+mutationPolicy:
+  allowedRoles: [editor, admin]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: name, type: text, label: Name, required: true}
+  - {id: description, type: textarea, label: Description}
+  - {id: folder, type: text, label: Folder, managed: role, readonly: true}
+  - {id: field_definitions, type: json, label: Document fields}
+  - id: features
+    type: multi_select
+    label: Features
+    options: [comments, review_status, agent_tasks]
+  - {id: archived, type: boolean, label: Archived}
+  # App data, not a Keeper concept: an opportunity's own collection is kept out
+  # of the Library view.
+  - {id: in_library, type: boolean, label: In the library, default: true}

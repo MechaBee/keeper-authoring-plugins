@@ -1,0 +1,54 @@
+view:
+  id: customers
+  title: Customers
+nav:
+  order: 50
+  icon: users
+  group: {id: setup, label: Setup, icon: settings, order: 90}
+state:
+  selected_customer_id: null
+data_sources:
+  customers:
+    kind: table
+    table: customers
+    sort: {field: name, direction: asc}
+  customer_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: customers
+      label: New customer
+      fields: name,industry,background
+    on_success:
+      - {type: refresh, data_sources: [customers]}
+      - {type: set_state, key: selected_customer_id, value: {bind: action.result.id}}
+components:
+  customer_workspace:
+    kind: record_collection
+    title: Customers
+    table: customers
+    data_source: customers
+    search: {enabled: true, placeholder: Search customers, fields: [name, industry]}
+    create: {data_source: customer_create_action, label: New customer}
+    selection:
+      state_key: selected_customer_id
+      desktop: split
+      mobile: page
+      reconcile: first_available
+    summary:
+      title_field: name
+      meta_fields: [industry]
+    detail:
+      title: Customer
+      mode: editable
+      save_mode: explicit
+      save_label: Save customer
+      density: compact
+      show_primary_key: false
+      fields:
+        - {field: name, mode: edit}
+        - {field: industry, mode: edit}
+        - {field: background, mode: edit, ui: {width: full, variant: markdown}}
+layout:
+  component: customer_workspace

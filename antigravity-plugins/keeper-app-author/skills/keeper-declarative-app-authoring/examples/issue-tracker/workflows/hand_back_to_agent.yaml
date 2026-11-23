@@ -1,0 +1,58 @@
+id: hand_back_to_agent
+title: Hand back to the Agent
+appearance: secondary
+allowed_roles: [editor, developer, admin]
+actor_required: true
+success_message: The issue is back in the Agent queue.
+invalidate: "*"
+input_fields:
+  - {id: issue_id, type: reference, label: Issue, referenceTable: issues, required: true, readonly: true}
+  - id: note
+    type: textarea
+    label: What should change
+    contentFormat: markdown
+    helpText: Optional. The Agent reads it with the rest of the conversation. Comments on passages of the design reach it too.
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: input.issue_id}
+  - id: prepare
+    kind: script
+    label: Check the issue
+    input:
+      issue: {bind: step.issue, fallback: null}
+      note: {bind: input.note, fallback: null}
+      actor: {bind: system.actorUserId}
+    code: |
+      const issue = input.issue;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      if (issue.state !== "open") helpers.actionError("Reopen the issue first.");
+      if (issue.assignee_kind !== "agent") helpers.actionError("The Agent isn't working on this issue. Assign it to the Agent instead.");
+      if (issue.agent_status === "ready") helpers.actionError("The issue is already in the Agent queue.");
+      const note = String(input.note ?? "").trim();
+      return {
+        issue_values: {
+          agent_status: "ready",
+          ...(note ? {comment_count: (Number(issue.comment_count) || 0) + 1} : {}),
+        },
+        // With a note the event reads as a comment, so it counts as one.
+        event_values: {
+          issue_id: issue.id,
+          kind: note ? "comment" : "agent",
+          summary: "handed this back to the Agent",
+          // A comment bubble shows the body, not the summary, so it says what happened.
+          body: note ? "**Handed back to the Agent**\n\n" + note : null,
+          actor_user_id: input.actor,
+        },
+      };
+  - id: update_issue
+    kind: update_record
+    table: issues
+    record_id: {bind: input.issue_id}
+    values_from: {bind: step.prepare.issue_values}
+  - id: record_event
+    kind: create_record
+    table: issue_activity
+    values_from: {bind: step.prepare.event_values}
+result: {step: update_issue}

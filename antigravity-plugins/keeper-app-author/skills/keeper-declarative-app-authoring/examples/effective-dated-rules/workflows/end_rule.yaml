@@ -1,0 +1,132 @@
+id: end_rule
+title: End rule
+appearance: destructive
+success_message: Rule end date recorded.
+
+input_fields:
+  - id: rule_id
+    type: reference
+    label: Rule
+    referenceTable: rules
+    required: true
+    readonly: true
+  - id: effective_to
+    type: date
+    label: Effective to
+    required: true
+
+steps:
+  - id: rule
+    kind: get_record
+    table: rules
+    record_id:
+      bind: input.rule_id
+  - id: current_snapshot
+    kind: get_record
+    table: current_rules
+    record_id:
+      bind: input.rule_id
+  - id: current_version
+    kind: get_record
+    table: rule_versions
+    record_id:
+      bind: step.current_snapshot.version_id
+  - id: versions
+    kind: query_records
+    table: rule_versions
+    filter:
+      rule_id:
+        bind: input.rule_id
+  - id: prepare
+    kind: script
+    label: Prepare end date
+    input:
+      rule:
+        bind: step.rule
+      currentSnapshot:
+        bind: step.current_snapshot
+      currentVersion:
+        bind: step.current_version
+      versions:
+        bind: step.versions
+      effectiveTo:
+        bind: input.effective_to
+      now:
+        bind: system.nowIso
+    code: |
+      if (!input.rule || !input.currentSnapshot || !input.currentVersion) {
+        throw new Error("The selected rule needs a current version and snapshot.");
+      }
+      const hasScheduledSuccessor = (Array.isArray(input.versions) ? input.versions : [])
+        .some((entry) =>
+          entry &&
+          entry.id !== input.currentVersion.id &&
+          entry.effective_from > input.currentVersion.effective_from);
+      if (hasScheduledSuccessor) {
+        throw new Error("Resolve the scheduled successor before ending this rule.");
+      }
+      const effectiveTo = String(input.effectiveTo || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(effectiveTo)) {
+        throw new Error("Effective to must be an ISO date.");
+      }
+      if (effectiveTo < String(input.currentVersion.effective_from || "")) {
+        throw new Error("Effective to cannot precede the current version.");
+      }
+      const today = String(input.now || "").slice(0, 10);
+      const shouldDeleteSnapshot = Boolean(today && effectiveTo < today);
+      return {
+        versionValues: { effective_to: effectiveTo },
+        ruleValues: { status: shouldDeleteSnapshot ? "ended" : "ending" },
+        snapshotValues: { effective_to: effectiveTo },
+        shouldDeleteSnapshot,
+        shouldKeepSnapshot: !shouldDeleteSnapshot,
+        preview: {
+          title: `End ${String(input.rule.name || input.rule.id)}`,
+          description: shouldDeleteSnapshot
+            ? "End-dates the version and removes the no-longer-current snapshot."
+            : "Schedules the end date while keeping the rule in the current snapshot.",
+          items: [{ label: "Effective to", value: effectiveTo }],
+        },
+      };
+  - id: end_current_version
+    kind: update_record
+    table: rule_versions
+    record_id:
+      bind: step.current_snapshot.version_id
+    values_from:
+      bind: step.prepare.versionValues
+  - id: update_logical_rule
+    kind: update_record
+    table: rules
+    record_id:
+      bind: input.rule_id
+    values_from:
+      bind: step.prepare.ruleValues
+  - id: delete_expired_snapshot
+    kind: delete_record
+    table: current_rules
+    record_id:
+      bind: input.rule_id
+    when:
+      bind: step.prepare.shouldDeleteSnapshot
+  - id: retain_ending_snapshot
+    kind: update_record
+    table: current_rules
+    record_id:
+      bind: input.rule_id
+    values_from:
+      bind: step.prepare.snapshotValues
+    when:
+      bind: step.prepare.shouldKeepSnapshot
+
+preview:
+  step: prepare
+  path: preview
+
+result:
+  step: update_logical_rule
+
+invalidate:
+  - rules
+  - rule_versions
+  - current_rules

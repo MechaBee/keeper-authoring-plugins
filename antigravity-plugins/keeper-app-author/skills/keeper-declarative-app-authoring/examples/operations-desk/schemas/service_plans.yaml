@@ -1,0 +1,83 @@
+table: service_plans
+version: 1
+primaryKey: id
+idPrefix: plan
+displayField: label
+fields:
+  - id: id
+    type: text
+    label: ID
+    required: true
+    readonly: true
+  - id: label
+    type: text
+    label: Plan
+    required: true
+  - id: organization_id
+    type: reference
+    label: Organization
+    required: true
+    referenceTable: organizations
+  - id: asset_id
+    type: reference
+    label: Asset
+    required: true
+    referenceTable: assets
+  - id: interval_months
+    type: number
+    label: Interval
+    unit: months
+    required: true
+    min: 1
+    default: 12
+  - id: next_due_date
+    type: date
+    label: Next due
+    required: true
+  - id: assignee_id
+    type: reference
+    label: Assignee
+    referenceTable: team_members
+  - id: priority
+    type: select
+    label: Priority
+    required: true
+    default: normal
+    options:
+      - value: low
+        label: Low
+      - value: normal
+        label: Normal
+      - value: high
+        label: High
+      - value: urgent
+        label: Urgent
+  - id: status
+    type: select
+    label: Status
+    required: true
+    default: active
+    options:
+      - value: active
+        label: Active
+      - value: paused
+        label: Paused
+      - value: ended
+        label: Ended
+  - id: notes
+    type: textarea
+    label: Notes
+    contentFormat: markdown
+relations:
+  - field: organization_id
+    references:
+      table: organizations
+      field: id
+  - field: asset_id
+    references:
+      table: assets
+      field: id
+  - field: assignee_id
+    references:
+      table: team_members
+      field: id

@@ -1,0 +1,17 @@
+table: member_profile_directory
+version: 2
+primaryKey: id
+idPrefix: member_profile_directory
+displayField: display_name
+rowAccess:
+  mode: policy
+  allOf:
+    - kind: app_role
+      anyOf: [admin]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: user_id, type: reference, label: App member, referenceTable: keeper_app_members, required: true, readonly: true}
+  - {id: display_name, type: text, label: Name, required: true, readonly: true}
+  - {id: email, type: text, label: Email, required: true, readonly: true}
+  - {id: role_title, type: text, label: Team or role, readonly: true}
+  - {id: active, type: boolean, label: Available for assignment, required: true, readonly: true}

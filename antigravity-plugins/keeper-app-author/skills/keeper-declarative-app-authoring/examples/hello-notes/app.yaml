@@ -1,0 +1,7 @@
+id: hello-notes
+title: Hello Notes
+description: Capture and organize short notes.
+version: 1
+defaultView: home
+icon: file-text
+schemaVersion: 1

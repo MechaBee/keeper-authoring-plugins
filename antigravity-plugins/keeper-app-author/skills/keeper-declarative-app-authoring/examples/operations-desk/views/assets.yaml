@@ -1,0 +1,173 @@
+view:
+  id: assets
+  title: Assets
+  description: Edit a selected asset beside its related work history.
+
+nav:
+  order: 30
+
+route_state:
+  selected_asset_id: assetId
+
+state:
+  selected_asset_id: ""
+
+actions:
+  - id: new_asset
+    kind: action_set
+    data_source: new_asset_action
+
+data_sources:
+  organizations:
+    kind: table
+    table: organizations
+    sort:
+      field: name
+      direction: asc
+  assets:
+    kind: table
+    table: assets
+    sort:
+      field: label
+      direction: asc
+  selected_asset:
+    kind: record
+    table: assets
+    id:
+      bind: state.selected_asset_id
+    refresh_on:
+      - state.selected_asset_id
+  asset_work:
+    kind: table
+    table: work_orders
+    filter:
+      asset_id:
+        bind: state.selected_asset_id
+    sort:
+      field: created_at
+      direction: desc
+    refresh_on:
+      - state.selected_asset_id
+  new_asset_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: assets
+      label: New asset
+      fields: organization_id,label,asset_type,location,status,last_service_date,next_service_due,service_interval_months,notes
+      field__status: active
+      field__service_interval_months: 12
+    on_success:
+      - type: set_state
+        key: selected_asset_id
+        value:
+          bind: action.result.id
+
+components:
+  assets_table:
+    kind: record_table
+    title: Asset register
+    data_source: assets
+    search:
+      enabled: true
+      placeholder: Search assets
+      fields:
+        - label
+        - asset_type
+        - location
+        - organization_id
+    selection:
+      state_key: selected_asset_id
+      reconcile: first_available
+    columns:
+      - field: label
+      - field: organization_id
+      - field: asset_type
+      - field: location
+      - field: status
+      - field: next_service_due
+    on_row_click:
+      - type: set_state
+        key: selected_asset_id
+        value:
+          bind: record.id
+  asset_detail:
+    kind: record_detail
+    title: Asset detail
+    table: assets
+    data_source: selected_asset
+    mode: editable
+    show_primary_key: false
+    empty_message: Select an asset.
+    header:
+      title_field:
+        field: label
+        mode: edit
+      meta_fields:
+        - field: status
+          mode: edit
+          ui:
+            variant: badge
+        - field: organization_id
+          mode: edit
+          ui:
+            variant: reference_chip
+    sections:
+      - id: identity
+        title: Identity and location
+        columns: 2
+        fields:
+          - field: asset_type
+            mode: edit
+          - field: location
+            mode: edit
+      - id: service
+        title: Service schedule
+        columns: 2
+        fields:
+          - field: last_service_date
+            mode: edit
+          - field: next_service_due
+            mode: edit
+          - field: service_interval_months
+            mode: edit
+      - id: notes
+        fields:
+          - field: notes
+            mode: edit
+            contentFormat: markdown
+            ui:
+              variant: markdown
+              width: full
+    save_label: Save asset
+  asset_work_table:
+    kind: record_table
+    title: Related work
+    data_source: asset_work
+    columns:
+      - field: title
+      - field: status
+      - field: priority
+      - field: scheduled_date
+      - field: assignee_id
+    on_row_click:
+      - type: navigate
+        viewId: work-order-detail
+        query:
+          workOrderId:
+            bind: record.id
+
+layout:
+  kind: split
+  direction: horizontal
+  sizes:
+    - 1
+    - 1
+  children:
+    - component: assets_table
+    - kind: stack
+      gap: md
+      children:
+        - component: asset_detail
+        - component: asset_work_table

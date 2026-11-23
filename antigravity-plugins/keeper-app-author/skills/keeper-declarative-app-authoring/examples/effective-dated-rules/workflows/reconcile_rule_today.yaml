@@ -1,0 +1,139 @@
+id: reconcile_rule_today
+title: Reconcile rule for today
+appearance: secondary
+success_message: Current snapshot reconciled to today.
+
+input_fields:
+  - id: rule_id
+    type: reference
+    label: Rule
+    referenceTable: rules
+    required: true
+    readonly: true
+
+steps:
+  - id: rule
+    kind: get_record
+    table: rules
+    record_id:
+      bind: input.rule_id
+  - id: current_snapshot
+    kind: get_record
+    table: current_rules
+    record_id:
+      bind: input.rule_id
+  - id: versions
+    kind: query_records
+    table: rule_versions
+    filter:
+      rule_id:
+        bind: input.rule_id
+    sort:
+      field: effective_from
+      direction: desc
+  - id: prepare
+    kind: script
+    label: Resolve today's lifecycle
+    input:
+      rule:
+        bind: step.rule
+      currentSnapshot:
+        bind: step.current_snapshot
+      versions:
+        bind: step.versions
+      now:
+        bind: system.nowIso
+    code: |
+      const rule = input.rule;
+      const current = input.currentSnapshot;
+      if (!rule || !current) throw new Error("The selected rule has no current snapshot.");
+      const today = String(input.now || "").slice(0, 10);
+      if (!today) throw new Error("The current date is unavailable.");
+
+      const versions = Array.isArray(input.versions) ? input.versions : [];
+      const applicable = versions
+        .filter((entry) => {
+          if (!entry || String(entry.effective_from || "") > today) return false;
+          return !entry.effective_to || String(entry.effective_to) >= today;
+        })
+        .sort((left, right) =>
+          String(right.effective_from || "").localeCompare(String(left.effective_from || "")));
+      const target = applicable[0] || null;
+      const shouldPromote = Boolean(target && target.id !== current.version_id);
+      const shouldEnd = Boolean(!target && current.effective_to && current.effective_to < today);
+      if (!shouldPromote && !shouldEnd) {
+        throw new Error("This rule is already reconciled for today.");
+      }
+
+      return {
+        shouldPromote,
+        shouldEnd,
+        promotedRuleValues: { status: "active" },
+        promotedSnapshotValues: target
+          ? {
+              version_id: target.id,
+              effective_from: target.effective_from,
+              effective_to: target.effective_to || null,
+              value: target.value,
+              unit: target.unit,
+              last_change_reason: target.change_reason,
+            }
+          : {},
+        targetVersionId: target && target.id,
+        endedRuleValues: { status: "ended" },
+        preview: {
+          title: `Reconcile ${String(rule.name || rule.id)}`,
+          description: shouldPromote
+            ? "Promotes the dated version that is effective today."
+            : "Removes the expired current snapshot and marks the rule ended.",
+          items: [{ label: "As of", value: today }],
+        },
+      };
+  - id: promote_logical_rule
+    kind: update_record
+    table: rules
+    record_id:
+      bind: input.rule_id
+    values_from:
+      bind: step.prepare.promotedRuleValues
+    values:
+      current_version_id:
+        bind: step.prepare.targetVersionId
+    when:
+      bind: step.prepare.shouldPromote
+  - id: promote_current_snapshot
+    kind: update_record
+    table: current_rules
+    record_id:
+      bind: input.rule_id
+    values_from:
+      bind: step.prepare.promotedSnapshotValues
+    when:
+      bind: step.prepare.shouldPromote
+  - id: end_logical_rule
+    kind: update_record
+    table: rules
+    record_id:
+      bind: input.rule_id
+    values_from:
+      bind: step.prepare.endedRuleValues
+    when:
+      bind: step.prepare.shouldEnd
+  - id: delete_expired_snapshot
+    kind: delete_record
+    table: current_rules
+    record_id:
+      bind: input.rule_id
+    when:
+      bind: step.prepare.shouldEnd
+
+preview:
+  step: prepare
+  path: preview
+
+result:
+  step: prepare
+
+invalidate:
+  - rules
+  - current_rules

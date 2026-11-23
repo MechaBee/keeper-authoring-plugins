@@ -1,0 +1,163 @@
+table: time_entries
+version: 2
+primaryKey: id
+idPrefix: entry
+displayField: work_date
+rowAccess:
+  mode: policy
+  allOf:
+    - kind: resource_grant
+      resourceField: project_id
+      directGrants: {table: project_user_access, resourceField: project_id, principalField: user_id}
+      groupGrants: {table: project_group_access, resourceField: project_id, groupField: group_id}
+      groupMemberships: {table: group_memberships, groupField: group_id, principalField: user_id}
+    - kind: owner
+      ownerField: owner_user_id
+      adminCreateAssignment: resolved_principal
+mutationPolicy:
+  allowedRoles: [editor, developer, admin]
+  relationField: period_id
+  allowWhen:
+    field: status
+    values: [open]
+  channels:
+    direct:
+      operations: [update, delete]
+    workflow:
+      operations: [create, update]
+      workflowIds: [create_time_entry, create_admin_time_entry, duplicate_time_entry, quick_add_time_entry]
+validationPolicy:
+  checks:
+    - id: quarter_hour_duration
+      operations: [create, update]
+      message: Duration must be a positive multiple of 15 minutes.
+      input:
+        candidate: {kind: candidate}
+      code: |
+        const candidate = input.candidate;
+        return Number.isInteger(candidate.duration_minutes)
+          && candidate.duration_minutes >= 15
+          && candidate.duration_minutes % 15 === 0;
+    - id: complete_time_range
+      operations: [create, update]
+      message: Start and end must both be present on the work date and agree with the duration.
+      input:
+        candidate: {kind: candidate}
+      code: |
+        const candidate = input.candidate;
+        const start = candidate.started_at;
+        const end = candidate.ended_at;
+        if (!start && !end) return true;
+        if (typeof start !== "string" || typeof end !== "string") return false;
+        if (start.slice(0, 10) !== candidate.work_date || end.slice(0, 10) !== candidate.work_date) return false;
+        const elapsed = (new Date(end).getTime() - new Date(start).getTime()) / 60000;
+        return Number.isFinite(elapsed) && elapsed > 0 && elapsed === candidate.duration_minutes;
+    - id: task_matches_project
+      operations: [create, update]
+      message: The selected task does not belong to the selected project.
+      input:
+        candidate: {kind: candidate}
+        task: {kind: related_record, relationField: task_id}
+      code: |
+        const candidate = input.candidate;
+        const task = input.task;
+        return !candidate.task_id || Boolean(task && task.project_id === candidate.project_id);
+    - id: project_is_open_for_new_time
+      operations: [create]
+      message: Time entries can only be added to open projects.
+      input:
+        project: {kind: related_record, relationField: project_id}
+      code: |
+        const project = input.project;
+        return Boolean(project && project.archived !== true);
+    - id: task_is_open_for_new_time
+      operations: [create]
+      message: Time entries can only be added to open tasks.
+      input:
+        candidate: {kind: candidate}
+        task: {kind: related_record, relationField: task_id}
+      code: |
+        const candidate = input.candidate;
+        const task = input.task;
+        return !candidate.task_id || Boolean(task && task.archived !== true);
+    - id: timesheet_context_matches_entry
+      operations: [create, update]
+      message: The weekly sheet must be owned by the entry owner and contain the work date.
+      input:
+        candidate: {kind: candidate}
+        timesheet: {kind: related_record, relationField: timesheet_id}
+      code: |
+        const candidate = input.candidate;
+        const timesheet = input.timesheet;
+        if (!timesheet || timesheet.owner_user_id !== candidate.owner_user_id) return false;
+        const start = String(timesheet.week_start ?? "");
+        const date = String(candidate.work_date ?? "");
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+        const end = new Date(`${start}T00:00:00Z`);
+        end.setUTCDate(end.getUTCDate() + 6);
+        return date >= start && date <= end.toISOString().slice(0, 10);
+    - id: period_context_matches_entry
+      operations: [create, update]
+      message: The accounting period must be the calendar month containing the work date.
+      input:
+        candidate: {kind: candidate}
+        period: {kind: related_record, relationField: period_id}
+      code: |
+        const candidate = input.candidate;
+        const period = input.period;
+        if (!period) return false;
+        const date = String(candidate.work_date ?? "");
+        return period.period_key === date.slice(0, 7)
+          && date >= period.period_start
+          && date <= period.period_end;
+constraints:
+  - id: daily_minutes_at_most_1440
+    kind: aggregate_bound
+    groupBy: [owner_user_id, work_date]
+    aggregate: {operation: sum, field: duration_minutes}
+    maximum: 1440
+    message: A member cannot record more than 24 hours on one day.
+queryPaths:
+  - id: by_work_date
+    equalityFields: []
+    orderFields: [work_date]
+  - id: by_timesheet_work_date
+    equalityFields: [timesheet_id]
+    orderFields: [work_date]
+  - id: by_timesheet_cell_start
+    equalityFields: [timesheet_id, work_date, project_id, task_id, billable]
+    orderFields: [started_at]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: owner_user_id, type: reference, label: Owner, referenceTable: keeper_principals, required: true, readonly: true}
+  - {id: project_id, type: reference, label: Project, referenceTable: projects, required: true, reference_where: {archived: false}}
+  - id: task_id
+    type: reference
+    label: Task
+    referenceTable: tasks
+    reference_where: {archived: false}
+    reference_filters:
+      - {record_field: project_id, value_field: project_id, when_empty: none}
+  - {id: timesheet_id, type: reference, label: Timesheet, referenceTable: timesheets, required: true, workflowOnly: true}
+  - {id: period_id, type: reference, label: Accounting period, referenceTable: periods, required: true, workflowOnly: true}
+  - {id: work_date, type: date, label: Work date, required: true}
+  - {id: started_at, type: datetime, label: Start time}
+  - {id: ended_at, type: datetime, label: End time}
+  - {id: duration_minutes, type: number, label: Time spent, required: true, min: 15, step: 15, unit: min}
+  - {id: description, type: textarea, label: Description, contentFormat: plain_text}
+  - {id: billable, type: boolean, label: Billable, required: true, default: true}
+  - {id: created_at, type: datetime, label: Created, readonly: true, computed: {kind: now, on: create, format: datetime}}
+  - {id: updated_at, type: datetime, label: Updated, readonly: true, computed: {kind: now, on: always, format: datetime}}
+relations:
+  - field: project_id
+    references: {table: projects, field: id}
+    onDelete: block
+  - field: task_id
+    references: {table: tasks, field: id}
+    onDelete: block
+  - field: timesheet_id
+    references: {table: timesheets, field: id}
+    onDelete: block
+  - field: period_id
+    references: {table: periods, field: id}
+    onDelete: block

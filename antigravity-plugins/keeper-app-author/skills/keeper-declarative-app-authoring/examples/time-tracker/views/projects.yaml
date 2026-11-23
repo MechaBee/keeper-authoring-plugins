@@ -1,0 +1,121 @@
+view:
+  id: projects
+  title: Projects
+  description: Browse projects you may use and manage your personal favourites.
+nav:
+  order: 30
+  icon: folder-kanban
+access:
+  allowed_roles: [viewer, editor, developer, admin]
+state:
+  selected_project_id: null
+data_sources:
+  visible_clients:
+    kind: table
+    table: clients
+    sort: {field: name, direction: asc}
+  visible_projects:
+    kind: table
+    table: projects
+    filter: {archived: false}
+    sort: {field: name, direction: asc}
+  visible_tasks:
+    kind: table
+    table: tasks
+    filter:
+      archived: false
+      project_id: {bind: state.selected_project_id}
+    sort: {field: name, direction: asc}
+    refresh_on: [state.selected_project_id]
+  my_favorite_projects:
+    kind: table
+    table: favorite_projects
+    filter: {owner_user_id: {bind: context.userId}}
+  my_favorite_tasks:
+    kind: table
+    table: favorite_tasks
+    filter: {owner_user_id: {bind: context.userId}}
+  add_favorite_project_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params: {table: favorite_projects, label: Add favourite project, fields: project_id}
+    on_success:
+      - {type: refresh, data_sources: [my_favorite_projects]}
+  add_favorite_task_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: favorite_tasks
+      label: Add favourite task
+      fields: "project_id,task_id"
+      field__project_id: {bind: state.selected_project_id}
+    refresh_on: [state.selected_project_id]
+    on_success:
+      - {type: refresh, data_sources: [my_favorite_tasks]}
+components:
+  projects_table:
+    kind: record_table
+    title: Available projects
+    description: Select a project to see its available tasks.
+    data_source: visible_projects
+    columns:
+      - {field: client_id, label: Client}
+      - {field: name, label: Project}
+      - {field: billable_by_default, label: Billable}
+    search: {enabled: true, placeholder: Search projects, fields: [name, client_id]}
+    sort: {enabled: true, default: {field: name, direction: asc}}
+    density: compact
+    selection:
+      state_key: selected_project_id
+      reconcile: first_available
+    on_row_click:
+      - {type: set_state, key: selected_project_id, value: {bind: record.id}}
+  tasks_table:
+    kind: record_table
+    title: Tasks for selected project
+    description: Tasks are filtered to the selected project.
+    data_source: visible_tasks
+    columns:
+      - {field: name, label: Task}
+    search: {enabled: true, placeholder: Search tasks, fields: [name]}
+    sort: {enabled: true, default: {field: name, direction: asc}}
+    density: compact
+    empty_message: Select a project to see its tasks.
+  favorite_projects_collection:
+    kind: record_collection
+    title: Favourite projects
+    description: Keep frequently used projects close at hand.
+    table: favorite_projects
+    data_source: my_favorite_projects
+    create: {data_source: add_favorite_project_action, label: Add favourite project}
+    delete: {enabled: true, label: Remove, confirm: Remove this favourite project?, mode: block}
+    summary:
+      title_field: project_id
+      meta_fields: [created_at]
+    empty_message: No favourite projects yet.
+  favorite_tasks_collection:
+    kind: record_collection
+    title: Favourite tasks
+    description: Save common project and task combinations.
+    table: favorite_tasks
+    data_source: my_favorite_tasks
+    create: {data_source: add_favorite_task_action, label: Add favourite task}
+    delete: {enabled: true, label: Remove, confirm: Remove this favourite task?, mode: block}
+    summary:
+      title_field: task_id
+      meta_fields: [project_id, created_at]
+    empty_message: No favourite tasks yet.
+layout:
+  kind: stack
+  gap: lg
+  children:
+    - kind: split
+      direction: horizontal
+      sizes: [3, 2]
+      children:
+        - component: projects_table
+        - component: tasks_table
+    - component: favorite_projects_collection
+    - component: favorite_tasks_collection

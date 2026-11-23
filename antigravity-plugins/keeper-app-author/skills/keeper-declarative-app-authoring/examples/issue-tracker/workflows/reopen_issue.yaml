@@ -1,0 +1,65 @@
+id: reopen_issue
+title: Reopen issue
+appearance: secondary
+allowed_roles: [editor, developer, admin]
+actor_required: true
+success_message: Issue reopened.
+invalidate: "*"
+input_fields:
+  - {id: issue_id, type: reference, label: Issue, referenceTable: issues, required: true, readonly: true}
+  - {id: comment, type: textarea, label: Comment, contentFormat: markdown, helpText: Optional. Say why it needs another look.}
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: input.issue_id}
+  - id: prepare
+    kind: script
+    label: Check the change
+    input:
+      issue: {bind: step.issue, fallback: null}
+      comment: {bind: input.comment, fallback: null}
+      actor: {bind: system.actorUserId}
+      role: {bind: system.appRole}
+    code: |
+      const issue = input.issue;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      if (issue.state === "open") helpers.actionError("This issue is already open.");
+      const comment = String(input.comment ?? "").trim();
+      if (comment && issue.locked === true && input.role !== "admin") {
+        helpers.inputError("comment", "The conversation is locked. Only admins can comment.");
+      }
+
+      const excerpt = (markdown) => {
+        const text = markdown
+          .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+          .replace(/\\([\\`*_{}\[\]()#+\-.!>~|])/g, "$1")
+          .replace(/(\*\*|__|~~|`)/g, "")
+          .replace(/^\s*(#{1,6}|>|[-*+]|\d+\.)\s+/gm, "")
+          .replace(/\s+/g, " ")
+          .trim();
+        return `commented: ${text.length > 120 ? `${text.slice(0, 117)}...` : text}`;
+      };
+      const issueValues = {state: "open", state_reason: null, duplicate_of_id: null, closed_at: null, closed_by_user_id: null};
+      if (comment) issueValues.comment_count = (Number(issue.comment_count) || 0) + 1;
+      return {
+        issue_values: issueValues,
+        has_comment: Boolean(comment),
+        comment_values: {issue_id: issue.id, kind: "comment", summary: excerpt(comment), body: comment || null, actor_user_id: input.actor},
+        event_values: {issue_id: issue.id, kind: "reopened", summary: "reopened this issue", actor_user_id: input.actor},
+      };
+  - id: post_comment
+    kind: create_record
+    table: issue_activity
+    when: {bind: step.prepare.has_comment, fallback: false}
+    values_from: {bind: step.prepare.comment_values}
+  - id: update_issue
+    kind: update_record
+    table: issues
+    record_id: {bind: input.issue_id}
+    values_from: {bind: step.prepare.issue_values}
+  - id: record_event
+    kind: create_record
+    table: issue_activity
+    values_from: {bind: step.prepare.event_values}
+result: {step: update_issue}

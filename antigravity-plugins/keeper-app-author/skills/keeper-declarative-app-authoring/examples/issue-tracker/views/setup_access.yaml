@@ -1,0 +1,301 @@
+view:
+  id: setup_access
+  title: Access
+  description: Maintain optional issue-tracker profiles and decide which projects each app member or group can open. App membership is managed from Access & sharing.
+nav:
+  order: 70
+  icon: shield
+  group:
+    id: setup
+    label: Setup
+    icon: settings
+    order: 90
+access:
+  allowed_roles: [admin]
+state:
+  active_section: people
+  selected_member_id: null
+  selected_group_id: null
+  selected_access_project_id: null
+route_state:
+  active_section: {route: section, mode: sync}
+data_sources:
+  members:
+    kind: table
+    table: members
+    sort: {field: display_name, direction: asc}
+  app_members:
+    kind: table
+    table: keeper_app_members
+    sort: {field: display_name, direction: asc}
+  member_profile_directory:
+    kind: projected_table
+    schema: member_profile_directory
+    from: {source: members, as: profile}
+    lookups:
+      - {source: app_members, as: app_member, local: profile.user_id, foreign: id, mode: left}
+    fields:
+      - {field: id, value: {path: profile.id}}
+      - {field: user_id, value: {path: profile.user_id}}
+      - {field: display_name, value: {path: profile.display_name}}
+      - field: email
+        value: {op: coalesce, values: [{path: app_member.email}, {literal: Email unavailable}]}
+      - {field: role_title, value: {path: profile.role_title}}
+      - {field: active, value: {path: profile.active}}
+    sort: {field: display_name, direction: asc}
+  selected_member:
+    kind: record
+    table: members
+    id: {bind: state.selected_member_id}
+    refresh_on: [state.selected_member_id]
+  selected_app_member:
+    kind: record
+    table: keeper_app_members
+    id: {bind: source.selected_member.record.user_id}
+    refresh_on: [state.selected_member_id]
+  projects:
+    kind: table
+    table: projects
+    sort: {field: name, direction: asc}
+  groups:
+    kind: table
+    table: groups
+    sort: {field: name, direction: asc}
+  selected_group_memberships:
+    kind: table
+    table: group_memberships
+    filter: {group_id: {bind: state.selected_group_id}}
+    refresh_on: [state.selected_group_id]
+  selected_project_user_access:
+    kind: table
+    table: project_user_access
+    filter: {project_id: {bind: state.selected_access_project_id}}
+    refresh_on: [state.selected_access_project_id]
+  selected_project_group_access:
+    kind: table
+    table: project_group_access
+    filter: {project_id: {bind: state.selected_access_project_id}}
+    refresh_on: [state.selected_access_project_id]
+
+  group_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: groups
+      label: New group
+      fields: name
+      field__active: true
+    on_success:
+      - {type: refresh, data_sources: [groups]}
+      - {type: set_state, key: selected_group_id, value: {bind: action.result.id}}
+  group_membership_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: group_memberships
+      label: Add to group
+      fields: user_id
+      field__group_id: {bind: state.selected_group_id}
+    refresh_on: [state.selected_group_id]
+    on_success:
+      - {type: refresh, data_sources: [selected_group_memberships]}
+  project_user_access_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: project_user_access
+      label: Grant a person
+      fields: user_id
+      field__project_id: {bind: state.selected_access_project_id}
+    refresh_on: [state.selected_access_project_id]
+    on_success:
+      - {type: refresh, data_sources: [selected_project_user_access]}
+  project_group_access_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: project_group_access
+      label: Grant a group
+      fields: group_id
+      field__project_id: {bind: state.selected_access_project_id}
+    refresh_on: [state.selected_access_project_id]
+    on_success:
+      - {type: refresh, data_sources: [selected_project_group_access]}
+
+components:
+  new_member:
+    kind: record_form
+    title: Add issue-tracker profile
+    description: Choose an existing app member and add optional assignment metadata. Invite or remove app members from Access & sharing in the app menu.
+    table: members
+    fields: [user_id, display_name, role_title]
+    defaults: {active: true}
+    submit_label: Add profile
+    on_success:
+      - {type: refresh, data_sources: [members]}
+      - {type: set_state, key: selected_member_id, value: {bind: record.id}}
+
+  people_directory:
+    kind: record_table
+    title: Assignment profiles
+    description: Select a profile to edit it. Email comes from the app member directory and is shown to app admins for unambiguous identification.
+    data_source: member_profile_directory
+    columns:
+      - {field: display_name, label: Name}
+      - {field: email, label: Email}
+      - {field: role_title, label: Team or role}
+      - {field: active, label: Available}
+    search: {enabled: true, placeholder: Search name, email or role, fields: [display_name, email, role_title]}
+    sort: {enabled: true, default: {field: display_name, direction: asc}}
+    density: compact
+    selection:
+      state_key: selected_member_id
+      reconcile: first_available
+    on_row_click:
+      - {type: set_state, key: selected_member_id, value: {bind: record.id}}
+
+  person_detail:
+    kind: record_detail
+    title: Person
+    table: members
+    data_source: selected_member
+    mode: editable
+    save_mode: explicit
+    save_label: Save person
+    density: compact
+    show_primary_key: false
+    empty_message: Select an assignment profile.
+    fields:
+      - {field: user_id, mode: display, ui: {variant: reference_chip}}
+      - field: member_email
+        mode: display
+        field_schema: {type: text, label: Email}
+        value: {bind: source.selected_app_member.record.email}
+        ui: {copyable: true, empty_text: Email unavailable}
+      - {field: display_name, mode: edit}
+      - {field: role_title, mode: edit}
+      - {field: active, mode: edit}
+
+  groups_workspace:
+    kind: record_collection
+    title: Groups
+    description: Select a group to manage its members. Grant the group to projects in the Project access tab.
+    table: groups
+    data_source: groups
+    search: {enabled: true, placeholder: Search groups, fields: [name]}
+    create: {data_source: group_create_action, label: New group}
+    selection:
+      state_key: selected_group_id
+      desktop: split
+      mobile: page
+      reconcile: first_available
+    summary:
+      title_field: name
+    detail:
+      title: Group
+      mode: editable
+      save_mode: explicit
+      save_label: Save group
+      density: compact
+      show_primary_key: false
+      fields:
+        - {field: name, mode: edit}
+
+  group_memberships_workspace:
+    kind: record_collection
+    title: Members of the selected group
+    table: group_memberships
+    data_source: selected_group_memberships
+    create: {data_source: group_membership_create_action, label: Add to group}
+    delete: {enabled: true, label: Remove, confirm: Remove this person from the group?, mode: block}
+    summary:
+      title_field: user_id
+      meta_fields: [created_at]
+    empty_message: Select a group, or add its first member.
+
+  access_projects_table:
+    kind: record_table
+    title: Projects
+    data_source: projects
+    columns:
+      - {field: name, label: Project}
+      - {field: key, label: Key, width: narrow}
+      - {field: archived, label: Archived, width: narrow}
+    search: {enabled: true, placeholder: Search projects, fields: [name, key]}
+    sort: {enabled: true, default: {field: name, direction: asc}}
+    density: compact
+    selection:
+      state_key: selected_access_project_id
+      reconcile: first_available
+    on_row_click:
+      - {type: set_state, key: selected_access_project_id, value: {bind: record.id}}
+
+  project_user_access_workspace:
+    kind: record_collection
+    title: People with access
+    table: project_user_access
+    data_source: selected_project_user_access
+    create: {data_source: project_user_access_create_action, label: Grant a person}
+    delete: {enabled: true, label: Revoke, confirm: Revoke this person's access to the project?, mode: block}
+    summary:
+      title_field: user_id
+      meta_fields: [created_at]
+    empty_message: Nobody has been granted this project directly.
+
+  project_group_access_workspace:
+    kind: record_collection
+    title: Groups with access
+    table: project_group_access
+    data_source: selected_project_group_access
+    create: {data_source: project_group_access_create_action, label: Grant a group}
+    delete: {enabled: true, label: Revoke, confirm: Revoke this group's access to the project?, mode: block}
+    summary:
+      title_field: group_id
+      meta_fields: [created_at]
+    empty_message: No group has been granted this project.
+
+layout:
+  kind: tabs
+  state_key: active_section
+  tabs:
+    - id: people
+      label: People
+      icon: user
+      layout:
+        kind: stack
+        gap: lg
+        children:
+          - component: new_member
+          - kind: split
+            direction: horizontal
+            sizes: [3, 2]
+            children:
+              - component: people_directory
+              - component: person_detail
+    - id: groups
+      label: Groups
+      icon: users
+      layout:
+        kind: stack
+        gap: lg
+        children:
+          - component: groups_workspace
+          - component: group_memberships_workspace
+    - id: project_access
+      label: Project access
+      icon: folder-kanban
+      layout:
+        kind: split
+        direction: horizontal
+        sizes: [3, 2]
+        children:
+          - component: access_projects_table
+          - kind: stack
+            gap: lg
+            children:
+              - component: project_user_access_workspace
+              - component: project_group_access_workspace

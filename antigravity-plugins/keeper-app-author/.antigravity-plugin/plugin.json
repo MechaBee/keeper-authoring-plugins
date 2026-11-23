@@ -1,0 +1,18 @@
+{
+  "name": "keeper-app-author",
+  "displayName": "Keeper App Author",
+  "version": "1.26.1",
+  "description": "Describe how you or your team works and get a real app for it — notes, records, boards, dashboards, and workflows — with every change reviewed before it goes live.",
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "Turn my scattered notes into a personal tracker with tasks, statuses, and a weekly review.",
+    "Build a service dispatch board with customer and equipment records and a parts list.",
+    "Add an approval step and a status dashboard to my app, and show me exactly what changes before it goes live."
+  ],
+  "author": {
+    "name": "MechaBee",
+    "url": "https://mechabee.com/"
+  },
+  "homepage": "https://mechabee.com/keeper",
+  "repository": "https://github.com/MechaBee/keeper-authoring-plugins"
+}

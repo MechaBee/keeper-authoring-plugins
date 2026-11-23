@@ -165,6 +165,36 @@ for (const name of codexNames) {
     hashFile(join(codexPackage, ".mcp.json")) === hashFile(join(claudePackage, ".mcp.json")),
     `${name}: platform MCP configurations must match`,
   );
+
+  // Antigravity has no marketplace catalog: its package is installed straight from
+  // antigravity-plugins/<name>. Every listed plugin must ship one.
+  const antigravityPackage = join(repositoryRoot, "antigravity-plugins", name);
+  const antigravityManifestPath = join(antigravityPackage, ".antigravity-plugin/plugin.json");
+  check(existsSync(antigravityManifestPath), `${name}: Antigravity package is missing .antigravity-plugin/plugin.json`);
+  for (const foreign of [".codex-plugin", ".claude-plugin", ".mcp.json"]) {
+    check(!existsSync(join(antigravityPackage, foreign)), `${name}: Antigravity package must not contain ${foreign}`);
+  }
+  if (existsSync(antigravityManifestPath)) {
+    const antigravityManifest = validateManifest(antigravityManifestPath, `${name}: Antigravity`, name);
+    check(antigravityManifest.version === codexManifest.version, `${name}: platform plugin versions must match`);
+    check(
+      typeof antigravityManifest.logo === "string" && existsSync(resolve(antigravityPackage, antigravityManifest.logo)),
+      `${name}: Antigravity logo asset does not exist`,
+    );
+  }
+  check(existsSync(join(antigravityPackage, "README.md")), `${name}: Antigravity README.md is missing`);
+  const antigravityMcpPath = join(antigravityPackage, "mcp_config.json");
+  check(existsSync(antigravityMcpPath), `${name}: Antigravity mcp_config.json is missing`);
+  if (existsSync(antigravityMcpPath)) {
+    const antigravityMcp = readJson(antigravityMcpPath);
+    const urls = (servers) =>
+      Object.entries(servers ?? {}).map(([serverName, server]) => `${serverName}=${server.url}`).sort().join(",");
+    check(
+      urls(antigravityMcp.mcpServers) === urls(mcpConfig.mcpServers),
+      `${name}: Antigravity MCP servers must match the Codex and Claude configuration`,
+    );
+  }
+  compareTrees(join(codexPackage, "skills"), join(antigravityPackage, "skills"), `${name}: Antigravity skills`);
 }
 
 if (failures.length > 0) {
@@ -173,4 +203,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log("Marketplace validation passed for Codex and Claude Code.");
+console.log("Marketplace validation passed for Codex, Claude Code and Antigravity.");

@@ -1,0 +1,65 @@
+view:
+  id: setup_projects
+  title: Projects
+  description: Each project has its own issue numbers, milestones and people. Grant access to a project from Access.
+nav:
+  order: 50
+  icon: folder-open
+  group:
+    id: setup
+    label: Setup
+    icon: settings
+    order: 90
+access:
+  allowed_roles: [admin]
+state:
+  selected_project_id: null
+data_sources:
+  projects:
+    kind: table
+    table: projects
+    sort: {field: name, direction: asc}
+  project_create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: record_create_action
+    params:
+      table: projects
+      label: New project
+      fields: key,name,description
+      field__archived: false
+    on_success:
+      - {type: refresh, data_sources: [projects]}
+      - {type: set_state, key: selected_project_id, value: {bind: action.result.id}}
+components:
+  projects_workspace:
+    kind: record_collection
+    title: Projects
+    table: projects
+    data_source: projects
+    search: {enabled: true, placeholder: Search projects, fields: [key, name]}
+    create: {data_source: project_create_action, label: New project}
+    archiving: {enabled: true, field: archived, toggle_label: Include archived}
+    selection:
+      state_key: selected_project_id
+      desktop: split
+      mobile: page
+      reconcile: first_available
+    summary:
+      title_field: name
+      meta_fields: [key, next_number]
+    detail:
+      title: Project
+      mode: editable
+      save_mode: explicit
+      save_label: Save project
+      density: compact
+      show_primary_key: false
+      fields:
+        - {field: key, mode: display}
+        - {field: name, mode: edit}
+        - {field: description, mode: edit, ui: {width: full}}
+        - {field: next_number, mode: display, ui: {empty_text: "1"}}
+        - {field: archived, mode: edit}
+layout:
+  component: projects_workspace

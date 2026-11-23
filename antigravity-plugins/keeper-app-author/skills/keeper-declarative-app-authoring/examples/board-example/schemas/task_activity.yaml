@@ -1,0 +1,55 @@
+table: task_activity
+version: 2
+primaryKey: id
+idPrefix: activity
+displayField: body
+rowAccess:
+  mode: all
+fields:
+  - id: id
+    type: text
+    label: ID
+    required: true
+    readonly: true
+  - id: task_id
+    type: reference
+    label: Task
+    referenceTable: tasks
+    required: true
+  - id: author
+    type: text
+    label: Author
+    default: Team
+  - id: type
+    type: select
+    label: Type
+    required: true
+    default: comment
+    options:
+      - {value: comment, label: Comment}
+      - {value: status_changed, label: Status changed}
+  - id: body
+    type: textarea
+    label: Activity
+    required: true
+  - id: from_status
+    type: text
+    label: Previous status
+  - id: to_status
+    type: text
+    label: New status
+  - id: created_at
+    type: datetime
+    label: Logged at
+    required: true
+    readonly: true
+    computed:
+      kind: now
+      on: create
+      format: datetime
+relations:
+  - field: task_id
+    references:
+      table: tasks
+      field: id
+    onDelete: cascade

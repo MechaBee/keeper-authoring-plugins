@@ -1,0 +1,48 @@
+id: record_board_move
+title: Record board move
+appearance: secondary
+allowed_roles: [editor, developer, admin]
+actor_required: true
+success_message: Board move recorded.
+invalidate: "*"
+input_fields:
+  - {id: issue_id, type: reference, label: Issue, referenceTable: issues, required: true}
+  - {id: message, type: text, label: Move, required: true}
+  - {id: from_status, type: text, label: Previous column, required: true}
+  - {id: to_status, type: text, label: New column, required: true}
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: input.issue_id}
+  - id: prepare
+    kind: script
+    label: Check the board move
+    input:
+      issue: {bind: step.issue, fallback: null}
+      from_status: {bind: input.from_status}
+      to_status: {bind: input.to_status}
+      actor: {bind: system.actorUserId}
+    code: |
+      const issue = input.issue;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      const names = {backlog: "Backlog", ready: "Ready", in_progress: "In progress", in_review: "In review", done: "Done"};
+      if (!Object.prototype.hasOwnProperty.call(names, input.from_status) ||
+          !Object.prototype.hasOwnProperty.call(names, input.to_status) ||
+          input.from_status === input.to_status ||
+          issue.board_status !== input.to_status) {
+        helpers.actionError("The board move changed before it could be recorded.");
+      }
+      return {
+        event_values: {
+          issue_id: issue.id,
+          kind: "board_moved",
+          summary: "moved this on the board from " + names[input.from_status] + " to " + names[input.to_status],
+          actor_user_id: input.actor,
+        },
+      };
+  - id: record_event
+    kind: create_record
+    table: issue_activity
+    values_from: {bind: step.prepare.event_values}
+result: {step: record_event}

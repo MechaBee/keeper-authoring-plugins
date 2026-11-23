@@ -1,0 +1,4 @@
+{"id": "urgent", "name": "Urgent", "color": "#d1383d", "position": 10, "active": true, "created_at": "2026-09-17T09:00", "updated_at": "2026-09-17T09:00"}
+{"id": "high", "name": "High", "color": "#e0780f", "position": 20, "active": true, "created_at": "2026-09-17T09:00", "updated_at": "2026-09-17T09:00"}
+{"id": "medium", "name": "Medium", "color": "#b8900a", "position": 30, "active": true, "created_at": "2026-09-17T09:00", "updated_at": "2026-09-17T09:00"}
+{"id": "low", "name": "Low", "color": "#5b6275", "position": 40, "active": true, "created_at": "2026-09-17T09:00", "updated_at": "2026-09-17T09:00"}

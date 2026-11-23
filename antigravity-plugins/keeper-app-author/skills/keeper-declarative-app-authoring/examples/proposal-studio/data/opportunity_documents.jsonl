@@ -1,0 +1,9 @@
+{"id":"odoc_nw_tpl","opportunity_id":"opp_northwind","document_id":"doc_tpl_proposal","link_role":"template","note":"Use this structure for the proposal.","position":10}
+{"id":"odoc_nw_cold","opportunity_id":"opp_northwind","document_id":"doc_cold_chain","link_role":"reference","note":"The core of the offer. Note the Carrier Vector support for their six older trailers.","position":20}
+{"id":"odoc_nw_mon","opportunity_id":"opp_northwind","document_id":"doc_monitoring","link_role":"reference","note":"Lead with this: nobody at Northwind watches alerts at night.","position":30}
+{"id":"odoc_nw_sec","opportunity_id":"opp_northwind","document_id":"doc_security","link_role":"reference","note":"Priya asked about UK hosting and audit-grade records.","position":40}
+{"id":"odoc_nw_int","opportunity_id":"opp_northwind","document_id":"doc_integrations","link_role":"reference","note":"Tesco and Waitrose export formats.","position":50}
+{"id":"odoc_nw_case","opportunity_id":"opp_northwind","document_id":"doc_case_kestrel","link_role":"reference","note":"Closest reference: regulated, night cover, audits.","position":60}
+{"id":"odoc_ac_tpl","opportunity_id":"opp_acme","document_id":"doc_tpl_exec","link_role":"template","note":"Use this structure: Marcus needs one page for his MD.","position":70}
+{"id":"odoc_ac_disp","opportunity_id":"opp_acme","document_id":"doc_dispatch","link_role":"reference","note":"What the pilot would use.","position":80}
+{"id":"odoc_ac_play","opportunity_id":"opp_acme","document_id":"doc_playbook","link_role":"reference","note":"Pilot timeline at one hub.","position":90}

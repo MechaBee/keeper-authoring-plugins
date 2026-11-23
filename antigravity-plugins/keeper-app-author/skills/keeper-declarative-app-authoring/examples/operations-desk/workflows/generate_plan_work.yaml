@@ -1,0 +1,101 @@
+id: generate_plan_work
+title: Generate next work order
+appearance: default
+success_message: One work order created and this plan advanced.
+
+input_fields:
+  - id: plan_id
+    type: reference
+    label: Plan
+    referenceTable: service_plans
+    required: true
+    readonly: true
+
+steps:
+  - id: plan
+    kind: get_record
+    table: service_plans
+    record_id:
+      bind: input.plan_id
+  - id: asset
+    kind: get_record
+    table: assets
+    record_id:
+      bind: step.plan.asset_id
+  - id: prepare
+    kind: script
+    label: Prepare planned work
+    input:
+      plan:
+        bind: step.plan
+      asset:
+        bind: step.asset
+    code: |
+      const plan = input.plan;
+      const asset = input.asset;
+      if (!plan) throw new Error("Plan not found.");
+      if (plan.status !== "active") {
+        throw new Error("Only active plans can generate work.");
+      }
+      const dueDate = String(plan.next_due_date || "");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+        throw new Error("The plan needs a valid next due date.");
+      }
+
+      const next = new Date(`${dueDate}T00:00:00.000Z`);
+      next.setUTCMonth(next.getUTCMonth() + Number(plan.interval_months || 12));
+      const nextDueDate = next.toISOString().slice(0, 10);
+      const title = `Planned visit: ${String(asset && asset.label || plan.label)}`;
+
+      return {
+        workOrderValues: {
+          title,
+          organization_id: plan.organization_id,
+          asset_id: plan.asset_id,
+          assignee_id: plan.assignee_id || null,
+          status: "scheduled",
+          priority: plan.priority || "normal",
+          scheduled_date: dueDate,
+          description: plan.notes || "Complete the recurring plan checklist.",
+          source_plan_id: plan.id,
+        },
+        planValues: {
+          next_due_date: nextDueDate,
+        },
+        preview: {
+          title,
+          description: "Creates one work order and advances only this plan.",
+          items: [
+            { label: "Scheduled", value: dueDate },
+            { label: "Following due date", value: nextDueDate },
+          ],
+        },
+        result: {
+          plan_id: String(plan.id),
+          next_due_date: nextDueDate,
+        },
+      };
+  - id: create_work_order
+    kind: create_record
+    table: work_orders
+    values_from:
+      bind: step.prepare.workOrderValues
+  - id: advance_plan
+    kind: update_record
+    table: service_plans
+    record_id:
+      bind: input.plan_id
+    values_from:
+      bind: step.prepare.planValues
+
+preview:
+  step: prepare
+  path: preview
+
+result:
+  step: prepare
+  path: result
+
+invalidate:
+  - service_plans
+  - work_orders

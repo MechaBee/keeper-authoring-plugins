@@ -1,0 +1,76 @@
+id: commit_fix_report
+title: Save the Agent's fix report
+agent_commit: {task: report_fix}
+input_fields: []
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: system.agentRun.input.issue_id}
+  - id: prepare
+    kind: script
+    label: Close the issue as completed
+    input:
+      issue: {bind: step.issue, fallback: null}
+      body: {bind: result.resolution.body, fallback: ""}
+      requester: {bind: system.agentRun.requesterId}
+      run_id: {bind: system.agentRun.id}
+      now: {bind: system.nowLocal}
+    code: |
+      const issue = input.issue;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      // Someone may have closed it while the agent worked.
+      if (issue.state !== "open") helpers.actionError("This issue is already closed.");
+      if (issue.locked === true) helpers.actionError("The conversation is locked. Ask an admin to close the issue.");
+      const text = String(input.body ?? "").trim();
+      if (!text) helpers.actionError("The fix report is empty.");
+
+      const names = {backlog: "Backlog", ready: "Ready", in_progress: "In progress", in_review: "In review", done: "Done"};
+      const labels = Array.isArray(issue.labels) ? issue.labels : [];
+      const keptLabels = labels.filter((label) => label !== "needs-triage");
+      const issueValues = {
+        state: "closed",
+        state_reason: "completed",
+        duplicate_of_id: null,
+        closed_at: input.now,
+        closed_by_user_id: input.requester,
+        comment_count: (Number(issue.comment_count) || 0) + 1,
+        board_status: "done",
+        labels: keptLabels,
+      };
+      // A closed issue has nothing left for the Agent; the person stays the assignee.
+      if (issue.assignee_kind === "agent") {
+        issueValues.assignee_kind = "person";
+        issueValues.agent_status = null;
+      }
+
+      // Stored under the person who ran the agent; the run id makes the
+      // conversation show each row as "Agent (on behalf of <person>)".
+      const row = (kind, summary, body) => ({
+        issue_id: issue.id, kind, summary, body: body ?? null,
+        actor_user_id: input.requester, agent_run_id: input.run_id,
+      });
+      const events = [row("closed", "closed this as completed")];
+      if (issue.board_status !== "done") {
+        events.push(row("board_moved", "moved this on the board from " + (names[issue.board_status] || issue.board_status) + " to Done"));
+      }
+      if (keptLabels.length !== labels.length) events.push(row("labeled", "removed needs-triage"));
+      return {
+        issue_values: issueValues,
+        comment_values: row("comment", "reported the fix", "**Fixed**\n\n" + text),
+        events,
+      };
+  - id: comment
+    kind: create_record
+    table: issue_activity
+    values_from: {bind: step.prepare.comment_values}
+  - id: update_issue
+    kind: update_record
+    table: issues
+    record_id: {bind: system.agentRun.input.issue_id}
+    values_from: {bind: step.prepare.issue_values}
+  - id: record_events
+    kind: create_records
+    table: issue_activity
+    records_from: {bind: step.prepare.events}
+result: {step: comment}

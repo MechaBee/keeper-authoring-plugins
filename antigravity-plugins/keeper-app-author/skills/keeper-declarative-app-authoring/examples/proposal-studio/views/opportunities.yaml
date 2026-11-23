@@ -1,0 +1,56 @@
+view:
+  id: opportunities
+  title: Opportunities
+nav:
+  order: 10
+  icon: briefcase
+actions:
+  - id: new_opportunity
+    kind: action_set
+    data_source: new_opportunity_action
+data_sources:
+  opportunities:
+    kind: table
+    table: opportunities
+    sort: {field: close_date, direction: asc}
+  customers:
+    kind: table
+    table: customers
+    sort: {field: name, direction: asc}
+  new_opportunity_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params:
+      workflow_id: create_opportunity
+      label: New opportunity
+    action_dialog: {preview: false}
+    on_success:
+      - type: navigate
+        viewId: opportunity
+        query:
+          opportunityId: {bind: action.result.id}
+components:
+  opportunity_list:
+    kind: record_table
+    title: Opportunities
+    show_title: false
+    data_source: opportunities
+    columns:
+      - {field: title, label: Opportunity, wrap: true, width: wide, hideable: false}
+      - {field: customer_id, label: Customer}
+      - {field: stage, label: Stage, width: narrow}
+      - {field: close_date, label: Expected close, width: narrow}
+      - {field: value, label: Value, align: right, width: narrow, empty_text: ""}
+      - {field: owner_member_id, label: Owner, empty_text: ""}
+    search: {enabled: true, placeholder: Search opportunities, fields: [title, customer_name]}
+    sort: {enabled: true, default: {field: close_date, direction: asc}}
+    density: compact
+    on_row_click:
+      - type: navigate
+        viewId: opportunity
+        query:
+          opportunityId: {bind: record.id}
+    empty_message: No opportunities yet. Create one to start a brief.
+layout:
+  component: opportunity_list

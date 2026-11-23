@@ -1,0 +1,144 @@
+# The Agent's questions and its designs or plans are asks: each stays open for the issue's
+# author and assignee until the Agent's status moves on (answers re-queue the issue, a review
+# hands it back). `shipped` takes an agent's announcement only when someone asks for one; a team
+# channel connected to it shows the announcement with its text. Everything else is a plain
+# notification.
+topics:
+  - id: agent_questions
+    kind: ask
+    label: The Agent's questions
+    description: The Agent needs answers before it can go on with an issue.
+    action: Answer
+    open_while: {field: agent_status, equals: waiting_on_answers}
+    link: {view: issue, route: {issueId: "{id}"}}
+  - id: agent_reviews
+    kind: ask
+    label: The Agent's designs and plans to review
+    description: The Agent wrote a solution design or an implementation plan for you to review.
+    action: Review
+    open_while: {field: agent_status, equals: design_in_review}
+    link: {view: issue, route: {issueId: "{id}"}}
+  - id: shipped
+    kind: update
+    label: Shipped
+    description: An agent announces work it shipped on an issue, when someone asks it to.
+    link: {view: issue, route: {issueId: "{id}"}}
+    post: {table: issues, recipientFields: [author_user_id, assignee_user_id]}
+    channels: {include_text: true, title: "{ref} {title}"}
+rules:
+  - id: issue_opened
+    table: issues
+    operation: create
+    recipientFields: [assignee_user_id]
+    delivery: inbox_and_push
+    priority: 80
+    message:
+      inbox: "{ref} was assigned to you."
+      push: "A new issue was assigned to you."
+  - id: issue_assigned
+    table: issues
+    operation: update
+    changedFields: [assignee_user_id]
+    recipientFields: [assignee_user_id]
+    delivery: inbox_and_push
+    priority: 90
+    message:
+      inbox: "{ref} was assigned to you."
+      push: "An issue was assigned to you."
+  - id: issue_commented
+    table: issues
+    operation: update
+    workflowIds: [add_comment]
+    changedFields: [comment_count]
+    recipientFields: [author_user_id, assignee_user_id]
+    delivery: inbox_and_push
+    priority: 70
+    message:
+      inbox: "New comment on {ref}."
+      push: "There is a new comment on an issue."
+  # A connected agent's questions and designs, saved by its commit workflows.
+  - id: issue_agent_questions
+    topic: agent_questions
+    table: issues
+    operation: update
+    workflowIds: [commit_questions]
+    changedFields: [agent_status]
+    recipientFields: [author_user_id, assignee_user_id]
+    delivery: inbox_and_push
+    priority: 75
+    message:
+      inbox: "The Agent has questions on {ref}."
+      push: "The Agent has questions on an issue."
+  - id: issue_agent_design
+    topic: agent_reviews
+    table: issues
+    operation: update
+    workflowIds: [commit_solution_design, commit_implementation_plan, commit_design_revision]
+    changedFields: [agent_status]
+    recipientFields: [author_user_id, assignee_user_id]
+    delivery: inbox_and_push
+    priority: 75
+    message:
+      inbox: "The Agent's design or plan for {ref} is ready for review."
+      push: "An Agent document is ready for review."
+  - id: issue_agent_update
+    table: issues
+    operation: update
+    workflowIds: [commit_progress_update]
+    changedFields: [comment_count]
+    recipientFields: [author_user_id, assignee_user_id]
+    delivery: inbox_and_push
+    priority: 70
+    message:
+      inbox: "The Agent posted an update on {ref}."
+      push: "The Agent posted an update on an issue."
+  - id: issue_closed
+    table: issues
+    operation: update
+    workflowIds: [close_issue, commit_fix_report]
+    changedFields: [state]
+    recipientFields: [author_user_id, assignee_user_id]
+    delivery: inbox_and_push
+    priority: 100
+    message:
+      inbox: "{ref} was closed."
+      push: "An issue was closed."
+  - id: issue_reopened
+    table: issues
+    operation: update
+    workflowIds: [reopen_issue]
+    changedFields: [state]
+    recipientFields: [author_user_id, assignee_user_id]
+    delivery: inbox_and_push
+    priority: 100
+    message:
+      inbox: "{ref} was reopened."
+      push: "An issue was reopened."
+  - id: issue_board_status_changed
+    table: issues
+    operation: update
+    changedFields: [board_status]
+    recipientFields: [author_user_id, assignee_user_id]
+    delivery: inbox
+    priority: 40
+    message:
+      inbox: "Board status changed on {ref}."
+  - id: issue_description_changed
+    table: issues
+    operation: update
+    changedFields: [body]
+    recipientFields: [author_user_id, assignee_user_id]
+    delivery: inbox
+    priority: 30
+    message:
+      inbox: "Description changed on {ref}."
+  - id: issue_labels_changed
+    table: issues
+    operation: update
+    workflowIds: [set_labels]
+    changedFields: [labels]
+    recipientFields: [author_user_id, assignee_user_id]
+    delivery: inbox
+    priority: 20
+    message:
+      inbox: "Labels changed on {ref}."

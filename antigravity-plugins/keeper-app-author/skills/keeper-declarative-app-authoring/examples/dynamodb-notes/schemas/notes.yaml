@@ -1,0 +1,43 @@
+table: notes
+version: 2
+primaryKey: id
+idPrefix: note
+displayField: title
+rowAccess:
+  mode: all
+fields:
+  - id: id
+    type: text
+    label: ID
+    required: true
+    readonly: true
+  - id: title
+    type: text
+    label: Title
+  - id: content
+    type: textarea
+    label: Content
+    contentFormat: markdown
+  - id: created_at
+    type: datetime
+    label: Created At
+    required: true
+    readonly: true
+    computed:
+      kind: now
+      on: create
+      format: datetime
+  - id: updated_at
+    type: datetime
+    label: Updated At
+    required: true
+    readonly: true
+    computed:
+      kind: now
+      on: always
+      format: datetime
+queryPaths:
+  # Serves the home view's `sort: updated_at` under `performance.intent: indexed`.
+  - id: by_updated
+    equalityFields: []
+    orderFields: [updated_at]

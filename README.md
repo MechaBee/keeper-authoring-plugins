@@ -1,7 +1,7 @@
 # MechaBee Plugins
 
 This public repository distributes MechaBee's plugins for Codex and Claude Code from one versioned
-Git marketplace.
+Git marketplace, and the same plugins packaged for Google Antigravity.
 
 | Plugin | What it does |
 | --- | --- |
@@ -49,6 +49,20 @@ claude plugin install keeper-workspace-content@mechabee
 Install either plugin on its own, or both. Complete the MechaBee OAuth flow when prompted, then
 start a new Claude Code session. Each plugin authenticates separately.
 
+## Install for Antigravity
+
+Antigravity installs a plugin from a local path, git URL or archive. Clone this repository, then
+install the plugin folders you want:
+
+```bash
+git clone https://github.com/MechaBee/keeper-authoring-plugins.git
+agy plugin install ./keeper-authoring-plugins/antigravity-plugins/keeper-app-author
+agy plugin install ./keeper-authoring-plugins/antigravity-plugins/keeper-workspace-content
+```
+
+Complete the MechaBee OAuth flow when prompted, then start a new Antigravity conversation. Each
+plugin authenticates separately. To update, pull the repository and install the plugin again.
+
 ## Update
 
 Refresh the marketplace, then reinstall the plugin to pick up a newly published version:
@@ -86,12 +100,15 @@ and show the deployment diff before asking to apply it.
 ├── plugins/                      Codex packages
 │   ├── keeper-app-author/
 │   └── keeper-workspace-content/
-└── claude-plugins/                Claude Code packages
+├── claude-plugins/                Claude Code packages
+│   ├── keeper-app-author/
+│   └── keeper-workspace-content/
+└── antigravity-plugins/           Antigravity packages
     ├── keeper-app-author/
     └── keeper-workspace-content/
 ```
 
-The Codex and Claude packages are kept separate because their manifests and validation rules can
+The Codex, Claude and Antigravity packages are kept separate because their manifests and validation rules can
 evolve independently. Runtime resources are duplicated inside each package because plugin clients
 install packages into isolated caches.
 

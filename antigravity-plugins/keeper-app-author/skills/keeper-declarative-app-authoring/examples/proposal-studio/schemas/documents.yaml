@@ -1,0 +1,44 @@
+table: documents
+version: 1
+primaryKey: id
+idPrefix: doc
+displayField: title
+# Keeper keeps one row per file in a collection's folder, keyed by its path.
+# People, agents and other workspace tools add files; the rows follow.
+role: document
+rowAccess: {mode: all}
+comments:
+  who_can_comment: [editor, admin]
+mutationPolicy:
+  allowedRoles: [editor, admin]
+validationPolicy:
+  unique:
+    - fields: [body_path]
+      message: Another document already uses that file.
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: collection_id, type: reference, label: Collection, referenceTable: collections, required: true}
+  - {id: title, type: text, label: Title, required: true}
+  - {id: summary, type: textarea, label: Summary, helpText: One or two sentences. Agents read this before opening the document.}
+  - {id: body_path, type: text, label: File, managed: role, readonly: true}
+  - {id: media_type, type: text, label: Media type, managed: role, readonly: true}
+  - {id: content_hash, type: text, label: Content hash, managed: role, readonly: true}
+  - {id: file_signature, type: text, label: File signature, managed: role, readonly: true}
+  - {id: file_title, type: text, label: Title in the file, managed: role, readonly: true}
+  - {id: revision, type: number, label: Revision, managed: role, readonly: true}
+  - {id: properties, type: json, label: Properties}
+  - id: review_status
+    type: select
+    label: Status
+    options: [draft, in_review, approved]
+  - id: state
+    type: select
+    label: State
+    options: [active, archived, missing]
+    managed: role
+    readonly: true
+  - {id: updated_at, type: datetime, label: Updated, required: true, readonly: true, computed: {kind: now, on: always, format: datetime}}
+relations:
+  - field: collection_id
+    references: {table: collections, field: id}
+    onDelete: block

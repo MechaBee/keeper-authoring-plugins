@@ -1,0 +1,4 @@
+{"id": "cust_northwind", "name": "Northwind Foods", "industry": "Chilled food distribution", "background": "Regional distributor of dairy and chilled food to supermarkets from three depots in the South West: Bristol, Avonmouth and Swindon. 42 refrigerated vehicles."}
+{"id": "cust_acme", "name": "Acme Logistics", "industry": "Third-party logistics", "background": "3PL with five hubs in the North of England, delivering for retail and e-commerce clients."}
+{"id": "cust_harbor", "name": "Harbor Clinic", "industry": "Healthcare", "background": "Private clinic group running non-emergency patient transport between four sites."}
+{"id": "cust_kestrel", "name": "Kestrel Pharma", "industry": "Pharmaceutical wholesale", "background": "Distributes temperature-sensitive medicines from two warehouses to around 900 pharmacies."}

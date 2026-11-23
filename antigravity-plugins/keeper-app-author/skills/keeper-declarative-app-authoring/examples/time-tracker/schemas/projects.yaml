@@ -1,0 +1,39 @@
+table: projects
+version: 2
+primaryKey: id
+idPrefix: project
+displayField: name
+referenceLabelTemplate: "${name} (${client_id})"
+rowAccess:
+  mode: policy
+  allOf:
+    - kind: resource_grant
+      resourceField: id
+      directGrants: {table: project_user_access, resourceField: project_id, principalField: user_id}
+      groupGrants: {table: project_group_access, resourceField: project_id, groupField: group_id}
+      groupMemberships: {table: group_memberships, groupField: group_id, principalField: user_id}
+mutationPolicy:
+  allowedRoles: [admin]
+validationPolicy:
+  unique:
+    - fields: [client_id, name]
+      message: Project names must be unique within a client.
+queryPaths:
+  - id: by_name
+    equalityFields: []
+    orderFields: [name]
+  - id: by_archived_name
+    equalityFields: [archived]
+    orderFields: [name]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: client_id, type: reference, label: Client, referenceTable: clients, required: true}
+  - {id: name, type: text, label: Project, required: true}
+  - {id: archived, type: boolean, label: Closed, required: true, default: false, helpText: Closed projects cannot receive new time entries.}
+  - {id: billable_by_default, type: boolean, label: Billable by default, required: true, default: true}
+  - {id: created_at, type: datetime, label: Created, readonly: true, computed: {kind: now, on: create, format: datetime}}
+  - {id: updated_at, type: datetime, label: Updated, readonly: true, computed: {kind: now, on: always, format: datetime}}
+relations:
+  - field: client_id
+    references: {table: clients, field: id}
+    onDelete: block

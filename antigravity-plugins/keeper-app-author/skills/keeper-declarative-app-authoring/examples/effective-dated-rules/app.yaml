@@ -1,0 +1,7 @@
+id: effective-dated-rules
+title: Effective Rules
+description: Maintain stable logical rules, dated versions, and a materialized current snapshot.
+version: 1
+defaultView: rules
+icon: calendar-range
+schemaVersion: 1

@@ -1,0 +1,91 @@
+id: set_milestone
+title: Milestone
+appearance: secondary
+allowed_roles: [editor, developer, admin]
+actor_required: true
+success_message: Milestone updated.
+invalidate: "*"
+input_fields:
+  - {id: issue_id, type: reference, label: Issue, referenceTable: issues, required: true, readonly: true}
+  - {id: project_id, type: reference, label: Project, referenceTable: projects, required: true, readonly: true}
+  - id: milestone_id
+    type: reference
+    label: Milestone
+    referenceTable: milestones
+    reference_where: {state: open}
+    helpText: Leave empty to remove the issue from its milestone.
+    input: {placeholder: No milestone}
+    reference_filters:
+      - {record_field: project_id, value_field: project_id, when_empty: none}
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: input.issue_id}
+  - id: flags
+    kind: script
+    input:
+      milestone_id: {bind: input.milestone_id, fallback: null}
+      current_milestone_id: {bind: step.issue.milestone_id, fallback: null}
+    code: |
+      return {
+        has_milestone: Boolean(input.milestone_id),
+        has_current: Boolean(input.current_milestone_id),
+        current_milestone_id: input.current_milestone_id,
+      };
+  - id: milestone
+    kind: get_record
+    table: milestones
+    when: {bind: step.flags.has_milestone, fallback: false}
+    record_id: {bind: input.milestone_id}
+  - id: current
+    kind: get_record
+    table: milestones
+    when: {bind: step.flags.has_current, fallback: false}
+    record_id: {bind: step.flags.current_milestone_id}
+  - id: prepare
+    kind: script
+    label: Check the milestone
+    input:
+      issue: {bind: step.issue, fallback: null}
+      milestone: {bind: step.milestone, fallback: null}
+      current: {bind: step.current, fallback: null}
+      actor: {bind: system.actorUserId}
+    code: |
+      const issue = input.issue;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      const next = input.milestone;
+      if (next && next.project_id !== issue.project_id) {
+        helpers.inputError("milestone_id", "Choose a milestone from this issue's project.");
+      }
+      if (next && next.state !== "open" && next.id !== issue.milestone_id) {
+        helpers.inputError("milestone_id", "This milestone is closed.");
+      }
+      if ((next?.id ?? null) === (issue.milestone_id ?? null)) {
+        helpers.inputError("milestone_id", next ? `The issue is already in ${next.title}.` : "The issue has no milestone yet.");
+      }
+
+      const currentTitle = input.current ? input.current.title : "its milestone";
+      const summary = next ? `added this to ${next.title}` : `removed this from ${currentTitle}`;
+      return {
+        issue_values: {milestone_id: next ? next.id : null},
+        event_values: {issue_id: issue.id, kind: "milestoned", summary, actor_user_id: input.actor},
+        preview: {
+          title: `${issue.ref} ${issue.title}`,
+          items: [
+            {label: "Now", value: input.current ? input.current.title : "No milestone"},
+            {label: "After", value: next ? next.title : "No milestone"},
+          ],
+        },
+      };
+  - id: update_issue
+    kind: update_record
+    table: issues
+    record_id: {bind: input.issue_id}
+    values_from: {bind: step.prepare.issue_values}
+  - id: record_event
+    kind: create_record
+    table: issue_activity
+    values_from: {bind: step.prepare.event_values}
+preview: {step: prepare, path: preview}
+result: {step: update_issue}

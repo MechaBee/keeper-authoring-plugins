@@ -1,0 +1,32 @@
+table: project_group_access
+version: 2
+primaryKey: id
+idPrefix: project_group_access
+displayField: project_id
+rowAccess:
+  mode: policy
+  allOf:
+    - kind: app_role
+      anyOf: [admin]
+mutationPolicy:
+  allowedRoles: [admin]
+validationPolicy:
+  unique:
+    - fields: [project_id, group_id]
+      message: This group already has a grant to the project.
+queryPaths:
+  - id: by_project
+    equalityFields: [project_id]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: project_id, type: reference, label: Project, referenceTable: projects, required: true}
+  - {id: group_id, type: reference, label: Group, referenceTable: groups, required: true}
+  - {id: created_at, type: datetime, label: Created, readonly: true, computed: {kind: now, on: create, format: datetime}}
+  - {id: updated_at, type: datetime, label: Updated, readonly: true, computed: {kind: now, on: always, format: datetime}}
+relations:
+  - field: project_id
+    references: {table: projects, field: id}
+    onDelete: block
+  - field: group_id
+    references: {table: groups, field: id}
+    onDelete: block

@@ -1,0 +1,50 @@
+table: notes
+version: 1
+primaryKey: id
+idPrefix: note
+displayField: title
+fields:
+  - id: id
+    type: text
+    label: ID
+    required: true
+    readonly: true
+  - id: title
+    type: text
+    label: Title
+  - id: content
+    type: textarea
+    label: Content
+    contentFormat: markdown
+  - id: color
+    type: color
+    label: Color
+  - id: created_at
+    type: datetime
+    label: Created At
+    required: true
+    readonly: true
+    computed:
+      kind: now
+      on: create
+      format: datetime
+  - id: updated_at
+    type: datetime
+    label: Updated At
+    required: true
+    readonly: true
+    computed:
+      kind: now
+      on: always
+      format: datetime
+  - id: is_pinned
+    type: boolean
+    label: Pinned
+    default: false
+  - id: pinned_at
+    type: datetime
+    label: Pinned At
+  - id: is_archived
+    type: boolean
+    label: Archived
+    default: false

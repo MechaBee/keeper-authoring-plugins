@@ -1,0 +1,27 @@
+id: change_customer
+title: Change customer
+appearance: secondary
+allowed_roles: [editor, admin]
+success_message: Customer changed.
+invalidate: "*"
+input_fields:
+  - {id: opportunity_id, type: reference, label: Opportunity, referenceTable: opportunities, required: true, readonly: true}
+  - {id: customer_id, type: reference, label: Customer, referenceTable: customers, required: true}
+steps:
+  - id: customer
+    kind: get_record
+    table: customers
+    record_id: {bind: input.customer_id}
+  - id: check
+    kind: script
+    input:
+      customer: {bind: step.customer, fallback: null}
+    code: |
+      if (!input.customer) helpers.inputError("customer_id", "Choose a customer.");
+      return {values: {customer_id: input.customer.id, customer_name: input.customer.name}};
+  - id: update
+    kind: update_record
+    table: opportunities
+    record_id: {bind: input.opportunity_id}
+    values_from: {bind: step.check.values}
+result: {step: update}

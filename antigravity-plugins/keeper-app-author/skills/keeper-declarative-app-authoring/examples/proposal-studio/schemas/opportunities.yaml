@@ -1,0 +1,53 @@
+table: opportunities
+version: 1
+primaryKey: id
+idPrefix: opp
+displayField: title
+# The customer name is part of the label so a connected agent can find
+# "the Northwind opportunity" in the task's input options.
+referenceLabelTemplate: "${customer_name} · ${title}"
+rowAccess: {mode: all}
+comments:
+  who_can_comment: [editor, admin]
+mutationPolicy:
+  allowedRoles: [editor, admin]
+  channels:
+    # Creating goes through create_opportunity, which also gives the
+    # opportunity its own collection.
+    direct: {operations: [update]}
+    workflow:
+      operations: [create, update]
+      workflowIds: [create_opportunity, change_customer]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: title, type: text, label: Title, required: true}
+  - {id: customer_id, type: reference, label: Customer, referenceTable: customers, required: true, workflowOnly: true}
+  - {id: customer_name, type: text, label: Customer name, workflowOnly: true, helpText: Copied from the customer so the opportunity's label names them.}
+  - id: stage
+    type: select
+    label: Stage
+    required: true
+    default: discovery
+    options:
+      - {value: discovery, label: Discovery}
+      - {value: qualified, label: Qualified}
+      - {value: proposal, label: Proposal}
+      - {value: negotiation, label: Negotiation}
+      - {value: won, label: Won}
+      - {value: lost, label: Lost}
+  - {id: value, type: number, label: Value, min: 0, currency: EUR}
+  - {id: close_date, type: date, label: Expected close}
+  - {id: owner_member_id, type: reference, label: Owner, referenceTable: keeper_app_members}
+  - {id: needs, type: textarea, label: Needs, contentFormat: markdown, helpText: The problem in the customer's words.}
+  - {id: requirements, type: textarea, label: Requirements, contentFormat: markdown}
+  - {id: decision_criteria, type: textarea, label: Decision criteria, contentFormat: markdown, helpText: Who decides and what matters most to them.}
+  - {id: collection_id, type: reference, label: Documents, referenceTable: collections, workflowOnly: true, helpText: The opportunity's own collection, made when it is created.}
+  - {id: created_at, type: datetime, label: Created, required: true, readonly: true, computed: {kind: now, on: create, format: datetime}}
+  - {id: updated_at, type: datetime, label: Updated, required: true, readonly: true, computed: {kind: now, on: always, format: datetime}}
+relations:
+  - field: customer_id
+    references: {table: customers, field: id}
+    onDelete: block
+  - field: collection_id
+    references: {table: collections, field: id}
+    onDelete: block

@@ -1,0 +1,56 @@
+table: favorite_tasks
+version: 2
+primaryKey: id
+idPrefix: favorite_task
+displayField: task_id
+rowAccess:
+  mode: policy
+  allOf:
+    - kind: resource_grant
+      resourceField: project_id
+      directGrants: {table: project_user_access, resourceField: project_id, principalField: user_id}
+      groupGrants: {table: project_group_access, resourceField: project_id, groupField: group_id}
+      groupMemberships: {table: group_memberships, groupField: group_id, principalField: user_id}
+    - kind: owner
+      ownerField: owner_user_id
+mutationPolicy:
+  allowedRoles: [editor, developer, admin]
+validationPolicy:
+  unique:
+    - fields: [owner_user_id, task_id]
+      message: This task is already a favourite.
+  checks:
+    - id: task_matches_project
+      operations: [create, update]
+      message: The selected task does not belong to the selected project.
+      input:
+        candidate: {kind: candidate}
+        task: {kind: related_record, relationField: task_id}
+      code: |
+        const candidate = input.candidate;
+        const task = input.task;
+        return Boolean(task && task.project_id === candidate.project_id);
+queryPaths:
+  - id: by_owner
+    equalityFields: [owner_user_id]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: owner_user_id, type: reference, label: Owner, referenceTable: keeper_principals, required: true, readonly: true}
+  - {id: project_id, type: reference, label: Project, referenceTable: projects, required: true, reference_where: {archived: false}}
+  - id: task_id
+    type: reference
+    label: Task
+    referenceTable: tasks
+    required: true
+    reference_where: {archived: false}
+    reference_filters:
+      - {record_field: project_id, value_field: project_id, when_empty: none}
+  - {id: created_at, type: datetime, label: Created, readonly: true, computed: {kind: now, on: create, format: datetime}}
+  - {id: updated_at, type: datetime, label: Updated, readonly: true, computed: {kind: now, on: always, format: datetime}}
+relations:
+  - field: project_id
+    references: {table: projects, field: id}
+    onDelete: block
+  - field: task_id
+    references: {table: tasks, field: id}
+    onDelete: block

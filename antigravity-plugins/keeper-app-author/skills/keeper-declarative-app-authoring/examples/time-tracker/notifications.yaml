@@ -1,0 +1,13 @@
+rules:
+  - id: time_entry_logged
+    table: time_entries
+    operation: create
+    recipientFields: [owner_user_id]
+    message:
+      inbox: "A time entry was logged for you."
+  - id: time_entry_updated
+    table: time_entries
+    operation: update
+    recipientFields: [owner_user_id]
+    message:
+      inbox: "A time entry was updated."

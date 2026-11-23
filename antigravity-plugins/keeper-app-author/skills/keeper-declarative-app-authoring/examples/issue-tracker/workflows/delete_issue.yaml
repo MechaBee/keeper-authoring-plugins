@@ -1,0 +1,55 @@
+id: delete_issue
+title: Delete issue
+appearance: destructive
+allowed_roles: [admin]
+actor_required: true
+success_message: Issue deleted.
+invalidate: "*"
+input_fields:
+  - {id: issue_id, type: reference, label: Issue, referenceTable: issues, required: true, readonly: true}
+  - {id: confirm_ref, type: text, label: Type the issue reference to confirm, required: true, helpText: "For example WEB#42. The issue, its conversation and its links are removed for good."}
+steps:
+  - id: issue
+    kind: get_record
+    table: issues
+    record_id: {bind: input.issue_id}
+  - id: children
+    kind: query_records
+    table: issues
+    filter:
+      parent_issue_id: {bind: input.issue_id}
+    limit: 1
+  - id: duplicates
+    kind: query_records
+    table: issues
+    filter:
+      duplicate_of_id: {bind: input.issue_id}
+    limit: 1
+  - id: prepare
+    kind: script
+    label: Check before deleting
+    input:
+      issue: {bind: step.issue, fallback: null}
+      children: {bind: step.children, fallback: null}
+      duplicates: {bind: step.duplicates, fallback: null}
+      confirm: {bind: input.confirm_ref}
+    code: |
+      const issue = input.issue;
+      if (!issue) helpers.actionError("This issue is no longer available.");
+      if (String(input.confirm ?? "").trim().toUpperCase() !== String(issue.ref).toUpperCase()) {
+        helpers.inputError("confirm_ref", `Type ${issue.ref} to confirm.`);
+      }
+      if (Array.isArray(input.children) && input.children.length > 0) {
+        helpers.actionError("This issue still has sub-issues. Move or delete them first.");
+      }
+      if (Array.isArray(input.duplicates) && input.duplicates.length > 0) {
+        helpers.actionError("Other issues are closed as duplicates of this one. Reopen or re-close them first.");
+      }
+      return {issue_id: issue.id};
+  - id: delete_issue
+    kind: delete_record
+    table: issues
+    record_id: {bind: step.prepare.issue_id}
+    mode: cascade
+on_success:
+  - {type: navigate, viewId: issues}

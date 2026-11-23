@@ -1,0 +1,29 @@
+id: move_on_board
+title: Move an issue on the board
+description: "Use to move an open issue to another board column without posting anything, for example to In progress when you pick it up or to In review when your change waits for review. Your result is the new column. Nobody is notified. Use post_update when people should also read why, and report_fix when the work is done and shipped."
+kind: task
+exposure: {mcp: true}
+allowed_roles: [editor, developer, admin]
+input:
+  - id: issue_id
+    type: reference
+    label: Issue
+    referenceTable: issues
+    required: true
+    reference_where: {state: open}
+target: {table: issues, id: {bind: input.issue_id}}
+context:
+  issue:
+    kind: record
+    table: issues
+    id: {bind: input.issue_id}
+    required: true
+    label: The issue
+    fields: [ref, title, state, board_status]
+guide: ai/move-on-board.md
+executor: {kind: agent}
+output:
+  records:
+    move: {table: issues, op: update, id: {bind: input.issue_id}, fields: [board_status]}
+commit: {mode: on_result, workflow: commit_board_move}
+limits: {timeout_s: 600}

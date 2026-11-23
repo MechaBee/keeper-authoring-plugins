@@ -1,0 +1,44 @@
+table: issue_documents
+version: 1
+primaryKey: id
+idPrefix: idoc
+displayField: note
+# Documents and folders linked to an issue from elsewhere, with why they
+# matter. The issue's own folder is issues.collection_id. A link is visible
+# exactly when its issue is.
+role: document_link
+role_options: {record_field: issue_id}
+rowAccess:
+  mode: policy
+  allOf:
+    - kind: related_resource_grant
+      resourceTable: issues
+      resourceField: id
+      targetField: issue_id
+mutationPolicy:
+  allowedRoles: [editor, developer, admin]
+fields:
+  - {id: id, type: text, label: ID, required: true, readonly: true}
+  - {id: issue_id, type: reference, label: Issue, referenceTable: issues, required: true}
+  - {id: collection_id, type: reference, label: Collection, referenceTable: collections}
+  - {id: document_id, type: reference, label: Document, referenceTable: documents}
+  - id: link_role
+    type: select
+    label: Use
+    required: true
+    options:
+      - {value: reference, label: Reference}
+      - {value: specification, label: Specification}
+      - {value: design, label: Design}
+  - {id: note, type: textarea, label: Why it matters}
+  - {id: position, type: number, label: Order}
+relations:
+  - field: issue_id
+    references: {table: issues, field: id}
+    onDelete: cascade
+  - field: document_id
+    references: {table: documents, field: id}
+    onDelete: cascade
+  - field: collection_id
+    references: {table: collections, field: id}
+    onDelete: cascade
