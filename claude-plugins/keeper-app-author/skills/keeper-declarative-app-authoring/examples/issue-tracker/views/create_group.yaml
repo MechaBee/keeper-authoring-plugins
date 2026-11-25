@@ -1,0 +1,25 @@
+view:
+  id: create_group
+  title: Create a group
+  description: Name a group, add its members, and choose the projects it can open.
+nav:
+  visible: false
+access:
+  allowed_roles: [admin]
+data_sources:
+  create_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params: {workflow_id: create_group_with_members, label: Create the group}
+    action_dialog:
+      layout: steps
+      preview: false
+      done:
+        title: Group created
+        message: Everyone in the group can open the projects you chose.
+        links:
+          - {label: Back to Access, viewId: setup_access, query: {section: groups}}
+components:
+  flow: {kind: flow, data_source: create_action}
+layout: {component: flow}

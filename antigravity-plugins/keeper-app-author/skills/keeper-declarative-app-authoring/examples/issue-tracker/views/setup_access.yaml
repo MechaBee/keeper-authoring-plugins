@@ -127,6 +127,13 @@ data_sources:
       - {type: refresh, data_sources: [selected_project_group_access]}
 
 components:
+  admin_flows:
+    kind: toolbar
+    title: Step by step
+    presentation: {variant: cards}
+    items:
+      - {id: set_up_member, kind: link, label: Set up an invited member, description: "Profile, assignment and project access for someone you invited.", viewId: set_up_member}
+      - {id: create_group, kind: link, label: Create a group, description: "Name a group, add members and choose its projects.", viewId: create_group}
   new_member:
     kind: record_form
     title: Add issue-tracker profile
@@ -259,43 +266,47 @@ components:
     empty_message: No group has been granted this project.
 
 layout:
-  kind: tabs
-  state_key: active_section
-  tabs:
-    - id: people
-      label: People
-      icon: user
-      layout:
-        kind: stack
-        gap: lg
-        children:
-          - component: new_member
-          - kind: split
+  kind: stack
+  gap: lg
+  children:
+    - component: admin_flows
+    - kind: tabs
+      state_key: active_section
+      tabs:
+        - id: people
+          label: People
+          icon: user
+          layout:
+            kind: stack
+            gap: lg
+            children:
+              - component: new_member
+              - kind: split
+                direction: horizontal
+                sizes: [3, 2]
+                children:
+                  - component: people_directory
+                  - component: person_detail
+        - id: groups
+          label: Groups
+          icon: users
+          layout:
+            kind: stack
+            gap: lg
+            children:
+              - component: groups_workspace
+              - component: group_memberships_workspace
+        - id: project_access
+          label: Project access
+          icon: folder-kanban
+          layout:
+            kind: split
             direction: horizontal
             sizes: [3, 2]
             children:
-              - component: people_directory
-              - component: person_detail
-    - id: groups
-      label: Groups
-      icon: users
-      layout:
-        kind: stack
-        gap: lg
-        children:
-          - component: groups_workspace
-          - component: group_memberships_workspace
-    - id: project_access
-      label: Project access
-      icon: folder-kanban
-      layout:
-        kind: split
-        direction: horizontal
-        sizes: [3, 2]
-        children:
-          - component: access_projects_table
-          - kind: stack
-            gap: lg
-            children:
-              - component: project_user_access_workspace
-              - component: project_group_access_workspace
+              - component: access_projects_table
+              - kind: stack
+                gap: lg
+                children:
+                  - component: project_user_access_workspace
+                  - component: project_group_access_workspace

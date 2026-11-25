@@ -1,7 +1,7 @@
 {
   "name": "keeper-app-author",
   "displayName": "Keeper App Author",
-  "version": "1.26.1",
+  "version": "1.27.0",
   "description": "Describe how you or your team works and get a real app for it — notes, records, boards, dashboards, and workflows — with every change reviewed before it goes live.",
   "logo": "assets/logo.svg",
   "suggestedPrompts": [

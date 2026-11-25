@@ -1,0 +1,25 @@
+view:
+  id: set_up_member
+  title: Set up an invited member
+  description: Give someone you invited a profile, say whether they take work, and open the right projects for them.
+nav:
+  visible: false
+access:
+  allowed_roles: [admin]
+data_sources:
+  set_up_action:
+    kind: provider_resource
+    provider: workspace
+    resource: workflow_action
+    params: {workflow_id: set_up_member, label: Set up the member}
+    action_dialog:
+      layout: steps
+      preview: false
+      done:
+        title: Member set up
+        message: Their profile, groups and project access are saved.
+        links:
+          - {label: Back to Access, viewId: setup_access, query: {section: people}}
+components:
+  flow: {kind: flow, data_source: set_up_action}
+layout: {component: flow}

@@ -1,0 +1,63 @@
+id: create_group_with_members
+title: Create a group
+allowed_roles: [admin]
+actor_required: true
+success_message: Group created.
+invalidate: "*"
+input_fields:
+  - {id: name, type: text, label: Group name, required: true, input: {placeholder: "Mobile team"}}
+  - id: user_ids
+    type: reference
+    label: Members
+    referenceTable: keeper_app_members
+    multiple: true
+    helpText: "Optional. People you invited to the app."
+  - id: project_ids
+    type: reference
+    label: Projects
+    referenceTable: projects
+    multiple: true
+    helpText: "Optional. Every member of the group can open these projects."
+input_sections:
+  - {id: group, title: Group, description: "Name the group. Members see projects through it, so a team name works well.", fields: [name], columns: 1}
+  - {id: people, title: Members and projects, description: "Add people now or later. Projects you pick open for everyone in the group.", fields: [user_ids, project_ids], columns: 1}
+steps:
+  - id: check
+    kind: script
+    input:
+      name: {bind: input.name}
+    code: |
+      const name = String(input.name || "").trim();
+      if (!name) helpers.inputError("name", "Name the group.");
+      return {name};
+  - id: group
+    kind: create_record
+    table: groups
+    values:
+      name: {bind: step.check.name}
+      active: true
+  - id: plan
+    kind: script
+    input:
+      group_id: {bind: step.group.id}
+      user_ids: {bind: input.user_ids, fallback: null}
+      project_ids: {bind: input.project_ids, fallback: null}
+    code: |
+      return {
+        memberships: Array.from(new Set(input.user_ids || [])).map((user_id) => ({group_id: input.group_id, user_id})),
+        grants: Array.from(new Set(input.project_ids || [])).map((project_id) => ({project_id, group_id: input.group_id})),
+      };
+  - id: add_memberships
+    kind: create_records
+    table: group_memberships
+    records_from: {bind: step.plan.memberships}
+  - id: add_grants
+    kind: create_records
+    table: project_group_access
+    records_from: {bind: step.plan.grants}
+  - id: ids
+    kind: script
+    input:
+      group_id: {bind: step.group.id}
+    code: 'return {group_id: input.group_id};'
+result: {step: ids}

@@ -1,0 +1,101 @@
+id: set_up_member
+title: Set up an invited member
+allowed_roles: [admin]
+actor_required: true
+success_message: Member set up.
+invalidate: "*"
+input_fields:
+  - id: user_id
+    type: reference
+    label: Invited person
+    referenceTable: keeper_app_members
+    required: true
+    reference_exclude: {table: members, field: user_id}
+    input:
+      variant: search
+      placeholder: Find someone you invited
+      no_options_text: "Everyone you invited is already set up. Invite more people from Access & sharing."
+    helpText: "Only people you invited who aren't set up yet. Invite people from Access & sharing first."
+  - {id: display_name, type: text, label: Name, required: true, helpText: "How the person appears as an assignee and in activity."}
+  - {id: role_title, type: text, label: Team or role, input: {placeholder: "Frontend, Support, Design"}}
+  - {id: active, type: boolean, label: Available for assignment, helpText: "Clear it for people who should follow issues but not be given work."}
+  - id: group_ids
+    type: reference
+    label: Groups
+    referenceTable: groups
+    reference_where: {active: true}
+    multiple: true
+    helpText: "Optional. The person gets every project their groups can open."
+  - id: project_ids
+    type: reference
+    label: Projects
+    referenceTable: projects
+    multiple: true
+    helpText: "Optional. Direct access, on top of what the groups give."
+input_defaults: {active: true}
+input_sections:
+  - {id: person, title: Person, description: "Choose who you invited and how they appear in the tracker.", fields: [user_id, display_name, role_title, active], columns: 1}
+  - {id: access, title: Groups and projects, description: "Decide which projects they can open. You can skip this and add access later.", fields: [group_ids, project_ids], columns: 1}
+steps:
+  - id: profiles
+    kind: collect_records
+    table: members
+    filter: {user_id: {bind: input.user_id}}
+    maxRecords: 1
+  - id: memberships
+    kind: collect_records
+    table: group_memberships
+    filter: {user_id: {bind: input.user_id}}
+    maxRecords: 1000
+  - id: grants
+    kind: collect_records
+    table: project_user_access
+    filter: {user_id: {bind: input.user_id}}
+    maxRecords: 1000
+  - id: plan
+    kind: script
+    label: Check the person and build their access
+    input:
+      user_id: {bind: input.user_id}
+      display_name: {bind: input.display_name}
+      profiles: {bind: step.profiles}
+      memberships: {bind: step.memberships}
+      grants: {bind: step.grants}
+      group_ids: {bind: input.group_ids, fallback: null}
+      project_ids: {bind: input.project_ids, fallback: null}
+    code: |
+      if (input.profiles.length > 0) {
+        helpers.inputError("user_id", "This person is already set up. Change their profile on the Access page.");
+      }
+      if (!String(input.display_name || "").trim()) helpers.inputError("display_name", "Enter a name.");
+      const inGroup = new Set(input.memberships.map((row) => row.group_id));
+      const granted = new Set(input.grants.map((row) => row.project_id));
+      const groupIds = Array.from(new Set(input.group_ids || [])).filter((id) => !inGroup.has(id));
+      const projectIds = Array.from(new Set(input.project_ids || [])).filter((id) => !granted.has(id));
+      return {
+        memberships: groupIds.map((group_id) => ({group_id, user_id: input.user_id})),
+        grants: projectIds.map((project_id) => ({project_id, user_id: input.user_id})),
+      };
+  - id: profile
+    kind: create_record
+    table: members
+    values:
+      user_id: {bind: input.user_id}
+      display_name: {bind: input.display_name}
+      role_title: {bind: input.role_title, fallback: null}
+      active: {bind: input.active, fallback: true}
+  - id: add_memberships
+    kind: create_records
+    table: group_memberships
+    records_from: {bind: step.plan.memberships}
+  - id: add_grants
+    kind: create_records
+    table: project_user_access
+    records_from: {bind: step.plan.grants}
+  - id: ids
+    kind: script
+    input:
+      member_id: {bind: step.profile.id}
+      user_id: {bind: input.user_id}
+    code: 'return {member_id: input.member_id, user_id: input.user_id};'
+result: {step: ids}

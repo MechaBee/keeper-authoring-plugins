@@ -15,12 +15,15 @@ JSONL storage; the manifest omits `storage`.
 | [Issues for agents](views/agent_issues.yaml) (hidden) | Connected agents | Lean MCP list: issues by recent update, filtered by board column (`status`), `state` and `project`; no member directory |
 | [Document](views/document.yaml) (hidden, `?documentId=`) | Everyone | `document_page` with passage comments, for the issue's documents |
 | [Milestones](views/milestones.yaml) | Everyone | Progress from two `aggregate_table` counts joined by a projection |
-| [Setup access](views/setup_access.yaml) and the other `setup_*` views | Admins | Projects; labels, types and priorities; issue templates; optional assignment profiles, groups and project grants |
+| [Setup access](views/setup_access.yaml) and the other `setup_*` views | Admins | Projects; labels, types and priorities; issue templates; optional assignment profiles, groups and project grants; Step by step flow cards on Access |
+| [Set up an invited member](views/set_up_member.yaml) (hidden) | Admins | Three-step `flow` over `set_up_member`: profile, groups and project access saved together |
+| [Create a group](views/create_group.yaml) (hidden) | Admins | Two-step `flow` over `create_group_with_members`: the group and its members in one save |
 
 Fifteen workflows own every change that should leave a trace: `open_issue`, `close_issue`,
 `reopen_issue`, `add_comment`, `assign_issue`, `set_labels`, `set_milestone`, `set_issue_type`,
 `move_issue_on_board`, `record_board_move`, `link_issues`, `unlink_issues`, `transfer_issue`,
-`lock_conversation` (admins) and `delete_issue` (admins), plus `hand_back_to_agent`.
+`lock_conversation` (admins) and `delete_issue` (admins), plus `hand_back_to_agent`. Two admin
+wizards set up access in one save each: `set_up_member` and `create_group_with_members`.
 Eight [AI tasks](../../reference/automation/task.md), exposed to connected agents as procedures,
 let a coding agent work an issue. Four work the Agent queue: `ask_questions`,
 `write_implementation_plan`, `write_solution_design` and `revise_solution_design` (for either
@@ -130,6 +133,12 @@ requirements for other apps.
   assignee, because the comment rule only follows `add_comment`; `issue_closed` also follows
   `commit_fix_report`. A person's comment on a waiting issue returns it to the queue; **Hand back to the
   Agent** does the same after a design, with an optional note.
+- **Wizards for the access chores.** An invited person still needs a profile, groups and project
+  grants. `set_up_member` writes all three in one transaction, and its person picker uses
+  [`reference_exclude`](../../reference/schema/fields.md) on `members.user_id`, so it lists only
+  invited people who have no profile yet; the workflow refuses a duplicate anyway.
+  `create_group_with_members` does the same for a new group. Both run from flow views linked from
+  cards at the top of **Setup → Access**.
 - **`invalidate: "*"` everywhere.** Workflows run from several views whose source keys differ,
   and `invalidate` names view source keys, not tables.
 
@@ -140,9 +149,10 @@ into the candidate before making domain changes. Validate the complete candidate
 view in isolation. After deployment, as a workspace owner or manager (an implicit app admin):
 
 1. Add testers from **Administration → Members** or **Access & sharing**.
-2. If they should be assignable, add their optional profiles under **Setup → Access → People**.
-3. Under **Setup → Access → Project access**, grant the seeded **Demo project** (`DEMO`) to them
-   with the Editor role. Admins see every project without a grant.
+2. Under **Setup → Access**, choose **Set up an invited member** for each of them: a profile (and
+   whether they take work), optional groups, and the seeded **Demo project** (`DEMO`) with the
+   Editor role. Admins see every project without a grant. The People, Groups and Project access
+   tables there do the same steps one at a time.
 
 The seed data contains the filter catalog, three templates, the Demo project and one milestone.
 There are no seeded issues or people, because both need real Keeper principals.
@@ -167,5 +177,5 @@ There are no seeded issues or people, because both need real Keeper principals.
 
 ## Validation expectation
 
-The complete 76-file app candidate (the author-facing README is excluded) verifies with zero
+The complete 95-file app candidate (the author-facing README is excluded) verifies with zero
 errors and zero warnings with data included. Re-run validation after any adaptation.

@@ -3,6 +3,16 @@
 All notable changes to the MechaBee Keeper plugins are documented here. Entries without a plugin
 name in the heading are Keeper App Author releases.
 
+## Keeper App Author 1.27.0 - 2026-11-25
+
+- New `reference_exclude: {table, field}` on workflow input references: the picker leaves out
+  options whose id the other table already holds, such as people who already have a profile.
+  Workflow inputs only; if the table can't be read, every option is shown and the workflow's own
+  checks still apply. See `reference/schema/fields.md`.
+- Issue Tracker example: admin wizards **Set up an invited member** (profile, groups and project
+  access in one save) and **Create a group** (a group and its members), opened from Step by step
+  cards on Setup → Access, with a guide section.
+
 ## Antigravity packages - 2026-11-23
 
 - New `antigravity-plugins/` folder with Antigravity packages of Keeper App Author 1.26.1 and

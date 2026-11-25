@@ -17,6 +17,17 @@ Use:
 Removing a member blocks app access but preserves issues, comments, grants, profiles and historical
 assignments.
 
+## Step by step
+
+**Setup → Access** opens with two guided flows. They do what the sections below describe, in one
+place:
+
+- **Set up an invited member**: pick someone you invited, give them a name and team, choose whether
+  they can be assigned issues, and optionally add them to groups and grant projects.
+- **Create a group**: name the group, add members and choose the projects it can open.
+
+Nothing is saved until the last step. Use the sections below to change things later.
+
 ## 2. Add optional assignment profiles
 
 App members are immediately available for project and group grants. If you also want a friendly

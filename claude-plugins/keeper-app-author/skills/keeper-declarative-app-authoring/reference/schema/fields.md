@@ -84,6 +84,24 @@ static equality filter on the referenced table (for example `{archived: false}`)
 offered options; it is reference-only and combines with any `reference_filters`. Load the referenced
 table in a view that must render labels or provide a dropdown.
 
+A workflow input `reference` may set `reference_exclude: {table, field}` to leave out every option
+whose id already appears in `field` of an app table, for example people who already have a profile:
+
+```yaml
+- id: user_id
+  type: reference
+  label: Invited person
+  referenceTable: keeper_app_members
+  reference_exclude: {table: members, field: user_id}
+  input: {no_options_text: Everyone you invited is already set up.}
+```
+
+`field` is a `text` field or a reference to the same table as the input. The runtime reads that
+table as the viewer when it opens the dialog, so it narrows the choice only: a table the viewer
+cannot read leaves the picker unfiltered, and the workflow must still reject a duplicate itself.
+It is not accepted on schema fields or AI task inputs, because an edit form would drop the record's
+own current value. Use it on create-style workflows, not on ones that change an existing row.
+
 `referenceTable: keeper_principals` is a runtime-owned principal reference, not an application
 schema or JSONL file. For an app-admin form, Keeper supplies a bounded directory typeahead and
 returns the selected opaque ID. Ordinary editors receive only contextual options already allowed by
